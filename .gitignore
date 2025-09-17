@@ -1,0 +1,14 @@
+.claude
+
+ai-tools/
+
+node_modules/
+*/node_modules/
+
+backend/bin/
+backend/obj/
+
+frontend/.env
+frontend/.env*
+
+frontend.bkp/
