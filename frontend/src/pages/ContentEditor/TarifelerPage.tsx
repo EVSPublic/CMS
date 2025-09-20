@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import FormInput from '../../components/Base/Form/FormInput';
 import FormTextarea from '../../components/Base/Form/FormTextarea';
 import FormLabel from '../../components/Base/Form/FormLabel';
 import Button from '../../components/Base/Button';
 import Tab from '../../components/Base/Headless/Tab';
 import ImageInput from '../../components/ImageInput';
+import { useContentManager } from '../../hooks/useContentManager';
+import ContentToolbar from '../../components/ContentManagement/ContentToolbar';
 
 interface TarifelerPageContent {
   meta: {
@@ -139,22 +141,13 @@ const initialContent: TarifelerPageContent = {
 };
 
 const TarifelerPageEditor: React.FC = () => {
-  const [content, setContent] = useState<TarifelerPageContent>(initialContent);
-  const [isSaving, setIsSaving] = useState(false);
+  const contentManager = useContentManager({
+    pageId: 'tarifeler',
+    initialContent,
+    autoSave: false
+  });
 
-  const updateContent = (path: string, value: any) => {
-    const keys = path.split('.');
-    const newContent = { ...content };
-    let current = newContent as any;
-
-    for (let i = 0; i < keys.length - 1; i++) {
-      if (!current[keys[i]]) current[keys[i]] = {};
-      current = current[keys[i]];
-    }
-
-    current[keys[keys.length - 1]] = value;
-    setContent(newContent);
-  };
+  const { content, setContent, updateContent } = contentManager;
 
   const updateArrayItem = (path: string, index: number, field: string, value: any) => {
     const keys = path.split('.');
@@ -197,99 +190,15 @@ const TarifelerPageEditor: React.FC = () => {
     setContent(newContent);
   };
 
-  const validateContent = () => {
-    const errors: string[] = [];
-
-    if (!content.meta.title.trim()) {
-      errors.push('Sayfa başlığı boş olamaz');
-    }
-
-    if (!content.pageHeader.title.trim()) {
-      errors.push('Ana başlık boş olamaz');
-    }
-
-    if (!content.pageHeader.description.trim()) {
-      errors.push('Sayfa açıklaması boş olamaz');
-    }
-
-    // Validate campaign tariffs
-    content.campaignTariffs.cards.forEach((card, index) => {
-      if (!card.title.trim()) {
-        errors.push(`Kampanyalı Tarife ${index + 1} başlığı boş olamaz`);
-      }
-      if (!card.currentPrice.trim()) {
-        errors.push(`Kampanyalı Tarife ${index + 1} güncel fiyatı boş olamaz`);
-      }
-    });
-
-    // Validate normal tariffs
-    content.normalTariffs.cards.forEach((card, index) => {
-      if (!card.title.trim()) {
-        errors.push(`Normal Tarife ${index + 1} başlığı boş olamaz`);
-      }
-      if (!card.currentPrice.trim()) {
-        errors.push(`Normal Tarife ${index + 1} fiyatı boş olamaz`);
-      }
-    });
-
-    if (!content.contact.heading.trim()) {
-      errors.push('İletişim başlığı boş olamaz');
-    }
-
-    if (!content.partnerships.heading.trim()) {
-      errors.push('Ortaklık başlığı boş olamaz');
-    }
-
-    content.partnerships.logos.forEach((logo, index) => {
-      if (!logo.name.trim()) {
-        errors.push(`Ortaklık ${index + 1} adı boş olamaz`);
-      }
-      if (!logo.image.trim()) {
-        errors.push(`Ortaklık ${index + 1} logo yolu boş olamaz`);
-      }
-      if (!logo.alt.trim()) {
-        errors.push(`Ortaklık ${index + 1} logo alt metni boş olamaz`);
-      }
-    });
-
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
-  };
-
-  const handleSave = async () => {
-    const validation = validateContent();
-
-    if (!validation.isValid) {
-      alert('Lütfen şu hataları düzeltin:\n\n' + validation.errors.join('\n'));
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      // TODO: Implement API call to save content
-      console.log('Saving content:', content);
-      // await api.savePageContent('tarifeler', content);
-      alert('İçerik başarıyla kaydedildi!');
-    } catch (error) {
-      console.error('Save error:', error);
-      alert('Kaydetme sırasında bir hata oluştu!');
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-          Tarifeler İçerik Editörü
-        </h1>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-          Tarifeler sayfası içeriklerini düzenleyin
-        </p>
-      </div>
+    <div>
+      <ContentToolbar
+        contentManager={contentManager}
+        pageTitle="Tarifeler İçerik Editörü"
+      />
+
+      <div className="p-6">
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
         <Tab.Group>
@@ -369,7 +278,7 @@ const TarifelerPageEditor: React.FC = () => {
                   </Button>
                 </div>
 
-                {content.campaignTariffs.cards.map((card, index) => (
+                {content.campaignTariffs.cards.map((card: any, index: number) => (
                   <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                     <div className="flex justify-between items-start mb-4">
                       <h4 className="font-medium text-gray-900 dark:text-white">Kampanyalı Tarife {index + 1}</h4>
@@ -476,7 +385,7 @@ const TarifelerPageEditor: React.FC = () => {
                   </Button>
                 </div>
 
-                {content.normalTariffs.cards.map((card, index) => (
+                {content.normalTariffs.cards.map((card: any, index: number) => (
                   <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                     <div className="flex justify-between items-start mb-4">
                       <h4 className="font-medium text-gray-900 dark:text-white">Normal Tarife {index + 1}</h4>
@@ -615,7 +524,7 @@ const TarifelerPageEditor: React.FC = () => {
                       </Button>
                     </div>
 
-                    {content.partnerships.logos.map((logo, index) => (
+                    {content.partnerships.logos.map((logo: any, index: number) => (
                       <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4">
                         <div className="flex justify-between items-start mb-4">
                           <h5 className="font-medium text-gray-900 dark:text-white">Logo {index + 1}</h5>
@@ -694,7 +603,7 @@ const TarifelerPageEditor: React.FC = () => {
                 <div>
                   <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Ortaklık Logoları</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {content.partnerships.logos.map((logo, index) => (
+                    {content.partnerships.logos.map((logo: any, index: number) => (
                       <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                         <FormLabel htmlFor={`partnership-logo-${index}`}>{logo.name || `Logo ${index + 1}`}</FormLabel>
                         <ImageInput
@@ -711,17 +620,7 @@ const TarifelerPageEditor: React.FC = () => {
           </Tab.Panels>
         </Tab.Group>
 
-        <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4">
-          <div className="flex justify-end space-x-3">
-            <Button
-              variant="primary"
-              onClick={handleSave}
-              disabled={isSaving}
-            >
-              {isSaving ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
-            </Button>
-          </div>
-        </div>
+      </div>
       </div>
     </div>
   );
