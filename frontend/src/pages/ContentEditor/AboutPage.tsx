@@ -258,30 +258,20 @@ const AboutPageEditor: React.FC = () => {
       <div className="space-y-6">
         <Tab.Group>
           <Tab.List className="border-b border-gray-200 dark:border-gray-700">
-            <Tab>
-              <Tab.Button className="px-4 py-2 mr-4 border-b-2 font-medium text-sm">
-                Genel Bilgiler
-              </Tab.Button>
+            <Tab className="px-6 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-600 data-[selected]:text-blue-600 dark:data-[selected]:text-blue-400 data-[selected]:border-blue-600 dark:data-[selected]:border-blue-400">
+              Genel Bilgiler
             </Tab>
-            <Tab>
-              <Tab.Button className="px-4 py-2 mr-4 border-b-2 font-medium text-sm">
-                Ana Bölüm
-              </Tab.Button>
+            <Tab className="px-6 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-600 data-[selected]:text-blue-600 dark:data-[selected]:text-blue-400 data-[selected]:border-blue-600 dark:data-[selected]:border-blue-400">
+              Ana Bölüm
             </Tab>
-            <Tab>
-              <Tab.Button className="px-4 py-2 mr-4 border-b-2 font-medium text-sm">
-                Misyon & Vizyon
-              </Tab.Button>
+            <Tab className="px-6 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-600 data-[selected]:text-blue-600 dark:data-[selected]:text-blue-400 data-[selected]:border-blue-600 dark:data-[selected]:border-blue-400">
+              Misyon & Vizyon
             </Tab>
-            <Tab>
-              <Tab.Button className="px-4 py-2 mr-4 border-b-2 font-medium text-sm">
-                İletişim & Ortaklıklar
-              </Tab.Button>
+            <Tab className="px-6 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-600 data-[selected]:text-blue-600 dark:data-[selected]:text-blue-400 data-[selected]:border-blue-600 dark:data-[selected]:border-blue-400">
+              İletişim & Ortaklıklar
             </Tab>
-            <Tab>
-              <Tab.Button className="px-4 py-2 mr-4 border-b-2 font-medium text-sm">
-                Görseller
-              </Tab.Button>
+            <Tab className="px-6 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-600 data-[selected]:text-blue-600 dark:data-[selected]:text-blue-400 data-[selected]:border-blue-600 dark:data-[selected]:border-blue-400">
+              Görseller
             </Tab>
           </Tab.List>
 
