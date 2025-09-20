@@ -23,6 +23,48 @@ const initialState: SideMenuState = {
       pathname: "/",
       title: "Dashboard",
     },
+    "CONTENT MANAGEMENT",
+    {
+      icon: "FileText",
+      title: "Page Content",
+      subMenu: [
+        {
+          icon: "Home",
+          pathname: "/content/index",
+          title: "Ana Sayfa",
+        },
+        {
+          icon: "Info",
+          pathname: "/content/hakkimizda",
+          title: "Hakkımızda",
+        },
+        {
+          icon: "User",
+          pathname: "/content/bireysel",
+          title: "Bireysel Çözümler",
+        },
+        {
+          icon: "Building",
+          pathname: "/content/kurumsal",
+          title: "Kurumsal Çözümler",
+        },
+        {
+          icon: "CreditCard",
+          pathname: "/content/tarifeler",
+          title: "Tarifeler",
+        },
+        {
+          icon: "MessageCircle",
+          pathname: "/content/iletisim",
+          title: "İletişim",
+        },
+        {
+          icon: "Map",
+          pathname: "/content/istasyon-haritasi",
+          title: "İstasyon Haritası",
+        },
+      ],
+    },
   ],
 };
 

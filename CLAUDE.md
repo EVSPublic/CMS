@@ -1,0 +1,1 @@
+- always update the TODO.md file and mark finished steps
