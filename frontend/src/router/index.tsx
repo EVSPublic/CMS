@@ -5,8 +5,8 @@ import Layout from "../themes";
 import ProtectedRoute from "../components/ProtectedRoute";
 import MediaGallery from "../pages/MediaGallery";
 import IndexPageEditor from "../pages/ContentEditor/IndexPage";
-import HakkimizdaPageEditor from "../pages/ContentEditor/HakkimizdaPage";
-import BireyselPageEditor from "../pages/ContentEditor/BireyselPage";
+import AboutPageEditor from "../pages/ContentEditor/AboutPage";
+import IndividualSolutionsPageEditor from "../pages/ContentEditor/IndividualSolutionsPage";
 import KurumsalPageEditor from "../pages/ContentEditor/KurumsalPage";
 import TarifelerPageEditor from "../pages/ContentEditor/TarifelerPage";
 import IletisimPageEditor from "../pages/ContentEditor/IletisimPage";
@@ -36,11 +36,11 @@ function Router() {
         },
         {
           path: "/content/hakkimizda",
-          element: <HakkimizdaPageEditor />,
+          element: <AboutPageEditor />,
         },
         {
           path: "/content/bireysel",
-          element: <BireyselPageEditor />,
+          element: <IndividualSolutionsPageEditor />,
         },
         {
           path: "/content/kurumsal",
