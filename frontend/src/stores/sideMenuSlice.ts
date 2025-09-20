@@ -25,6 +25,11 @@ const initialState: SideMenuState = {
     },
     "CONTENT MANAGEMENT",
     {
+      icon: "Image",
+      pathname: "/media-gallery",
+      title: "Media Gallery",
+    },
+    {
       icon: "FileText",
       title: "Page Content",
       subMenu: [

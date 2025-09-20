@@ -3,6 +3,7 @@ import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Layout from "../themes";
 import ProtectedRoute from "../components/ProtectedRoute";
+import MediaGallery from "../pages/MediaGallery";
 import IndexPageEditor from "../pages/ContentEditor/IndexPage";
 import HakkimizdaPageEditor from "../pages/ContentEditor/HakkimizdaPage";
 import BireyselPageEditor from "../pages/ContentEditor/BireyselPage";
@@ -24,6 +25,10 @@ function Router() {
         {
           path: "/",
           element: <Home />,
+        },
+        {
+          path: "/media-gallery",
+          element: <MediaGallery />,
         },
         {
           path: "/content/index",

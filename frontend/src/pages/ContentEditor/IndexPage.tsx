@@ -4,6 +4,7 @@ import FormTextarea from '../../components/Base/Form/FormTextarea';
 import FormLabel from '../../components/Base/Form/FormLabel';
 import Button from '../../components/Base/Button';
 import Tab from '../../components/Base/Headless/Tab';
+import ImageInput from '../../components/ImageInput';
 
 interface IndexPageContent {
   meta: {
@@ -771,13 +772,14 @@ const IndexPageEditor: React.FC = () => {
                   <h3 className="text-lg font-semibold mb-4">Logo ve Marka Görselleri</h3>
                   <div className="space-y-4">
                     <div>
-                      <FormLabel>Ana Logo</FormLabel>
-                      <div className="space-y-2">
-                        <FormInput
-                          value={content.branding.logo}
-                          onChange={(e) => updateContent('branding', 'logo', e.target.value)}
-                          placeholder="Logo dosya yolu"
-                        />
+                      <ImageInput
+                        value={content.branding.logo}
+                        onChange={(url) => updateContent('branding', 'logo', url)}
+                        label="Ana Logo"
+                        placeholder="Logo seçin..."
+                      />
+                      <div className="mt-3">
+                        <FormLabel>Logo Alt Metni</FormLabel>
                         <FormInput
                           value={content.branding.logoAlt}
                           onChange={(e) => updateContent('branding', 'logoAlt', e.target.value)}
@@ -786,11 +788,11 @@ const IndexPageEditor: React.FC = () => {
                       </div>
                     </div>
                     <div>
-                      <FormLabel>Favicon</FormLabel>
-                      <FormInput
+                      <ImageInput
                         value={content.branding.favicon}
-                        onChange={(e) => updateContent('branding', 'favicon', e.target.value)}
-                        placeholder="Favicon dosya yolu"
+                        onChange={(url) => updateContent('branding', 'favicon', url)}
+                        label="Favicon"
+                        placeholder="Favicon seçin..."
                       />
                     </div>
                   </div>
@@ -808,19 +810,19 @@ const IndexPageEditor: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <FormLabel>Flash Efekt Görseli</FormLabel>
-                      <FormInput
+                      <ImageInput
                         value={content.hero.flashImage}
-                        onChange={(e) => updateContent('hero', 'flashImage', e.target.value)}
-                        placeholder="Flash efekt görsel yolu"
+                        onChange={(url) => updateContent('hero', 'flashImage', url)}
+                        label="Flash Efekt Görseli"
+                        placeholder="Flash efekt görseli seçin..."
                       />
                     </div>
                     <div>
-                      <FormLabel>Arka Plan Görseli</FormLabel>
-                      <FormInput
+                      <ImageInput
                         value={content.hero.backgroundImage}
-                        onChange={(e) => updateContent('hero', 'backgroundImage', e.target.value)}
-                        placeholder="Arka plan görsel yolu"
+                        onChange={(url) => updateContent('hero', 'backgroundImage', url)}
+                        label="Arka Plan Görseli"
+                        placeholder="Arka plan görseli seçin..."
                       />
                     </div>
                   </div>
@@ -834,11 +836,11 @@ const IndexPageEditor: React.FC = () => {
                         <h4 className="font-medium mb-3">Kart {index + 1} Görseli</h4>
                         <div className="space-y-3">
                           <div>
-                            <FormLabel>Görsel Yolu</FormLabel>
-                            <FormInput
+                            <ImageInput
                               value={item.image}
-                              onChange={(e) => updateCarouselItem(index, 'image', e.target.value)}
-                              placeholder="Görsel dosya yolu"
+                              onChange={(url) => updateCarouselItem(index, 'image', url)}
+                              label="Kart Görseli"
+                              placeholder="Görsel seçin..."
                             />
                           </div>
                           <div>
@@ -859,19 +861,19 @@ const IndexPageEditor: React.FC = () => {
                   <h3 className="text-lg font-semibold mb-4">Hizmet Noktaları Görselleri</h3>
                   <div className="space-y-4">
                     <div>
-                      <FormLabel>Harita İkonu</FormLabel>
-                      <FormInput
+                      <ImageInput
                         value={content.servicePoints.mapImage}
-                        onChange={(e) => updateContent('servicePoints', 'mapImage', e.target.value)}
-                        placeholder="Harita ikon yolu"
+                        onChange={(url) => updateContent('servicePoints', 'mapImage', url)}
+                        label="Harita İkonu"
+                        placeholder="Harita ikonu seçin..."
                       />
                     </div>
                     <div>
-                      <FormLabel>İstasyon İkonu</FormLabel>
-                      <FormInput
+                      <ImageInput
                         value={content.servicePoints.iconImage}
-                        onChange={(e) => updateContent('servicePoints', 'iconImage', e.target.value)}
-                        placeholder="İstasyon ikon yolu"
+                        onChange={(url) => updateContent('servicePoints', 'iconImage', url)}
+                        label="İstasyon İkonu"
+                        placeholder="İstasyon ikonu seçin..."
                       />
                     </div>
                   </div>
@@ -884,11 +886,11 @@ const IndexPageEditor: React.FC = () => {
                       <div key={index} className="border border-gray-200 dark:border-gray-700  p-4">
                         <h4 className="font-medium mb-3">{item.title} İkonu</h4>
                         <div>
-                          <FormLabel>İkon Yolu</FormLabel>
-                          <FormInput
+                          <ImageInput
                             value={item.icon}
-                            onChange={(e) => updateTariffItem(index, 'icon', e.target.value)}
-                            placeholder="İkon dosya yolu"
+                            onChange={(url) => updateTariffItem(index, 'icon', url)}
+                            label="Tarife İkonu"
+                            placeholder="İkon seçin..."
                           />
                         </div>
                       </div>
@@ -900,27 +902,27 @@ const IndexPageEditor: React.FC = () => {
                   <h3 className="text-lg font-semibold mb-4">Mobil Uygulama Görselleri</h3>
                   <div className="space-y-4">
                     <div>
-                      <FormLabel>Uygulama Görseli</FormLabel>
-                      <FormInput
+                      <ImageInput
                         value={content.mobileApp.appImage}
-                        onChange={(e) => updateContent('mobileApp', 'appImage', e.target.value)}
-                        placeholder="Uygulama görsel yolu"
+                        onChange={(url) => updateContent('mobileApp', 'appImage', url)}
+                        label="Uygulama Görseli"
+                        placeholder="Uygulama görseli seçin..."
                       />
                     </div>
                     <div>
-                      <FormLabel>App Store İkonu</FormLabel>
-                      <FormInput
+                      <ImageInput
                         value={content.mobileApp.appStoreIcon}
-                        onChange={(e) => updateContent('mobileApp', 'appStoreIcon', e.target.value)}
-                        placeholder="App Store ikon yolu"
+                        onChange={(url) => updateContent('mobileApp', 'appStoreIcon', url)}
+                        label="App Store İkonu"
+                        placeholder="App Store ikonu seçin..."
                       />
                     </div>
                     <div>
-                      <FormLabel>Google Play İkonu</FormLabel>
-                      <FormInput
+                      <ImageInput
                         value={content.mobileApp.googlePlayIcon}
-                        onChange={(e) => updateContent('mobileApp', 'googlePlayIcon', e.target.value)}
-                        placeholder="Google Play ikon yolu"
+                        onChange={(url) => updateContent('mobileApp', 'googlePlayIcon', url)}
+                        label="Google Play İkonu"
+                        placeholder="Google Play ikonu seçin..."
                       />
                     </div>
                   </div>
@@ -934,18 +936,18 @@ const IndexPageEditor: React.FC = () => {
                         <h4 className="font-medium mb-3">{logo.name} Logosu</h4>
                         <div className="space-y-3">
                           <div>
-                            <FormLabel>Logo Yolu</FormLabel>
-                            <FormInput
+                            <ImageInput
                               value={logo.image}
-                              onChange={(e) => {
+                              onChange={(url) => {
                                 const newLogos = [...content.partnerships.logos];
-                                newLogos[index] = { ...newLogos[index], image: e.target.value };
+                                newLogos[index] = { ...newLogos[index], image: url };
                                 setContent(prev => ({
                                   ...prev,
                                   partnerships: { ...prev.partnerships, logos: newLogos }
                                 }));
                               }}
-                              placeholder="Logo dosya yolu"
+                              label="Ortaklık Logosu"
+                              placeholder="Logo seçin..."
                             />
                           </div>
                           <div>
