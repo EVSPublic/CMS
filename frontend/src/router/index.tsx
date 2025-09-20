@@ -7,7 +7,7 @@ import MediaGallery from "../pages/MediaGallery";
 import IndexPageEditor from "../pages/ContentEditor/IndexPage";
 import AboutPageEditor from "../pages/ContentEditor/AboutPage";
 import IndividualSolutionsPageEditor from "../pages/ContentEditor/IndividualSolutionsPage";
-import KurumsalPageEditor from "../pages/ContentEditor/KurumsalPage";
+import CorporateSolutionsPageEditor from "../pages/ContentEditor/CorporateSolutionsPage";
 import TarifelerPageEditor from "../pages/ContentEditor/TarifelerPage";
 import IletisimPageEditor from "../pages/ContentEditor/IletisimPage";
 import IstasyonHaritasiPageEditor from "../pages/ContentEditor/IstasyonHaritasiPage";
@@ -44,7 +44,7 @@ function Router() {
         },
         {
           path: "/content/kurumsal",
-          element: <KurumsalPageEditor />,
+          element: <CorporateSolutionsPageEditor />,
         },
         {
           path: "/content/tarifeler",
