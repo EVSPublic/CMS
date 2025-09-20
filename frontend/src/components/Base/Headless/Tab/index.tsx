@@ -85,7 +85,7 @@ Tab.Button = <C extends React.ElementType = "a">({
           "block border-transparent rounded-t-md dark:border-transparent",
         list.variant == "tabs" &&
           tab.selected &&
-          "bg-white border-slate-200 border-b-transparent font-medium dark:bg-transparent dark:border-t-darkmode-400 dark:border-b-darkmode-600 dark:border-x-darkmode-400",
+          "bg-white border-slate-200 border-b-transparent border-l-[3px] border-r-[3px] font-medium dark:bg-transparent dark:border-t-darkmode-400 dark:border-b-darkmode-600 dark:border-x-darkmode-400",
         list.variant == "tabs" &&
           !tab.selected &&
           "hover:bg-slate-100 dark:hover:bg-darkmode-400 dark:hover:border-transparent",
@@ -148,7 +148,7 @@ Tab.List = ({
         as="ul"
         className={twMerge([
           variant == "tabs" &&
-            "border-b border-slate-200 dark:border-darkmode-400",
+            "border-b border-slate-200 dark:border-darkmode-400 bg-[#ffffff] rounded-t-[10px]",
           variant == "boxed-tabs" &&
             "p-0.5 border bg-slate-50/70 border-slate-200/70 rounded-lg dark:bg-transparent dark:border-darkmode-400",
           "w-full flex",

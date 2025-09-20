@@ -77,6 +77,7 @@ Table.Thead = ({ className, ...props }: TheadProps) => {
     >
       <thead
         className={twMerge([
+          "bg-slate-50 dark:bg-darkmode-700",
           props.variant === "light" && "bg-slate-200/60 dark:bg-slate-200",
           props.variant === "dark" && "bg-dark text-white dark:bg-black/30",
           className,
