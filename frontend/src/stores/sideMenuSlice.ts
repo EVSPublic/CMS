@@ -36,7 +36,7 @@ const initialState: SideMenuState = {
         {
           icon: "Home",
           pathname: "/content/index",
-          title: "Ana Sayfa",
+          title: "Ana Sayfa"
         },
         {
           icon: "Info",
