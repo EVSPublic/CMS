@@ -9,6 +9,8 @@ import ImageInput from '../../components/ImageInput';
 interface ContactPageContent {
   meta: {
     title: string;
+    description: string;
+    keywords: string;
   };
   pageHero: {
     backgroundImage: string;
@@ -50,6 +52,13 @@ interface ContactPageContent {
       value: string;
       label: string;
     }>;
+    emailConfig: {
+      smtpHost: string;
+      smtpPort: string;
+      smtpUsername: string;
+      smtpPassword: string;
+      extraDetails: string;
+    };
     submitButton: string;
     kvkkText: string;
     kvkkLinkText: string;
@@ -63,7 +72,9 @@ interface ContactPageContent {
 
 const initialContent: ContactPageContent = {
   meta: {
-    title: "İletişim - Ovolt"
+    title: "İletişim - Ovolt",
+    description: "",
+    keywords: ""
   },
   pageHero: {
     backgroundImage: "assets/img/iletisim-bg.jpg",
@@ -111,6 +122,13 @@ const initialContent: ContactPageContent = {
       { value: "sikayet", label: "Şikayet" },
       { value: "oneriler", label: "Öneriler" }
     ],
+    emailConfig: {
+      smtpHost: "",
+      smtpPort: "",
+      smtpUsername: "",
+      smtpPassword: "",
+      extraDetails: ""
+    },
     submitButton: "Gönder",
     kvkkText: "Formu doldurarak, kişisel verilerinizin 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında işlenmesine örtülü şekilde onay vermiş oluyorsunuz.",
     kvkkLinkText: "KVKK Aydınlatma Metni için lütfen tıklayın."
@@ -297,9 +315,6 @@ const IletisimPageEditor: React.FC = () => {
             <Tab className="px-6 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-600 data-[selected]:text-blue-600 dark:data-[selected]:text-blue-400 data-[selected]:border-blue-600 dark:data-[selected]:border-blue-400">
               Sosyal Medya
             </Tab>
-            <Tab className="px-6 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-600 data-[selected]:text-blue-600 dark:data-[selected]:text-blue-400 data-[selected]:border-blue-600 dark:data-[selected]:border-blue-400">
-              Görseller
-            </Tab>
           </Tab.List>
 
           <Tab.Panels>
@@ -313,6 +328,28 @@ const IletisimPageEditor: React.FC = () => {
                     value={content.meta.title}
                     onChange={(e) => updateContent('meta.title', e.target.value)}
                     placeholder="İletişim - Ovolt"
+                  />
+                </div>
+
+                <div>
+                  <FormLabel htmlFor="meta.description">Açıklama</FormLabel>
+                  <FormTextarea
+                    id="meta.description"
+                    value={content.meta.description}
+                    onChange={(e) => updateContent('meta.description', e.target.value)}
+                    placeholder="Sayfa açıklamasını girin"
+                    rows={3}
+                  />
+                </div>
+
+                <div>
+                  <FormLabel htmlFor="meta.keywords">Anahtar Kelimeler</FormLabel>
+                  <FormTextarea
+                    id="meta.keywords"
+                    value={content.meta.keywords}
+                    onChange={(e) => updateContent('meta.keywords', e.target.value)}
+                    placeholder="Anahtar kelimeleri virgülle ayırarak girin"
+                    rows={2}
                   />
                 </div>
 
@@ -470,87 +507,60 @@ const IletisimPageEditor: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Form Alanları */}
+
+                {/* E-mail Konfigürasyonu */}
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Form Alanları</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">E-mail Konfigürasyonu</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <FormLabel htmlFor="fields.firstName">Ad Alanı</FormLabel>
+                      <FormLabel htmlFor="emailConfig.smtpHost">SMTP Host</FormLabel>
                       <FormInput
-                        id="fields.firstName"
-                        value={content.contactForm.fields.firstName}
-                        onChange={(e) => updateContent('contactForm.fields.firstName', e.target.value)}
-                        placeholder="Ad"
+                        id="emailConfig.smtpHost"
+                        value={content.contactForm.emailConfig.smtpHost}
+                        onChange={(e) => updateContent('contactForm.emailConfig.smtpHost', e.target.value)}
+                        placeholder="smtp.gmail.com"
                       />
                     </div>
 
                     <div>
-                      <FormLabel htmlFor="fields.lastName">Soyad Alanı</FormLabel>
+                      <FormLabel htmlFor="emailConfig.smtpPort">SMTP Port</FormLabel>
                       <FormInput
-                        id="fields.lastName"
-                        value={content.contactForm.fields.lastName}
-                        onChange={(e) => updateContent('contactForm.fields.lastName', e.target.value)}
-                        placeholder="Soyad"
+                        id="emailConfig.smtpPort"
+                        value={content.contactForm.emailConfig.smtpPort}
+                        onChange={(e) => updateContent('contactForm.emailConfig.smtpPort', e.target.value)}
+                        placeholder="587"
                       />
                     </div>
 
                     <div>
-                      <FormLabel htmlFor="fields.email">E-mail Alanı</FormLabel>
+                      <FormLabel htmlFor="emailConfig.smtpUsername">SMTP Username</FormLabel>
                       <FormInput
-                        id="fields.email"
-                        value={content.contactForm.fields.email}
-                        onChange={(e) => updateContent('contactForm.fields.email', e.target.value)}
-                        placeholder="E-Mail"
+                        id="emailConfig.smtpUsername"
+                        value={content.contactForm.emailConfig.smtpUsername}
+                        onChange={(e) => updateContent('contactForm.emailConfig.smtpUsername', e.target.value)}
+                        placeholder="your-email@example.com"
                       />
                     </div>
 
                     <div>
-                      <FormLabel htmlFor="fields.phone">Telefon Alanı</FormLabel>
+                      <FormLabel htmlFor="emailConfig.smtpPassword">SMTP Password</FormLabel>
                       <FormInput
-                        id="fields.phone"
-                        value={content.contactForm.fields.phone}
-                        onChange={(e) => updateContent('contactForm.fields.phone', e.target.value)}
-                        placeholder="Telefon"
+                        id="emailConfig.smtpPassword"
+                        type="password"
+                        value={content.contactForm.emailConfig.smtpPassword}
+                        onChange={(e) => updateContent('contactForm.emailConfig.smtpPassword', e.target.value)}
+                        placeholder="your-password"
                       />
                     </div>
 
-                    <div>
-                      <FormLabel htmlFor="fields.company">Şirket Alanı</FormLabel>
-                      <FormInput
-                        id="fields.company"
-                        value={content.contactForm.fields.company}
-                        onChange={(e) => updateContent('contactForm.fields.company', e.target.value)}
-                        placeholder="Şirket"
-                      />
-                    </div>
-
-                    <div>
-                      <FormLabel htmlFor="fields.title">Ünvan Alanı</FormLabel>
-                      <FormInput
-                        id="fields.title"
-                        value={content.contactForm.fields.title}
-                        onChange={(e) => updateContent('contactForm.fields.title', e.target.value)}
-                        placeholder="Ünvan"
-                      />
-                    </div>
-
-                    <div>
-                      <FormLabel htmlFor="fields.subject">Konu Alanı</FormLabel>
-                      <FormInput
-                        id="fields.subject"
-                        value={content.contactForm.fields.subject}
-                        onChange={(e) => updateContent('contactForm.fields.subject', e.target.value)}
-                        placeholder="Konu"
-                      />
-                    </div>
-
-                    <div>
-                      <FormLabel htmlFor="fields.message">Mesaj Alanı</FormLabel>
-                      <FormInput
-                        id="fields.message"
-                        value={content.contactForm.fields.message}
-                        onChange={(e) => updateContent('contactForm.fields.message', e.target.value)}
-                        placeholder="Mesajınız"
+                    <div className="md:col-span-2">
+                      <FormLabel htmlFor="emailConfig.extraDetails">Extra Details</FormLabel>
+                      <FormTextarea
+                        id="emailConfig.extraDetails"
+                        value={content.contactForm.emailConfig.extraDetails}
+                        onChange={(e) => updateContent('contactForm.emailConfig.extraDetails', e.target.value)}
+                        rows={3}
+                        placeholder="Additional email configuration details or notes"
                       />
                     </div>
                   </div>
@@ -608,42 +618,6 @@ const IletisimPageEditor: React.FC = () => {
                   ))}
                 </div>
 
-                {/* Form Butonları ve KVKK */}
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Form Alt Bilgileri</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <FormLabel htmlFor="submitButton">Gönder Butonu</FormLabel>
-                      <FormInput
-                        id="submitButton"
-                        value={content.contactForm.submitButton}
-                        onChange={(e) => updateContent('contactForm.submitButton', e.target.value)}
-                        placeholder="Gönder"
-                      />
-                    </div>
-
-                    <div>
-                      <FormLabel htmlFor="kvkkText">KVKK Metni</FormLabel>
-                      <FormTextarea
-                        id="kvkkText"
-                        value={content.contactForm.kvkkText}
-                        onChange={(e) => updateContent('contactForm.kvkkText', e.target.value)}
-                        rows={3}
-                        placeholder="Formu doldurarak, kişisel verilerinizin 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında işlenmesine örtülü şekilde onay vermiş oluyorsunuz."
-                      />
-                    </div>
-
-                    <div>
-                      <FormLabel htmlFor="kvkkLinkText">KVKK Link Metni</FormLabel>
-                      <FormInput
-                        id="kvkkLinkText"
-                        value={content.contactForm.kvkkLinkText}
-                        onChange={(e) => updateContent('contactForm.kvkkLinkText', e.target.value)}
-                        placeholder="KVKK Aydınlatma Metni için lütfen tıklayın."
-                      />
-                    </div>
-                  </div>
-                </div>
               </div>
             </Tab.Panel>
 
@@ -712,34 +686,6 @@ const IletisimPageEditor: React.FC = () => {
               </div>
             </Tab.Panel>
 
-            {/* Görseller */}
-            <Tab.Panel className="p-6">
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Sayfa Görselleri</h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <FormLabel htmlFor="pageHero.backgroundImage">Sayfa Arka Plan Görseli</FormLabel>
-                      <ImageInput
-                        value={content.pageHero.backgroundImage}
-                        onChange={(value) => updateContent('pageHero.backgroundImage', value)}
-                        placeholder="Arka plan görselini seçin"
-                      />
-                    </div>
-
-                    <div>
-                      <FormLabel htmlFor="pageHero.logoImage">Sayfa Logo Görseli</FormLabel>
-                      <ImageInput
-                        value={content.pageHero.logoImage}
-                        onChange={(value) => updateContent('pageHero.logoImage', value)}
-                        placeholder="Logo görselini seçin"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Tab.Panel>
           </Tab.Panels>
         </Tab.Group>
 
