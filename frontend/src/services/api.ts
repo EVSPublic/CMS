@@ -1,5 +1,5 @@
 // API Configuration and Base Service
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5054';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
 
 export interface PaginationMeta {
   page: number;

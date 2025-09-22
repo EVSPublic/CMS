@@ -1,4 +1,4 @@
-@AdminPanel_HostAddress = http://localhost:5054
+@AdminPanel_HostAddress = http://localhost:5050
 
 GET {{AdminPanel_HostAddress}}/weatherforecast/
 Accept: application/json
