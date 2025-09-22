@@ -39,11 +39,11 @@ function Router() {
           element: <AboutPageEditor />,
         },
         {
-          path: "/content/bireysel",
+          path: "/content/cozumler/bireysel",
           element: <IndividualSolutionsPageEditor />,
         },
         {
-          path: "/content/kurumsal",
+          path: "/content/cozumler/kurumsal",
           element: <CorporateSolutionsPageEditor />,
         },
         {

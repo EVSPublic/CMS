@@ -44,14 +44,21 @@ const initialState: SideMenuState = {
           title: "Hakkımızda",
         },
         {
-          icon: "User",
-          pathname: "/content/bireysel",
-          title: "Bireysel Çözümler",
-        },
-        {
-          icon: "Building",
-          pathname: "/content/kurumsal",
-          title: "Kurumsal Çözümler",
+          icon: "Lamp",
+          pathname: "",
+          title: "Çözümler",
+          subMenu: [
+            {
+              icon: "User",
+              pathname: "/content/cozumler/bireysel",
+              title: "Bireysel Çözümler",
+            },
+            {
+              icon: "Building",
+              pathname: "/content/cozumler/kurumsal",
+              title: "Kurumsal Çözümler",
+            }
+          ]
         },
         {
           icon: "CreditCard",
