@@ -17,21 +17,21 @@ export interface SideMenuState {
 
 const initialState: SideMenuState = {
   menu: [
-    "MAIN",
+    "ANA",
     {
       icon: "Home",
       pathname: "/",
       title: "Dashboard",
     },
-    "CONTENT MANAGEMENT",
+    "İÇERİK YÖNETİMİ",
     {
       icon: "Image",
       pathname: "/media-gallery",
-      title: "Media Gallery",
+      title: "Medya Galerisi",
     },
     {
       icon: "FileText",
-      title: "Page Content",
+      title: "Sayfa İçeriği",
       subMenu: [
         {
           icon: "Home",
@@ -76,6 +76,11 @@ const initialState: SideMenuState = {
           title: "İstasyon Haritası",
         },
       ],
+    },
+    {
+      icon: "Megaphone",
+      title: "Duyurular",
+      pathname: "/announcements",
     },
   ],
 };

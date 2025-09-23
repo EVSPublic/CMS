@@ -11,6 +11,7 @@ import CorporateSolutionsPageEditor from "../pages/ContentEditor/CorporateSoluti
 import TarifelerPageEditor from "../pages/ContentEditor/TarifelerPage";
 import IletisimPageEditor from "../pages/ContentEditor/IletisimPage";
 import IstasyonHaritasiPageEditor from "../pages/ContentEditor/IstasyonHaritasiPage";
+import AnnouncementsPageEditor from "../pages/ContentEditor/AnnouncementsPage";
 
 function Router() {
   const routes = [
@@ -58,6 +59,10 @@ function Router() {
           path: "/content/istasyon-haritasi",
           element: <IstasyonHaritasiPageEditor />,
         },
+        {
+          path: "/announcements",
+          element: <AnnouncementsPageEditor />,
+        }
       ],
     },
     {
