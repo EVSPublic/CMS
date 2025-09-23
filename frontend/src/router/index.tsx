@@ -14,6 +14,7 @@ import IstasyonHaritasiPageEditor from "../pages/ContentEditor/IstasyonHaritasiP
 import AnnouncementsPageEditor from "../pages/ContentEditor/AnnouncementsPage";
 import PartnershipPageEditor from "../pages/ContentEditor/PartnershipPage";
 import UserManagementPage from "../pages/UserManagement";
+import StaticPageCreator from "../pages/StaticPageCreator";
 
 function Router() {
   const routes = [
@@ -72,6 +73,10 @@ function Router() {
         {
           path: "/users",
           element: <UserManagementPage />,
+        },
+        {
+          path: "/static-pages",
+          element: <StaticPageCreator />,
         }
       ],
     },

@@ -87,6 +87,11 @@ const initialState: SideMenuState = {
       title: "Partnerlik",
       pathname: "/partnership",
     },
+    {
+      icon: "FileText",
+      title: "Statik Sayfalar",
+      pathname: "/static-pages",
+    },
     "SİSTEM YÖNETİMİ",
     {
       icon: "UserCog",
