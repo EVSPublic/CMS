@@ -12,6 +12,9 @@ interface TarifelerPageContent {
     description: string;
     keywords: string;
   };
+  hero: {
+    image: string;
+  };
   pageHeader: {
     title: string;
     description: string;
@@ -33,6 +36,9 @@ const initialContent: TarifelerPageContent = {
     title: "Tarifeler - Ovolt",
     description: "",
     keywords: ""
+  },
+  hero: {
+    image: ""
   },
   pageHeader: {
     title: "Tarifeler",
@@ -184,6 +190,9 @@ const TarifelerPageEditor: React.FC = () => {
               Genel Bilgiler
             </Tab>
             <Tab className="px-6 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-600 data-[selected]:text-blue-600 dark:data-[selected]:text-blue-400 data-[selected]:border-blue-600 dark:data-[selected]:border-blue-400">
+              Hero Bölümü
+            </Tab>
+            <Tab className="px-6 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-600 data-[selected]:text-blue-600 dark:data-[selected]:text-blue-400 data-[selected]:border-blue-600 dark:data-[selected]:border-blue-400">
               Tarifeler
             </Tab>
           </Tab.List>
@@ -234,6 +243,23 @@ const TarifelerPageEditor: React.FC = () => {
                       onChange={(e) => updateContent('pageHeader', 'description', e.target.value)}
                       rows={3}
                       placeholder="Ovolt, elektrikli aracınız için yüksek kaliteli, güvenilir ve erişilebilir şarj çözümleri sunar."
+                    />
+                  </div>
+                </div>
+              </div>
+            </Tab.Panel>
+
+            {/* Hero Bölümü */}
+            <Tab.Panel>
+              <div className="bg-white dark:bg-gray-800 shadow p-6">
+                <h3 className="text-lg font-semibold mb-4">Hero Bölümü</h3>
+                <div className="space-y-4">
+                  <div>
+                    <ImageInput
+                      value={content.hero.image}
+                      onChange={(url) => updateContent('hero', 'image', url)}
+                      label="Hero Görseli"
+                      placeholder="Hero görseli seçin..."
                     />
                   </div>
                 </div>
