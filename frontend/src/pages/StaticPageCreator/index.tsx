@@ -56,6 +56,7 @@ const StaticPageCreator: React.FC = () => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewPage, setPreviewPage] = useState<StaticPage | null>(null);
   const [editorMode, setEditorMode] = useState<'visual' | 'code'>('visual');
+  const [previewMode, setPreviewMode] = useState<'visual' | 'code'>('visual');
   const codeEditorRef = useRef<HTMLTextAreaElement>(null);
 
   const [pageForm, setPageForm] = useState<PageForm>({
@@ -137,6 +138,7 @@ const StaticPageCreator: React.FC = () => {
   const closePreview = () => {
     setIsPreviewOpen(false);
     setPreviewPage(null);
+    setPreviewMode('visual'); // Reset preview mode when closing
   };
 
   const handleTitleChange = (value: string) => {
@@ -481,8 +483,13 @@ const StaticPageCreator: React.FC = () => {
                     </div>
                   </div>
 
-                  {editorMode === 'visual' ? (
-                    <div className="border border-gray-300 dark:border-gray-700 rounded-md">
+                  <div className="relative">
+                    {/* Visual Editor */}
+                    <div
+                      className={`border border-gray-300 dark:border-gray-700 rounded-md ${
+                        editorMode === 'visual' ? 'block' : 'hidden'
+                      }`}
+                    >
                       <Ckeditor
                         value={pageForm.content}
                         onChange={(data: string) => setPageForm(prev => ({ ...prev, content: data }))}
@@ -515,8 +522,13 @@ const StaticPageCreator: React.FC = () => {
                         className="min-h-96"
                       />
                     </div>
-                  ) : (
-                    <div className="border border-gray-300 dark:border-gray-700 rounded-md overflow-hidden">
+
+                    {/* Code Editor */}
+                    <div
+                      className={`border border-gray-300 dark:border-gray-700 rounded-md overflow-hidden ${
+                        editorMode === 'code' ? 'block' : 'hidden'
+                      }`}
+                    >
                       <div className="bg-gray-50 dark:bg-gray-800 px-3 py-2 border-b border-gray-300 dark:border-gray-700">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-medium text-gray-600 dark:text-gray-400">HTML Kod Editörü</span>
@@ -552,7 +564,7 @@ const StaticPageCreator: React.FC = () => {
                         }}
                       />
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
 
@@ -590,9 +602,9 @@ const StaticPageCreator: React.FC = () => {
                   <div className="flex rounded-md border border-gray-300 dark:border-gray-700 overflow-hidden">
                     <button
                       type="button"
-                      onClick={() => setEditorMode('visual')}
+                      onClick={() => setPreviewMode('visual')}
                       className={`px-3 py-1 text-xs flex items-center gap-1 transition-colors ${
-                        editorMode === 'visual'
+                        previewMode === 'visual'
                           ? 'bg-blue-500 text-white'
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
@@ -602,9 +614,9 @@ const StaticPageCreator: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setEditorMode('code')}
+                      onClick={() => setPreviewMode('code')}
                       className={`px-3 py-1 text-xs flex items-center gap-1 transition-colors ${
-                        editorMode === 'code'
+                        previewMode === 'code'
                           ? 'bg-blue-500 text-white'
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
@@ -622,7 +634,7 @@ const StaticPageCreator: React.FC = () => {
                 </div>
               </div>
 
-              {editorMode === 'visual' ? (
+              {previewMode === 'visual' ? (
                 <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-gray-50 dark:bg-gray-900">
                   <div
                     className="prose prose-sm max-w-none dark:prose-invert"
