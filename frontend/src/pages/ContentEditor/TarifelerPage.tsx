@@ -6,6 +6,15 @@ import Button from '../../components/Base/Button';
 import Tab from '../../components/Base/Headless/Tab';
 import ImageInput from '../../components/ImageInput';
 
+interface TariffCard {
+  isCampaign: boolean;
+  badge: string;
+  title: string;
+  oldPrice: string;
+  currentPrice: string;
+  validityText: string;
+}
+
 interface TarifelerPageContent {
   meta: {
     title: string;
@@ -20,14 +29,7 @@ interface TarifelerPageContent {
     description: string;
   };
   tariffs: {
-    cards: Array<{
-      isCampaign: boolean;
-      badge: string;
-      title: string;
-      oldPrice: string;
-      currentPrice: string;
-      validityText: string;
-    }>;
+    cards: Array<TariffCard>;
   };
 }
 
@@ -111,16 +113,16 @@ const TarifelerPageEditor: React.FC = () => {
     }));
   };
 
-  const updateTariffCard = (index: number, field: string, value: string | boolean) => {
+  const updateTariffCard = (index: number, field: keyof TariffCard, value: string | boolean) => {
     const newCards = [...content.tariffs.cards];
     if (field === 'isCampaign') {
       newCards[index] = {
         ...newCards[index],
-        [field]: value,
+        isCampaign: value as boolean,
         badge: value ? "Kampanyalı Tarife" : "Normal Tarife"
       };
     } else {
-      newCards[index] = { ...newCards[index], [field]: value };
+      newCards[index] = { ...newCards[index], [field]: value as string };
     }
     setContent(prev => ({
       ...prev,

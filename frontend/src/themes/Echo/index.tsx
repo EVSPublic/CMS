@@ -55,10 +55,18 @@ function Main() {
 
   const [topBarActive, setTopBarActive] = useState(false);
   const [quickSearch, setQuickSearch] = useState(false);
+  const [selectedBrand, setSelectedBrand] = useState(() => {
+    return localStorage.getItem('selectedBrand') || 'Ovolt';
+  });
+
+  const handleBrandChange = (brand: string) => {
+    setSelectedBrand(brand);
+    localStorage.setItem('selectedBrand', brand);
+  };
 
   // Generate breadcrumbs based on current location and menu structure
   const generateBreadcrumbs = (): Array<{ title: string; to: string; active?: boolean }> => {
-    const breadcrumbs = [{ title: "Ovolt Admin", to: "/" }];
+    const breadcrumbs: Array<{ title: string; to: string; active?: boolean }> = [{ title: `${selectedBrand} Admin`, to: "/" }];
 
     // Fallback title mapping for better display
     const getTitleFromPath = (pathname: string): string => {
@@ -229,8 +237,15 @@ function Main() {
                   <div className="absolute w-[21%] right-0 inset-y-0 my-auto rounded-full opacity-50 h-[75%]"></div>
                 </div>
               </div>
-              <div className="ml-3.5 group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:opacity-0 transition-opacity font-medium">
-                ECHO
+              <div className="ml-3.5 group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:opacity-0 transition-opacity">
+                <select
+                  value={selectedBrand}
+                  onChange={(e) => handleBrandChange(e.target.value)}
+                  className="font-semibold text-gray-800 dark:text-white bg-transparent border-none text-base focus:outline-none cursor-pointer"
+                >
+                  <option value="Ovolt">Ovolt</option>
+                  <option value="Sharz.net">Sharz.net</option>
+                </select>
               </div>
             </a>
             <a
