@@ -82,6 +82,11 @@ const initialState: SideMenuState = {
       title: "Duyurular",
       pathname: "/announcements",
     },
+    {
+      icon: "Users",
+      title: "Partnerlik",
+      pathname: "/partnership",
+    },
   ],
 };
 

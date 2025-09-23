@@ -12,6 +12,7 @@ import TarifelerPageEditor from "../pages/ContentEditor/TarifelerPage";
 import IletisimPageEditor from "../pages/ContentEditor/IletisimPage";
 import IstasyonHaritasiPageEditor from "../pages/ContentEditor/IstasyonHaritasiPage";
 import AnnouncementsPageEditor from "../pages/ContentEditor/AnnouncementsPage";
+import PartnershipPageEditor from "../pages/ContentEditor/PartnershipPage";
 
 function Router() {
   const routes = [
@@ -62,6 +63,10 @@ function Router() {
         {
           path: "/announcements",
           element: <AnnouncementsPageEditor />,
+        },
+        {
+          path: "/partnership",
+          element: <PartnershipPageEditor />,
         }
       ],
     },
