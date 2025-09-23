@@ -13,6 +13,7 @@ import IletisimPageEditor from "../pages/ContentEditor/IletisimPage";
 import IstasyonHaritasiPageEditor from "../pages/ContentEditor/IstasyonHaritasiPage";
 import AnnouncementsPageEditor from "../pages/ContentEditor/AnnouncementsPage";
 import PartnershipPageEditor from "../pages/ContentEditor/PartnershipPage";
+import UserManagementPage from "../pages/UserManagement";
 
 function Router() {
   const routes = [
@@ -67,6 +68,10 @@ function Router() {
         {
           path: "/partnership",
           element: <PartnershipPageEditor />,
+        },
+        {
+          path: "/users",
+          element: <UserManagementPage />,
         }
       ],
     },
