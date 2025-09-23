@@ -58,6 +58,9 @@ const StaticPageCreator: React.FC = () => {
   const [editorMode, setEditorMode] = useState<'visual' | 'code'>('visual');
   const [previewMode, setPreviewMode] = useState<'visual' | 'code'>('visual');
   const codeEditorRef = useRef<HTMLTextAreaElement>(null);
+  const isFormattingRef = useRef(false);
+  const [isFormatting, setIsFormatting] = useState(false);
+  const [codeContent, setCodeContent] = useState('');
 
   const [pageForm, setPageForm] = useState<PageForm>({
     title: '',
@@ -66,6 +69,13 @@ const StaticPageCreator: React.FC = () => {
     status: 'draft'
   });
 
+  // Sync codeContent when pageForm.content changes (from visual editor)
+  useEffect(() => {
+    if (editorMode === 'visual' && pageForm.content !== codeContent) {
+      setCodeContent(pageForm.content);
+    }
+  }, [pageForm.content, editorMode, codeContent]);
+
   const resetForm = () => {
     setPageForm({
       title: '',
@@ -73,32 +83,49 @@ const StaticPageCreator: React.FC = () => {
       content: '',
       status: 'draft'
     });
+    setCodeContent('');
     setEditingPage(null);
     setEditorMode('visual');
   };
 
   const formatCode = () => {
-    if (pageForm.content) {
-      const formatted = jsBeautify.html(pageForm.content, {
-        indent_size: 2,
-        wrap_line_length: 120,
-        preserve_newlines: true,
-        max_preserve_newlines: 2
-      });
-      setPageForm(prev => ({ ...prev, content: formatted }));
+    if (codeContent && !isFormattingRef.current && editorMode === 'code') {
+      try {
+        isFormattingRef.current = true;
+        setIsFormatting(true);
+
+        const formatted = jsBeautify.html(codeContent, {
+          indent_size: 2,
+          wrap_line_length: 120,
+          preserve_newlines: true,
+          max_preserve_newlines: 2
+        });
+
+        // Update both the code content and page form
+        setCodeContent(formatted);
+        setPageForm(prev => ({ ...prev, content: formatted }));
+
+        // Reset the formatting flag immediately
+        isFormattingRef.current = false;
+        setIsFormatting(false);
+      } catch (error) {
+        console.error('Error formatting code:', error);
+        alert('Kod biçimlendirme hatası: Geçersiz HTML kodu olabilir');
+        isFormattingRef.current = false;
+        setIsFormatting(false);
+      }
     }
   };
 
   const switchEditorMode = (mode: 'visual' | 'code') => {
-    setEditorMode(mode);
-    if (mode === 'code' && codeEditorRef.current) {
-      // Apply syntax highlighting when switching to code mode
-      setTimeout(() => {
-        if (codeEditorRef.current) {
-          hljs.highlightElement(codeEditorRef.current);
-        }
-      }, 100);
+    if (mode === 'code') {
+      // Sync content from visual editor to code editor
+      setCodeContent(pageForm.content);
+    } else {
+      // Sync content from code editor to visual editor
+      setPageForm(prev => ({ ...prev, content: codeContent }));
     }
+    setEditorMode(mode);
   };
 
   const generateSlug = (title: string) => {
@@ -119,6 +146,7 @@ const StaticPageCreator: React.FC = () => {
         content: page.content,
         status: page.status
       });
+      setCodeContent(page.content);
     } else {
       resetForm();
     }
@@ -448,10 +476,11 @@ const StaticPageCreator: React.FC = () => {
                           type="button"
                           variant="soft-secondary"
                           onClick={formatCode}
+                          disabled={isFormatting}
                           className="text-xs px-3 py-1 flex items-center gap-1"
                         >
                           <Code className="w-3 h-3" />
-                          Kodu Biçimlendir
+                          {isFormatting ? 'Biçimlendiriliyor...' : 'Kodu Biçimlendir'}
                         </Button>
                       )}
                       <div className="flex rounded-md border border-gray-300 dark:border-gray-700 overflow-hidden">
@@ -540,8 +569,12 @@ const StaticPageCreator: React.FC = () => {
                       </div>
                       <textarea
                         ref={codeEditorRef}
-                        value={pageForm.content}
-                        onChange={(e) => setPageForm(prev => ({ ...prev, content: e.target.value }))}
+                        value={codeContent}
+                        onChange={(e) => {
+                          const newValue = e.target.value;
+                          setCodeContent(newValue);
+                          setPageForm(prev => ({ ...prev, content: newValue }));
+                        }}
                         className="w-full h-96 p-4 font-mono text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-0 resize-none focus:ring-0 focus:outline-none"
                         placeholder="HTML kodunuzu buraya yazın..."
                         style={{
@@ -557,9 +590,14 @@ const StaticPageCreator: React.FC = () => {
                             const end = e.currentTarget.selectionEnd;
                             const value = e.currentTarget.value;
                             const newValue = value.substring(0, start) + '  ' + value.substring(end);
-                            e.currentTarget.value = newValue;
-                            e.currentTarget.selectionStart = e.currentTarget.selectionEnd = start + 2;
+                            setCodeContent(newValue);
                             setPageForm(prev => ({ ...prev, content: newValue }));
+                            // Set cursor position after state update
+                            setTimeout(() => {
+                              if (e.currentTarget) {
+                                e.currentTarget.selectionStart = e.currentTarget.selectionEnd = start + 2;
+                              }
+                            }, 0);
                           }
                         }}
                       />
