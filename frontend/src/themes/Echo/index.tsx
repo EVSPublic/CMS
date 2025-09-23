@@ -56,6 +56,73 @@ function Main() {
   const [topBarActive, setTopBarActive] = useState(false);
   const [quickSearch, setQuickSearch] = useState(false);
 
+  // Generate breadcrumbs based on current location and menu structure
+  const generateBreadcrumbs = (): Array<{ title: string; to: string; active?: boolean }> => {
+    const breadcrumbs = [{ title: "Ovolt Admin", to: "/" }];
+
+    // Fallback title mapping for better display
+    const getTitleFromPath = (pathname: string): string => {
+      const titleMap: { [key: string]: string } = {
+        '/': 'Dashboard',
+        '/media-gallery': 'Medya Galerisi',
+        '/content/index': 'Ana Sayfa',
+        '/content/hakkimizda': 'Hakkımızda',
+        '/content/cozumler/bireysel': 'Bireysel Çözümler',
+        '/content/cozumler/kurumsal': 'Kurumsal Çözümler',
+        '/content/tarifeler': 'Tarifeler',
+        '/content/iletisim': 'İletişim',
+        '/content/istasyon-haritasi': 'İstasyon Haritası',
+        '/announcements': 'Duyurular',
+        '/partnership': 'Partnerlik',
+        '/static-pages': 'Statik Sayfalar',
+        '/users': 'Kullanıcı Yönetimi',
+      };
+
+      return titleMap[pathname] || pathname.split('/').pop()?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Sayfa';
+    };
+
+    // Find current menu item and build path
+    const findMenuPath = (menus: Array<FormattedMenu | string>, path: Array<FormattedMenu> = []): Array<FormattedMenu> | null => {
+      for (const menu of menus) {
+        if (typeof menu !== "string") {
+          if (menu.pathname === location.pathname) {
+            return [...path, menu];
+          }
+          if (menu.subMenu) {
+            const subPath = findMenuPath(menu.subMenu, [...path, menu]);
+            if (subPath) return subPath;
+          }
+        }
+      }
+      return null;
+    };
+
+    const menuPath = findMenuPath(formattedMenu);
+    if (menuPath) {
+      menuPath.forEach((menu, index) => {
+        // Skip parent menus without pathnames (like "Sayfa İçeriği" parent)
+        if (menu.pathname) {
+          breadcrumbs.push({
+            title: menu.title,
+            to: menu.pathname,
+            active: index === menuPath.length - 1
+          });
+        }
+      });
+    } else {
+      // Fallback for pages not in menu
+      if (location.pathname !== '/') {
+        breadcrumbs.push({
+          title: getTitleFromPath(location.pathname),
+          to: location.pathname,
+          active: true
+        });
+      }
+    }
+
+    return breadcrumbs;
+  };
+
   const toggleCompactMenu = (event: React.MouseEvent) => {
     event.preventDefault();
     setCompactMenu(!compactMenu);
@@ -203,7 +270,10 @@ function Main() {
                       onClick={(event: React.MouseEvent) => {
                         event.preventDefault();
                         linkTo(menu, navigate);
-                        setFormattedMenu([...formattedMenu]);
+                        // Only update formattedMenu for dropdown toggles, not navigation
+                        if (menu.subMenu) {
+                          setFormattedMenu([...formattedMenu]);
+                        }
                       }}
                     >
                       <Lucide
@@ -261,7 +331,10 @@ function Main() {
                                 onClick={(event: React.MouseEvent) => {
                                   event.preventDefault();
                                   linkTo(subMenu, navigate);
-                                  setFormattedMenu([...formattedMenu]);
+                                  // Only update formattedMenu for dropdown toggles, not navigation
+                                  if (subMenu.subMenu) {
+                                    setFormattedMenu([...formattedMenu]);
+                                  }
                                 }}
                               >
                                 <Lucide
@@ -329,9 +402,7 @@ function Main() {
                                             ) => {
                                               event.preventDefault();
                                               linkTo(lastSubMenu, navigate);
-                                              setFormattedMenu([
-                                                ...formattedMenu,
-                                              ]);
+                                              // Third level should only be navigation, no dropdowns
                                             }}
                                           >
                                             <Lucide
@@ -406,25 +477,16 @@ function Main() {
               </div>
               {/* BEGIN: Breadcrumb */}
               <Breadcrumb light className="flex-1 hidden xl:block">
-                <Breadcrumb.Link
-                  className="dark:before:bg-chevron-white"
-                  to="/"
-                >
-                  App
-                </Breadcrumb.Link>
-                <Breadcrumb.Link
-                  className="dark:before:bg-chevron-white"
-                  to="/"
-                >
-                  Dashboards
-                </Breadcrumb.Link>
-                <Breadcrumb.Link
-                  className="dark:before:bg-chevron-white"
-                  to="/"
-                  active={true}
-                >
-                  Analytics
-                </Breadcrumb.Link>
+                {generateBreadcrumbs().map((breadcrumb, index) => (
+                  <Breadcrumb.Link
+                    key={index}
+                    className="dark:before:bg-chevron-white"
+                    to={breadcrumb.to}
+                    active={breadcrumb.active}
+                  >
+                    {breadcrumb.title}
+                  </Breadcrumb.Link>
+                ))}
               </Breadcrumb>
               {/* END: Breadcrumb */}
               {/* BEGIN: Search */}
