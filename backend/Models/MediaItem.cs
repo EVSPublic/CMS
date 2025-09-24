@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AdminPanel.Models;
 
-public class Announcement
+public class MediaItem
 {
     [Key]
     public int Id { get; set; }
@@ -13,19 +13,26 @@ public class Announcement
 
     [Required]
     [MaxLength(255)]
-    public string Title { get; set; } = string.Empty;
+    public string FileName { get; set; } = string.Empty;
 
     [Required]
-    public string Content { get; set; } = string.Empty;
-
     [MaxLength(500)]
-    public string? ImageUrl { get; set; }
+    public string FilePath { get; set; } = string.Empty;
 
     [Required]
-    public AnnouncementStatus Status { get; set; } = AnnouncementStatus.Draft;
+    [MaxLength(100)]
+    public string FileType { get; set; } = string.Empty;
 
-    public DateTime? StartDate { get; set; }
-    public DateTime? EndDate { get; set; }
+    [Required]
+    public long FileSize { get; set; }
+
+    [MaxLength(255)]
+    public string? AltText { get; set; }
+
+    public string? Caption { get; set; }
+
+    [Required]
+    public ContentStatus Status { get; set; } = ContentStatus.Draft;
 
     public int? CreatedBy { get; set; }
     public int? UpdatedBy { get; set; }
@@ -42,12 +49,4 @@ public class Announcement
 
     [ForeignKey("UpdatedBy")]
     public virtual User? Updater { get; set; }
-}
-
-
-public enum AnnouncementStatus
-{
-    Draft,
-    Published,
-    Archived
 }

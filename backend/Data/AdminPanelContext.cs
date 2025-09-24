@@ -17,6 +17,7 @@ public class AdminPanelContext : IdentityDbContext<User, IdentityRole<int>, int>
     public DbSet<Announcement> Announcements { get; set; }
     public DbSet<Partnership> Partnerships { get; set; }
     public DbSet<MediaFile> MediaFiles { get; set; }
+    public DbSet<MediaItem> MediaItems { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
