@@ -94,57 +94,35 @@ class MediaService {
     if (searchRequest.status) params.append('status', searchRequest.status);
 
     const endpoint = `/api/v1/media/${brandId}${params.toString() ? `?${params.toString()}` : ''}`;
-    const response = await api.get<any>(endpoint);
+    const response = await api.get<MediaResponse>(endpoint);
 
     // Check if it's an error response
     if (response.ok === false) {
-      return response as ApiResponse<MediaResponse>;
+      return response;
     }
 
-    // Success case: response is the raw data from backend
-    const backendData = response as any;
+    // Success case: response.data is the data from backend
+    const backendData = response.data;
     return {
       ok: true,
       data: {
-        mediaItems: backendData.mediaItems || [],
-        totalCount: backendData.totalCount || 0,
-        page: backendData.page || 1,
-        pageSize: backendData.pageSize || 10
+        mediaItems: backendData?.mediaItems || [],
+        totalCount: backendData?.totalCount || 0,
+        page: backendData?.page || 1,
+        pageSize: backendData?.pageSize || 10
       }
     };
   }
 
   async getMediaItemById(brandId: number, id: string): Promise<ApiResponse<MediaItem>> {
-    const response = await api.get<any>(`/api/v1/media/${brandId}/${id}`);
-
-    // Check if it's an error response
-    if (response.ok === false) {
-      return response as ApiResponse<MediaItem>;
-    }
-
-    // Success case: response is the raw data from backend
-    return {
-      ok: true,
-      data: response as unknown as MediaItem
-    };
+    return api.get<MediaItem>(`/api/v1/media/${brandId}/${id}`);
   }
 
   async createMediaItem(
     brandId: number,
     request: CreateMediaItemRequest
   ): Promise<ApiResponse<MediaItem>> {
-    const response = await api.post<any>(`/api/v1/media/${brandId}`, request);
-
-    // Check if it's an error response
-    if (response.ok === false) {
-      return response as ApiResponse<MediaItem>;
-    }
-
-    // Success case: response is the raw data from backend
-    return {
-      ok: true,
-      data: response as unknown as MediaItem
-    };
+    return api.post<MediaItem>(`/api/v1/media/${brandId}`, request);
   }
 
   async updateMediaItem(
@@ -152,18 +130,7 @@ class MediaService {
     id: string,
     request: UpdateMediaItemRequest
   ): Promise<ApiResponse<MediaItem>> {
-    const response = await api.put<any>(`/api/v1/media/${brandId}/${id}`, request);
-
-    // Check if it's an error response
-    if (response.ok === false) {
-      return response as ApiResponse<MediaItem>;
-    }
-
-    // Success case: response is the raw data from backend
-    return {
-      ok: true,
-      data: response as unknown as MediaItem
-    };
+    return api.put<MediaItem>(`/api/v1/media/${brandId}/${id}`, request);
   }
 
   async deleteMediaItem(brandId: number, id: string): Promise<ApiResponse<any>> {
@@ -229,32 +196,14 @@ class MediaService {
 
   // Folder methods
   async getMediaFolders(brandId: number): Promise<ApiResponse<MediaFolder[]>> {
-    const response = await api.get<any>(`/api/v1/media/${brandId}/folders`);
-
-    if (response.ok === false) {
-      return response as ApiResponse<MediaFolder[]>;
-    }
-
-    return {
-      ok: true,
-      data: response as MediaFolder[]
-    };
+    return api.get<MediaFolder[]>(`/api/v1/media/${brandId}/folders`);
   }
 
   async createMediaFolder(
     brandId: number,
     request: CreateMediaFolderRequest
   ): Promise<ApiResponse<MediaFolder>> {
-    const response = await api.post<any>(`/api/v1/media/${brandId}/folders`, request);
-
-    if (response.ok === false) {
-      return response as ApiResponse<MediaFolder>;
-    }
-
-    return {
-      ok: true,
-      data: response as MediaFolder
-    };
+    return api.post<MediaFolder>(`/api/v1/media/${brandId}/folders`, request);
   }
 
   async updateMediaFolder(
@@ -262,16 +211,7 @@ class MediaService {
     folderId: number,
     request: UpdateMediaFolderRequest
   ): Promise<ApiResponse<MediaFolder>> {
-    const response = await api.put<any>(`/api/v1/media/${brandId}/folders/${folderId}`, request);
-
-    if (response.ok === false) {
-      return response as ApiResponse<MediaFolder>;
-    }
-
-    return {
-      ok: true,
-      data: response as MediaFolder
-    };
+    return api.put<MediaFolder>(`/api/v1/media/${brandId}/folders/${folderId}`, request);
   }
 
   async deleteMediaFolder(brandId: number, folderId: number): Promise<ApiResponse<any>> {

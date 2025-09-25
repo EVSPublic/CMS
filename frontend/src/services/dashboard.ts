@@ -22,12 +22,12 @@ class DashboardService {
   async getDashboardStats(): Promise<ApiResponse<DashboardStats>> {
     const response = await api.get<HealthStatus>('/api/health');
 
-    if (response.ok) {
+    if (response.ok && response.data) {
       // Transform the health response into dashboard stats format
       return {
         ok: true,
         data: {
-          systemHealth: response as unknown as HealthStatus
+          systemHealth: response.data
         }
       };
     }
