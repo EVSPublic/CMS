@@ -11,22 +11,33 @@ namespace AdminPanel.Services
         /// CPU usage for current process (%)
         /// Works cross-platform.
         /// </summary>
-        public static async Task<float> GetCpuUsageForProcess(int delay = 500)
+        public static async Task<float> GetCpuUsageForProcess(int delay = 100)
         {
-            using (Process proc = Process.GetCurrentProcess())
+            try
             {
-                TimeSpan startCpu = proc.TotalProcessorTime;
-                DateTime startTime = DateTime.UtcNow;
+                using (Process proc = Process.GetCurrentProcess())
+                {
+                    TimeSpan startCpu = proc.TotalProcessorTime;
+                    DateTime startTime = DateTime.UtcNow;
 
-                await Task.Delay(delay);
+                    await Task.Delay(delay);
 
-                TimeSpan endCpu = proc.TotalProcessorTime;
-                DateTime endTime = DateTime.UtcNow;
+                    TimeSpan endCpu = proc.TotalProcessorTime;
+                    DateTime endTime = DateTime.UtcNow;
 
-                double cpuUsedMs = (endCpu - startCpu).TotalMilliseconds;
-                double totalMsPassed = (endTime - startTime).TotalMilliseconds * Environment.ProcessorCount;
+                    double cpuUsedMs = (endCpu - startCpu).TotalMilliseconds;
+                    double totalMsPassed = (endTime - startTime).TotalMilliseconds * Environment.ProcessorCount;
 
-                return (float)(cpuUsedMs / totalMsPassed * 100);
+                    var cpuPercentage = (float)(cpuUsedMs / totalMsPassed * 100);
+
+                    // Ensure result is within reasonable bounds
+                    return Math.Max(0, Math.Min(100, cpuPercentage));
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error calculating CPU usage: {ex.Message}");
+                return 0; // Return 0 on error
             }
         }
 

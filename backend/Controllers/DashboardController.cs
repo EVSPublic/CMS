@@ -22,27 +22,41 @@ namespace AdminPanel.Controllers
         [HttpGet("stats")]
         public async Task<IActionResult> GetDashboardStats()
         {
-            var mediaUploadsCount = await _context.MediaFiles.CountAsync();
-            
+            // Count all media items across all brands
+            var mediaUploadsCount = await _context.MediaItems.CountAsync();
+
             var process = Process.GetCurrentProcess();
             // Memory usage in MB
             var memoryUsage = process.WorkingSet64 / (1024 * 1024);
 
+            // Get CPU usage with error handling
+            float cpuUsage = 0;
+            try
+            {
+                cpuUsage = await AdminPanel.Services.SystemUsage.GetCpuUsageForProcess(100); // Reduced delay
+            }
+            catch (Exception ex)
+            {
+                // Log the error but continue - CPU will show as 0
+                Console.WriteLine($"Error getting CPU usage: {ex.Message}");
+            }
+
             var stats = new
             {
                 mediaUploadsCount,
-                activeUserSessions = new Random().Next(5, 25), // Mock
-                serverResourceUsage = new { 
-                    cpu = await AdminPanel.Services.SystemUsage.GetCpuUsageForProcess(),
-                    memory = memoryUsage 
+                activeUserSessions = new Random().Next(15, 35), // Mock - more realistic range
+                serverResourceUsage = new {
+                    cpu = cpuUsage,
+                    memory = memoryUsage
                 },
-                recentActivity = await _context.MediaFiles
-                    .OrderByDescending(mf => mf.CreatedAt)
+                recentActivity = await _context.MediaItems
+                    .Include(mi => mi.Creator)
+                    .OrderByDescending(mi => mi.CreatedAt)
                     .Take(3)
-                    .Select(mf => new { 
-                        user = mf.Creator != null ? mf.Creator.UserName : "System", 
-                        action = $"Uploaded {mf.Filename}", 
-                        timestamp = mf.CreatedAt 
+                    .Select(mi => new {
+                        user = mi.Creator != null ? mi.Creator.UserName : "System",
+                        action = $"Uploaded {mi.FileName}",
+                        timestamp = mi.CreatedAt
                     })
                     .ToListAsync()
             };
