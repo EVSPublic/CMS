@@ -77,7 +77,7 @@ public class ContentController : ControllerBase
             {
                 // Get brand info for default content
                 var brand = await _context.Brands.FindAsync(brandId);
-                var defaultContent = GetDefaultContentForPageType(pageTypeEnum, brand?.Name ?? "");
+                var defaultContent = await GetDefaultContentForPageType(pageTypeEnum, brand?.Name ?? "", brandId);
 
                 // Create a default content page if it doesn't exist
                 var newContentPage = new ContentPage
@@ -264,8 +264,49 @@ public class ContentController : ControllerBase
         }
     }
 
-    private object GetDefaultContentForPageType(PageType pageType, string brandName)
+    [HttpGet("{brandId}/statistics")]
+    [Authorize]
+    public async Task<IActionResult> GetBrandStatistics(int brandId)
     {
+        try
+        {
+            // Get current user (all users can access statistics)
+            var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var currentUser = await _context.Users.FindAsync(currentUserId);
+
+            if (currentUser == null)
+            {
+                return Unauthorized();
+            }
+
+            var brand = await _context.Brands.FindAsync(brandId);
+
+            if (brand == null)
+            {
+                return NotFound(new { error = new { code = "BRAND_NOT_FOUND", message = "Brand not found" } });
+            }
+
+            var statistics = new
+            {
+                chargingStationCount = brand.ChargingStationCount,
+                formattedCount = $"{brand.ChargingStationCount}+"
+            };
+
+            return Ok(statistics);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting brand statistics for brand {BrandId}", brandId);
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while getting brand statistics" } });
+        }
+    }
+
+    private async Task<object> GetDefaultContentForPageType(PageType pageType, string brandName, int brandId)
+    {
+        // Get brand to fetch the charging station count
+        var brand = await _context.Brands.FindAsync(brandId);
+        var chargingStationCount = brand?.ChargingStationCount ?? 1880;
+
         return pageType switch
         {
             PageType.Index => new IndexPageContentDto
@@ -281,7 +322,7 @@ public class ContentController : ControllerBase
                     Title = "Her Yolculukta\nYanınızda",
                     MediaType = "video",
                     MediaUrl = "assets/video/hero-video.mp4",
-                    Count = "1880+",
+                    Count = $"{chargingStationCount}+",
                     CountText = "Şarj İstasyonu ile Kesintisiz Enerji"
                 },
                 Services = new ServicesDto

@@ -53,6 +53,7 @@ const IndexPageEditor: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentBrandId] = useState<number>(1); // Default to brand 1 (Ovolt)
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [realChargingStationCount, setRealChargingStationCount] = useState<string>('1880+');
 
   // Load content on component mount
   useEffect(() => {
@@ -64,15 +65,33 @@ const IndexPageEditor: React.FC = () => {
     setError(null);
 
     try {
-      const response = await contentService.getIndexPageContent(currentBrandId);
+      // Load both content and statistics in parallel
+      const [contentResponse, statsResponse] = await Promise.all([
+        contentService.getIndexPageContent(currentBrandId),
+        contentService.getBrandStatistics(currentBrandId)
+      ]);
 
-      if (response.ok && response.data) {
-        setContent(response.data);
-      } else {
-        // If no content found, use default content
-        setContent(initialContent);
-        setError(null);
+      let finalContent = initialContent;
+
+      if (contentResponse.ok && contentResponse.data) {
+        finalContent = contentResponse.data;
       }
+
+      // Update the charging station count with real database value
+      if (statsResponse.ok && statsResponse.data) {
+        setRealChargingStationCount(statsResponse.data.formattedCount);
+
+        // Also update the content count to match the database
+        finalContent = {
+          ...finalContent,
+          hero: {
+            ...finalContent.hero,
+            count: statsResponse.data.formattedCount
+          }
+        };
+      }
+
+      setContent(finalContent);
     } catch (err) {
       setContent(initialContent);
       setError('İçerik yüklenirken bir hata oluştu');
@@ -287,7 +306,7 @@ const IndexPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Sayı (sadece görüntüleme)</FormLabel>
                     <FormInput
-                      value={content?.hero?.count || ''}
+                      value={realChargingStationCount}
                       readOnly
                       placeholder="1880+"
                       className="bg-gray-100 dark:bg-gray-700"

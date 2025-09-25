@@ -227,6 +227,13 @@ class ContentService {
       content.meta.keywords
     );
   }
+
+  /**
+   * Get brand statistics including charging station count
+   */
+  async getBrandStatistics(brandId: number): Promise<ApiResponse<{ chargingStationCount: number; formattedCount: string }>> {
+    return api.get<{ chargingStationCount: number; formattedCount: string }>(`/api/v1/content/${brandId}/statistics`);
+  }
 }
 
 export const contentService = new ContentService();

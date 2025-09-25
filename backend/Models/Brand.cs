@@ -21,6 +21,8 @@ public class Brand
     [Column(TypeName = "json")]
     public string? ThemeConfig { get; set; }
 
+    public int ChargingStationCount { get; set; } = 1880;
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
