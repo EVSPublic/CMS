@@ -1,48 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FormInput from '../../components/Base/Form/FormInput';
 import FormTextarea from '../../components/Base/Form/FormTextarea';
 import FormLabel from '../../components/Base/Form/FormLabel';
 import Button from '../../components/Base/Button';
 import Tab from '../../components/Base/Headless/Tab';
 import ImageInput from '../../components/ImageInput';
-
-interface IndexPageContent {
-  meta: {
-    title: string;
-    description: string;
-    keywords: string;
-  };
-  hero: {
-    title: string;
-    mediaType: 'video' | 'image';
-    mediaUrl: string;
-    count: string;
-    countText: string;
-  };
-  services: {
-    title: string;
-    content: string;
-    subtitle: string;
-  };
-  tariffs: {
-    title: string;
-    description: string;
-    listTitle: string;
-  };
-  opet: {
-    backgroundImage: string;
-  };
-  solutions: {
-    individualDescription: string;
-    corporateDescription: string;
-    solutionsImage: string;
-  };
-  sustainability: {
-    title: string;
-    description: string;
-    backgroundImage: string;
-  };
-}
+import Lucide from '../../components/Base/Lucide';
+import { contentService, IndexPageContent } from '../../services/content';
 
 const initialContent: IndexPageContent = {
   meta: {
@@ -84,33 +48,69 @@ const initialContent: IndexPageContent = {
 
 const IndexPageEditor: React.FC = () => {
   const [content, setContent] = useState<IndexPageContent>(initialContent);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [currentBrandId] = useState<number>(1); // Default to brand 1 (Ovolt)
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+
+  // Load content on component mount
+  useEffect(() => {
+    loadContent();
+  }, []);
+
+  const loadContent = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await contentService.getIndexPageContent(currentBrandId);
+
+      if (response.ok && response.data) {
+        setContent(response.data);
+      } else {
+        // If no content found, use default content
+        setContent(initialContent);
+        setError(null);
+      }
+    } catch (err) {
+      setContent(initialContent);
+      setError('İçerik yüklenirken bir hata oluştu');
+      console.error('Content load error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const updateContent = (section: keyof IndexPageContent, field: string, value: any) => {
-    setContent(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: value
-      }
-    }));
+    setContent(prev => {
+      if (!prev) return initialContent;
+      return {
+        ...prev,
+        [section]: {
+          ...prev[section],
+          [field]: value
+        }
+      };
+    });
   };
 
   const validateContent = (): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
 
-    if (!content.meta.title.trim()) {
+    if (!content?.meta?.title?.trim()) {
       errors.push('Sayfa başlığı boş olamaz');
     }
-    if (!content.hero.title.trim()) {
+    if (!content?.hero?.title?.trim()) {
       errors.push('Hero ana başlık boş olamaz');
     }
-    if (!content.services.title.trim()) {
+    if (!content?.services?.title?.trim()) {
       errors.push('Hizmetler başlığı boş olamaz');
     }
-    if (!content.tariffs.title.trim()) {
+    if (!content?.tariffs?.title?.trim()) {
       errors.push('Tarifeler başlığı boş olamaz');
     }
-    if (!content.sustainability.title.trim()) {
+    if (!content?.sustainability?.title?.trim()) {
       errors.push('Sürdürülebilirlik başlığı boş olamaz');
     }
 
@@ -128,25 +128,67 @@ const IndexPageEditor: React.FC = () => {
       return;
     }
 
+    setSaving(true);
+    setError(null);
+
     try {
-      console.log('Saving content:', content);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      alert('İçerik başarıyla kaydedildi!');
+      const response = await contentService.saveIndexPageContent(currentBrandId, content);
+
+      if (response.ok) {
+        setLastSavedAt(new Date());
+        alert('İçerik başarıyla kaydedildi!');
+      } else {
+        setError(response.error?.message || 'İçerik kaydedilemedi');
+        alert('İçerik kaydedilirken bir hata oluştu: ' + (response.error?.message || 'Bilinmeyen hata'));
+      }
     } catch (error) {
       console.error('Save error:', error);
+      setError('İçerik kaydedilirken bir hata oluştu');
       alert('İçerik kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.');
+    } finally {
+      setSaving(false);
     }
   };
+
+  if (loading || !content) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Lucide icon="Loader2" className="mx-auto h-12 w-12 text-gray-400 animate-spin mb-3" />
+            <p className="text-gray-500 dark:text-gray-400">İçerik yükleniyor...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-          Ana Sayfa İçerik Editörü
-        </h1>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-          Ana sayfa içeriklerini düzenleyin
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+              Ana Sayfa İçerik Editörü
+            </h1>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+              Ana sayfa içeriklerini düzenleyin
+            </p>
+          </div>
+          {lastSavedAt && (
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              Son kayıt: {lastSavedAt.toLocaleString('tr-TR')}
+            </div>
+          )}
+        </div>
+        {error && (
+          <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm rounded-md">
+            <div className="flex items-center">
+              <Lucide icon="AlertCircle" className="w-4 h-4 mr-2" />
+              {error}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="space-y-6">
@@ -183,7 +225,7 @@ const IndexPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Sayfa Başlığı</FormLabel>
                     <FormInput
-                      value={content.meta.title}
+                      value={content?.meta?.title || ''}
                       onChange={(e) => updateContent('meta', 'title', e.target.value)}
                       placeholder="Sayfa başlığını girin"
                     />
@@ -191,7 +233,7 @@ const IndexPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Açıklama</FormLabel>
                     <FormTextarea
-                      value={content.meta.description}
+                      value={content?.meta?.description || ''}
                       onChange={(e) => updateContent('meta', 'description', e.target.value)}
                       placeholder="Sayfa açıklamasını girin"
                       rows={3}
@@ -200,7 +242,7 @@ const IndexPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Anahtar Kelimeler</FormLabel>
                     <FormTextarea
-                      value={content.meta.keywords}
+                      value={content?.meta?.keywords || ''}
                       onChange={(e) => updateContent('meta', 'keywords', e.target.value)}
                       placeholder="Anahtar kelimeleri virgülle ayırarak girin"
                       rows={2}
@@ -217,7 +259,7 @@ const IndexPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Ana Başlık</FormLabel>
                     <FormTextarea
-                      value={content.hero.title}
+                      value={content?.hero?.title || ''}
                       onChange={(e) => updateContent('hero', 'title', e.target.value)}
                       placeholder="Ana başlığı girin"
                       rows={2}
@@ -226,7 +268,7 @@ const IndexPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Medya Tipi</FormLabel>
                     <select
-                      value={content.hero.mediaType}
+                      value={content?.hero?.mediaType || 'video'}
                       onChange={(e) => updateContent('hero', 'mediaType', e.target.value as 'video' | 'image')}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
@@ -236,16 +278,16 @@ const IndexPageEditor: React.FC = () => {
                   </div>
                   <div>
                     <ImageInput
-                      value={content.hero.mediaUrl}
+                      value={content?.hero?.mediaUrl || ''}
                       onChange={(url) => updateContent('hero', 'mediaUrl', url)}
-                      label={content.hero.mediaType === 'video' ? "Hero Video" : "Hero Görseli"}
-                      placeholder={content.hero.mediaType === 'video' ? "Video seçin..." : "Hero görseli seçin..."}
+                      label={content?.hero?.mediaType === 'video' ? "Hero Video" : "Hero Görseli"}
+                      placeholder={content?.hero?.mediaType === 'video' ? "Video seçin..." : "Hero görseli seçin..."}
                     />
                   </div>
                   <div>
                     <FormLabel>Sayı (sadece görüntüleme)</FormLabel>
                     <FormInput
-                      value={content.hero.count}
+                      value={content?.hero?.count || ''}
                       readOnly
                       placeholder="1880+"
                       className="bg-gray-100 dark:bg-gray-700"
@@ -255,7 +297,7 @@ const IndexPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Sayı Açıklama Metni</FormLabel>
                     <FormInput
-                      value={content.hero.countText}
+                      value={content?.hero?.countText || ''}
                       onChange={(e) => updateContent('hero', 'countText', e.target.value)}
                       placeholder="Şarj İstasyonu ile Kesintisiz Enerji"
                     />
@@ -271,7 +313,7 @@ const IndexPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Başlık</FormLabel>
                     <FormInput
-                      value={content.services.title}
+                      value={content?.services?.title || ''}
                       onChange={(e) => updateContent('services', 'title', e.target.value)}
                       placeholder="Hizmet Noktaları"
                     />
@@ -279,7 +321,7 @@ const IndexPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>İçerik</FormLabel>
                     <FormTextarea
-                      value={content.services.content}
+                      value={content?.services?.content || ''}
                       onChange={(e) => updateContent('services', 'content', e.target.value)}
                       placeholder="Hizmetler açıklaması"
                       rows={4}
@@ -288,7 +330,7 @@ const IndexPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Alt Başlık</FormLabel>
                     <FormInput
-                      value={content.services.subtitle}
+                      value={content?.services?.subtitle || ''}
                       onChange={(e) => updateContent('services', 'subtitle', e.target.value)}
                       placeholder="Hizmet Noktaları"
                     />
@@ -304,7 +346,7 @@ const IndexPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Başlık</FormLabel>
                     <FormInput
-                      value={content.tariffs.title}
+                      value={content?.tariffs?.title || ''}
                       onChange={(e) => updateContent('tariffs', 'title', e.target.value)}
                       placeholder="Tarifeler"
                     />
@@ -312,7 +354,7 @@ const IndexPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Açıklama</FormLabel>
                     <FormTextarea
-                      value={content.tariffs.description}
+                      value={content?.tariffs?.description || ''}
                       onChange={(e) => updateContent('tariffs', 'description', e.target.value)}
                       placeholder="Tarifeler açıklaması"
                       rows={4}
@@ -321,7 +363,7 @@ const IndexPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Tarifeler Listesi Başlığı</FormLabel>
                     <FormInput
-                      value={content.tariffs.listTitle}
+                      value={content?.tariffs?.listTitle || ''}
                       onChange={(e) => updateContent('tariffs', 'listTitle', e.target.value)}
                       placeholder="Tarife Seçenekleri"
                     />
@@ -336,7 +378,7 @@ const IndexPageEditor: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <ImageInput
-                      value={content.opet.backgroundImage}
+                      value={content?.opet?.backgroundImage || ''}
                       onChange={(url) => updateContent('opet', 'backgroundImage', url)}
                       label="Arka Plan Görseli"
                       placeholder="Arka plan görseli seçin..."
@@ -353,7 +395,7 @@ const IndexPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Bireysel Açıklama</FormLabel>
                     <FormTextarea
-                      value={content.solutions.individualDescription}
+                      value={content?.solutions?.individualDescription || ''}
                       onChange={(e) => updateContent('solutions', 'individualDescription', e.target.value)}
                       placeholder="Bireysel çözümler açıklaması"
                       rows={4}
@@ -362,7 +404,7 @@ const IndexPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Kurumsal Açıklama</FormLabel>
                     <FormTextarea
-                      value={content.solutions.corporateDescription}
+                      value={content?.solutions?.corporateDescription || ''}
                       onChange={(e) => updateContent('solutions', 'corporateDescription', e.target.value)}
                       placeholder="Kurumsal çözümler açıklaması"
                       rows={4}
@@ -370,7 +412,7 @@ const IndexPageEditor: React.FC = () => {
                   </div>
                   <div>
                     <ImageInput
-                      value={content.solutions.solutionsImage}
+                      value={content?.solutions?.solutionsImage || ''}
                       onChange={(url) => updateContent('solutions', 'solutionsImage', url)}
                       label="Sağ Taraf Görseli"
                       placeholder="Çözümler görseli seçin..."
@@ -387,7 +429,7 @@ const IndexPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Başlık</FormLabel>
                     <FormInput
-                      value={content.sustainability.title}
+                      value={content?.sustainability?.title || ''}
                       onChange={(e) => updateContent('sustainability', 'title', e.target.value)}
                       placeholder="Sürdürülebilirlik başlığı"
                     />
@@ -395,7 +437,7 @@ const IndexPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Açıklama</FormLabel>
                     <FormTextarea
-                      value={content.sustainability.description}
+                      value={content?.sustainability?.description || ''}
                       onChange={(e) => updateContent('sustainability', 'description', e.target.value)}
                       placeholder="Sürdürülebilirlik açıklaması"
                       rows={3}
@@ -403,7 +445,7 @@ const IndexPageEditor: React.FC = () => {
                   </div>
                   <div>
                     <ImageInput
-                      value={content.sustainability.backgroundImage}
+                      value={content?.sustainability?.backgroundImage || ''}
                       onChange={(url) => updateContent('sustainability', 'backgroundImage', url)}
                       label="Arka Plan Görseli"
                       placeholder="Arka plan görseli seçin..."
@@ -416,8 +458,15 @@ const IndexPageEditor: React.FC = () => {
         </Tab.Group>
 
         <div className="flex justify-end mt-6">
-          <Button variant="primary" onClick={handleSave}>
-            Değişiklikleri Kaydet
+          <Button variant="primary" onClick={handleSave} disabled={saving}>
+            {saving ? (
+              <>
+                <Lucide icon="Loader2" className="w-4 h-4 mr-2 animate-spin" />
+                Kaydediliyor...
+              </>
+            ) : (
+              'Değişiklikleri Kaydet'
+            )}
           </Button>
         </div>
       </div>
