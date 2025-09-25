@@ -9,7 +9,7 @@ using AdminPanel.Models;
 namespace AdminPanel.Controllers;
 
 [ApiController]
-[Route("api/partnerships")]
+[Route("api/v1/partnerships")]
 [Authorize]
 public class PartnershipsController : ControllerBase
 {

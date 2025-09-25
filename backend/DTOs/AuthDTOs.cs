@@ -10,13 +10,18 @@ public class LoginRequestDto
 
     [Required]
     public string Password { get; set; } = string.Empty;
+
+    public bool RememberMe { get; set; } = false;
 }
 
 public class LoginResponseDto
 {
-    public string Token { get; set; } = string.Empty;
+    public bool Ok { get; set; } = true;
+    public string AccessToken { get; set; } = string.Empty;
     public string RefreshToken { get; set; } = string.Empty;
+    public int ExpiresIn { get; set; }
     public UserDto User { get; set; } = null!;
+    public Dictionary<string, List<string>> Permissions { get; set; } = new();
 }
 
 public class RefreshTokenRequestDto
@@ -27,12 +32,13 @@ public class RefreshTokenRequestDto
 
 public class UserDto
 {
-    public int Id { get; set; }
+    public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
-    public int? BrandId { get; set; }
+    public List<string> BrandAccess { get; set; } = new();
+    public Dictionary<string, List<string>> Permissions { get; set; } = new();
     public DateTime? LastLogin { get; set; }
     public DateTime CreatedAt { get; set; }
 }

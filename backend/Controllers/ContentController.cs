@@ -10,7 +10,7 @@ using AdminPanel.Models;
 namespace AdminPanel.Controllers;
 
 [ApiController]
-[Route("api/content")]
+[Route("api/v1/content")]
 [Authorize]
 public class ContentController : ControllerBase
 {
@@ -75,12 +75,16 @@ public class ContentController : ControllerBase
 
             if (contentPage == null)
             {
+                // Get brand info for default content
+                var brand = await _context.Brands.FindAsync(brandId);
+                var defaultContent = GetDefaultContentForPageType(pageTypeEnum, brand?.Name ?? "");
+
                 // Create a default content page if it doesn't exist
                 var newContentPage = new ContentPage
                 {
                     BrandId = brandId,
                     PageType = pageTypeEnum,
-                    Content = "{}",
+                    Content = JsonSerializer.Serialize(defaultContent),
                     Status = ContentStatus.Draft,
                     CreatedBy = currentUserId,
                     UpdatedBy = currentUserId,
@@ -92,13 +96,12 @@ public class ContentController : ControllerBase
                 await _context.SaveChangesAsync();
 
                 // Return the newly created page
-                var brand = await _context.Brands.FindAsync(brandId);
                 return Ok(new ContentPageDto
                 {
                     Id = newContentPage.Id,
                     BrandId = newContentPage.BrandId,
                     PageType = newContentPage.PageType.ToString(),
-                    Content = new { },
+                    Content = defaultContent,
                     MetaTitle = newContentPage.MetaTitle,
                     MetaDescription = newContentPage.MetaDescription,
                     MetaKeywords = newContentPage.MetaKeywords,
@@ -259,5 +262,58 @@ public class ContentController : ControllerBase
             _logger.LogError(ex, "Error publishing content page for brand {BrandId} and page type {PageType}", brandId, pageType);
             return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while publishing content page" } });
         }
+    }
+
+    private object GetDefaultContentForPageType(PageType pageType, string brandName)
+    {
+        return pageType switch
+        {
+            PageType.Index => new IndexPageContentDto
+            {
+                Meta = new MetaDto
+                {
+                    Title = $"{brandName} - Elektrikli Araç Şarj İstasyonu",
+                    Description = "",
+                    Keywords = ""
+                },
+                Hero = new HeroDto
+                {
+                    Title = "Her Yolculukta\nYanınızda",
+                    MediaType = "video",
+                    MediaUrl = "assets/video/hero-video.mp4",
+                    Count = "1880+",
+                    CountText = "Şarj İstasyonu ile Kesintisiz Enerji"
+                },
+                Services = new ServicesDto
+                {
+                    Title = "Hizmet Noktaları",
+                    Content = "Opet istasyonları başta olmak üzere stratejik noktalarda konumlanan halka açık şarj istasyonlarıyla, elektrikli aracınız için hızlı, güvenilir ve kolay erişilebilir enerjiye her an ulaşabilirsiniz.",
+                    Subtitle = "Hizmet Noktaları"
+                },
+                Tariffs = new TariffsDto
+                {
+                    Title = "Tarifeler",
+                    Description = "Geniş halka açık şarj istasyonu ağı ile elektrikli aracınız için rekabetçi ve şeffaf tarife seçenekleri sunar.",
+                    ListTitle = "Tarife Seçenekleri"
+                },
+                Opet = new OpetDto
+                {
+                    BackgroundImage = ""
+                },
+                Solutions = new SolutionsDto
+                {
+                    IndividualDescription = "Elektrikli araç sahiplerine hızlı, güvenilir ve kolay erişilebilir şarj çözümleri sunar.",
+                    CorporateDescription = "İşletmeler ve filolar için hibrit enerji çözümleri sunar.",
+                    SolutionsImage = ""
+                },
+                Sustainability = new SustainabilityDto
+                {
+                    Title = "Sürdürülebilirlik",
+                    Description = "Çevre dostu enerji çözümleri ile geleceğe yatırım yapıyoruz.",
+                    BackgroundImage = ""
+                }
+            },
+            _ => new { message = "Default content not implemented for this page type" }
+        };
     }
 }

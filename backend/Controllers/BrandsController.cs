@@ -8,7 +8,7 @@ using AdminPanel.Models;
 namespace AdminPanel.Controllers;
 
 [ApiController]
-[Route("api/brands")]
+[Route("api/v1/brands")]
 [Authorize]
 public class BrandsController : ControllerBase
 {

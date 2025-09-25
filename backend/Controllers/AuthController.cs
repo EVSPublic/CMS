@@ -10,7 +10,7 @@ using AdminPanel.Services;
 namespace AdminPanel.Controllers;
 
 [ApiController]
-[Route("api/auth")]
+[Route("api/v1/auth")]
 public class AuthController : ControllerBase
 {
     private readonly UserManager<User> _userManager;
@@ -61,21 +61,53 @@ public class AuthController : ControllerBase
 
             var token = _jwtService.GenerateToken(user);
 
+            // Get user's brand access and permissions
+            var brandAccess = new List<string>();
+            var permissions = new Dictionary<string, List<string>>();
+
+            if (user.Role == UserRole.Admin)
+            {
+                // Admin has access to all brands
+                var allBrands = await _context.Brands.Select(b => b.Name).ToListAsync();
+                brandAccess = allBrands;
+                foreach (var brand in allBrands)
+                {
+                    permissions[brand] = new List<string> { "read", "write", "delete" };
+                }
+            }
+            else if (user.BrandId.HasValue)
+            {
+                // User has access to specific brand
+                var brand = await _context.Brands.FirstOrDefaultAsync(b => b.Id == user.BrandId.Value);
+                if (brand != null)
+                {
+                    brandAccess.Add(brand.Name);
+                    var userPermissions = user.Role == UserRole.Editor
+                        ? new List<string> { "read", "write" }
+                        : new List<string> { "read" };
+                    permissions[brand.Name] = userPermissions;
+                }
+            }
+
             var response = new LoginResponseDto
             {
-                Token = token,
+                Ok = true,
+                AccessToken = token,
                 RefreshToken = "", // TODO: Implement refresh tokens
+                ExpiresIn = 3600, // 1 hour in seconds
                 User = new UserDto
                 {
-                    Id = user.Id,
+                    Id = user.Id.ToString(),
                     Name = user.Name,
                     Email = user.Email ?? string.Empty,
                     Role = user.Role.ToString(),
                     Status = user.Status.ToString(),
-                    BrandId = user.BrandId,
+                    BrandAccess = brandAccess,
+                    Permissions = permissions,
                     LastLogin = user.LastLogin,
                     CreatedAt = user.CreatedAt
-                }
+                },
+                Permissions = permissions
             };
 
             return Ok(response);
@@ -115,14 +147,43 @@ public class AuthController : ControllerBase
                 return NotFound();
             }
 
+            // Get user's brand access and permissions
+            var brandAccess = new List<string>();
+            var permissions = new Dictionary<string, List<string>>();
+
+            if (user.Role == UserRole.Admin)
+            {
+                // Admin has access to all brands
+                var allBrands = await _context.Brands.Select(b => b.Name).ToListAsync();
+                brandAccess = allBrands;
+                foreach (var brand in allBrands)
+                {
+                    permissions[brand] = new List<string> { "read", "write", "delete" };
+                }
+            }
+            else if (user.BrandId.HasValue)
+            {
+                // User has access to specific brand
+                var brand = await _context.Brands.FirstOrDefaultAsync(b => b.Id == user.BrandId.Value);
+                if (brand != null)
+                {
+                    brandAccess.Add(brand.Name);
+                    var userPermissions = user.Role == UserRole.Editor
+                        ? new List<string> { "read", "write" }
+                        : new List<string> { "read" };
+                    permissions[brand.Name] = userPermissions;
+                }
+            }
+
             var userDto = new UserDto
             {
-                Id = user.Id,
+                Id = user.Id.ToString(),
                 Name = user.Name,
                 Email = user.Email ?? string.Empty,
                 Role = user.Role.ToString(),
                 Status = user.Status.ToString(),
-                BrandId = user.BrandId,
+                BrandAccess = brandAccess,
+                Permissions = permissions,
                 LastLogin = user.LastLogin,
                 CreatedAt = user.CreatedAt
             };
@@ -168,5 +229,13 @@ public class AuthController : ControllerBase
             _logger.LogError(ex, "Error changing password for user");
             return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while changing password" } });
         }
+    }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto request)
+    {
+        // For now, return unauthorized as refresh tokens are not fully implemented
+        // TODO: Implement proper refresh token logic
+        return Unauthorized(new { error = new { code = "REFRESH_TOKEN_INVALID", message = "Refresh token is invalid" } });
     }
 }

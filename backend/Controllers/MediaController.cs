@@ -9,7 +9,7 @@ using AdminPanel.Models;
 namespace AdminPanel.Controllers;
 
 [ApiController]
-[Route("api/media")]
+[Route("api/v1/media")]
 [Authorize]
 public class MediaController : ControllerBase
 {
@@ -55,22 +55,25 @@ public class MediaController : ControllerBase
                 .Take(pageSize)
                 .Select(m => new MediaItemDto
                 {
-                    Id = m.Id,
+                    Id = m.Id.ToString(),
                     BrandId = m.BrandId,
-                    FileName = m.FileName,
-                    FilePath = m.FilePath,
-                    FileType = m.FileType,
-                    FileSize = m.FileSize,
-                    AltText = m.AltText,
-                    Caption = m.Caption,
+                    Filename = m.FileName,
+                    Url = $"/uploads/{m.FilePath}",
+                    Thumbnail = $"/uploads/thumbnails/{m.FilePath}",
+                    Size = m.FileSize,
+                    Type = m.FileType,
+                    Alt = m.AltText ?? "",
+                    Tags = new List<string>(), // TODO: Implement tags system
+                    Category = "general", // TODO: Implement categories
+                    UploadDate = m.CreatedAt,
                     Status = m.Status.ToString(),
                     CreatedBy = m.CreatedBy,
                     UpdatedBy = m.UpdatedBy,
                     CreatedAt = m.CreatedAt,
                     UpdatedAt = m.UpdatedAt,
                     BrandName = m.Brand.Name,
-                    CreatorName = m.Creator!.Name,
-                    UpdaterName = m.Updater!.Name
+                    CreatorName = m.Creator != null ? m.Creator.Name : null,
+                    UpdaterName = m.Updater != null ? m.Updater.Name : null
                 })
                 .ToListAsync();
 
@@ -102,14 +105,17 @@ public class MediaController : ControllerBase
 
             var mediaItem = new MediaItemDto
             {
-                Id = mediaItemEntity.Id,
+                Id = mediaItemEntity.Id.ToString(),
                 BrandId = mediaItemEntity.BrandId,
-                FileName = mediaItemEntity.FileName,
-                FilePath = mediaItemEntity.FilePath,
-                FileType = mediaItemEntity.FileType,
-                FileSize = mediaItemEntity.FileSize,
-                AltText = mediaItemEntity.AltText,
-                Caption = mediaItemEntity.Caption,
+                Filename = mediaItemEntity.FileName,
+                Url = $"/uploads/{mediaItemEntity.FilePath}",
+                Thumbnail = $"/uploads/thumbnails/{mediaItemEntity.FilePath}",
+                Size = mediaItemEntity.FileSize,
+                Type = mediaItemEntity.FileType,
+                Alt = mediaItemEntity.AltText ?? "",
+                Tags = new List<string>(),
+                Category = "general",
+                UploadDate = mediaItemEntity.CreatedAt,
                 Status = mediaItemEntity.Status.ToString(),
                 CreatedBy = mediaItemEntity.CreatedBy,
                 UpdatedBy = mediaItemEntity.UpdatedBy,
@@ -172,14 +178,17 @@ public class MediaController : ControllerBase
 
             var createdMediaItem = new MediaItemDto
             {
-                Id = createdMediaItemEntity!.Id,
+                Id = createdMediaItemEntity!.Id.ToString(),
                 BrandId = createdMediaItemEntity.BrandId,
-                FileName = createdMediaItemEntity.FileName,
-                FilePath = createdMediaItemEntity.FilePath,
-                FileType = createdMediaItemEntity.FileType,
-                FileSize = createdMediaItemEntity.FileSize,
-                AltText = createdMediaItemEntity.AltText,
-                Caption = createdMediaItemEntity.Caption,
+                Filename = createdMediaItemEntity.FileName,
+                Url = $"/uploads/{createdMediaItemEntity.FilePath}",
+                Thumbnail = $"/uploads/thumbnails/{createdMediaItemEntity.FilePath}",
+                Size = createdMediaItemEntity.FileSize,
+                Type = createdMediaItemEntity.FileType,
+                Alt = createdMediaItemEntity.AltText ?? "",
+                Tags = new List<string>(), // TODO: Implement tags system
+                Category = "general", // TODO: Implement categories
+                UploadDate = createdMediaItemEntity.CreatedAt,
                 Status = createdMediaItemEntity.Status.ToString(),
                 CreatedBy = createdMediaItemEntity.CreatedBy,
                 UpdatedBy = createdMediaItemEntity.UpdatedBy,
@@ -241,14 +250,17 @@ public class MediaController : ControllerBase
 
             var updatedMediaItem = new MediaItemDto
             {
-                Id = updatedMediaItemEntity!.Id,
+                Id = updatedMediaItemEntity!.Id.ToString(),
                 BrandId = updatedMediaItemEntity.BrandId,
-                FileName = updatedMediaItemEntity.FileName,
-                FilePath = updatedMediaItemEntity.FilePath,
-                FileType = updatedMediaItemEntity.FileType,
-                FileSize = updatedMediaItemEntity.FileSize,
-                AltText = updatedMediaItemEntity.AltText,
-                Caption = updatedMediaItemEntity.Caption,
+                Filename = updatedMediaItemEntity.FileName,
+                Url = $"/uploads/{updatedMediaItemEntity.FilePath}",
+                Thumbnail = $"/uploads/thumbnails/{updatedMediaItemEntity.FilePath}",
+                Size = updatedMediaItemEntity.FileSize,
+                Type = updatedMediaItemEntity.FileType,
+                Alt = updatedMediaItemEntity.AltText ?? "",
+                Tags = new List<string>(),
+                Category = "general",
+                UploadDate = updatedMediaItemEntity.CreatedAt,
                 Status = updatedMediaItemEntity.Status.ToString(),
                 CreatedBy = updatedMediaItemEntity.CreatedBy,
                 UpdatedBy = updatedMediaItemEntity.UpdatedBy,
@@ -403,14 +415,17 @@ public class MediaController : ControllerBase
 
             var createdMediaItem = new MediaItemDto
             {
-                Id = createdMediaItemEntity!.Id,
+                Id = createdMediaItemEntity!.Id.ToString(),
                 BrandId = createdMediaItemEntity.BrandId,
-                FileName = createdMediaItemEntity.FileName,
-                FilePath = createdMediaItemEntity.FilePath,
-                FileType = createdMediaItemEntity.FileType,
-                FileSize = createdMediaItemEntity.FileSize,
-                AltText = createdMediaItemEntity.AltText,
-                Caption = createdMediaItemEntity.Caption,
+                Filename = createdMediaItemEntity.FileName,
+                Url = $"/uploads/{createdMediaItemEntity.FilePath}",
+                Thumbnail = $"/uploads/thumbnails/{createdMediaItemEntity.FilePath}",
+                Size = createdMediaItemEntity.FileSize,
+                Type = createdMediaItemEntity.FileType,
+                Alt = createdMediaItemEntity.AltText ?? "",
+                Tags = new List<string>(), // TODO: Implement tags system
+                Category = "general", // TODO: Implement categories
+                UploadDate = createdMediaItemEntity.CreatedAt,
                 Status = createdMediaItemEntity.Status.ToString(),
                 CreatedBy = createdMediaItemEntity.CreatedBy,
                 UpdatedBy = createdMediaItemEntity.UpdatedBy,

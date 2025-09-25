@@ -9,7 +9,7 @@ using AdminPanel.Models;
 namespace AdminPanel.Controllers;
 
 [ApiController]
-[Route("api/static-pages")]
+[Route("api/v1/static-pages")]
 [Authorize]
 public class StaticPagesController : ControllerBase
 {

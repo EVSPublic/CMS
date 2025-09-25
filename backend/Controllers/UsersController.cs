@@ -9,7 +9,7 @@ using AdminPanel.Models;
 namespace AdminPanel.Controllers;
 
 [ApiController]
-[Route("api/users")]
+[Route("api/v1/users")]
 [Authorize]
 public class UsersController : ControllerBase
 {
@@ -46,12 +46,13 @@ public class UsersController : ControllerBase
                 .Take(pageSize)
                 .Select(u => new UserDto
                 {
-                    Id = u.Id,
+                    Id = u.Id.ToString(),
                     Name = u.Name,
                     Email = u.Email ?? string.Empty,
                     Role = u.Role.ToString(),
                     Status = u.Status.ToString(),
-                    BrandId = u.BrandId,
+                    BrandAccess = new List<string>(), // TODO: Calculate brand access
+                    Permissions = new Dictionary<string, List<string>>(), // TODO: Calculate permissions
                     LastLogin = u.LastLogin,
                     CreatedAt = u.CreatedAt
                 })
@@ -87,12 +88,13 @@ public class UsersController : ControllerBase
 
             var userDto = new UserDto
             {
-                Id = user.Id,
+                Id = user.Id.ToString(),
                 Name = user.Name,
                 Email = user.Email ?? string.Empty,
                 Role = user.Role.ToString(),
                 Status = user.Status.ToString(),
-                BrandId = user.BrandId,
+                BrandAccess = new List<string>(), // TODO: Calculate brand access
+                Permissions = new Dictionary<string, List<string>>(), // TODO: Calculate permissions
                 LastLogin = user.LastLogin,
                 CreatedAt = user.CreatedAt
             };
@@ -149,12 +151,13 @@ public class UsersController : ControllerBase
 
             var userDto = new UserDto
             {
-                Id = user.Id,
+                Id = user.Id.ToString(),
                 Name = user.Name,
                 Email = user.Email ?? string.Empty,
                 Role = user.Role.ToString(),
                 Status = user.Status.ToString(),
-                BrandId = user.BrandId,
+                BrandAccess = new List<string>(), // TODO: Calculate brand access
+                Permissions = new Dictionary<string, List<string>>(), // TODO: Calculate permissions
                 LastLogin = user.LastLogin,
                 CreatedAt = user.CreatedAt
             };
@@ -236,12 +239,13 @@ public class UsersController : ControllerBase
 
             var userDto = new UserDto
             {
-                Id = user.Id,
+                Id = user.Id.ToString(),
                 Name = user.Name,
                 Email = user.Email ?? string.Empty,
                 Role = user.Role.ToString(),
                 Status = user.Status.ToString(),
-                BrandId = user.BrandId,
+                BrandAccess = new List<string>(), // TODO: Calculate brand access
+                Permissions = new Dictionary<string, List<string>>(), // TODO: Calculate permissions
                 LastLogin = user.LastLogin,
                 CreatedAt = user.CreatedAt
             };

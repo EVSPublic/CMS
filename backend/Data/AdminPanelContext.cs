@@ -97,7 +97,7 @@ public class AdminPanelContext : IdentityDbContext<User, IdentityRole<int>, int>
         // Configure Announcement entity
         builder.Entity<Announcement>(entity =>
         {
-            entity.Property(e => e.Type).HasConversion<string>();
+            // entity.Property(e => e.Type).HasConversion<string>(); // Type property doesn't exist in Announcement model
             entity.Property(e => e.Status).HasConversion<string>();
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
