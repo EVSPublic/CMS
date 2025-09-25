@@ -30,6 +30,39 @@ export interface PublishContentPageDto {
   publish: boolean;
 }
 
+// About page content structure matching backend
+export interface AboutPageContent {
+  meta: {
+    title: string;
+    description: string;
+    keywords: string;
+  };
+  hero: {
+    image: string;
+  };
+  mainSection: {
+    title: string;
+    description: string;
+    image: string;
+  };
+  additionalSection: {
+    description: string;
+    image: string;
+  };
+  missionVision: {
+    vision: {
+      title: string;
+      quote: string;
+      description: string;
+    };
+    mission: {
+      title: string;
+      quote: string;
+      description: string;
+    };
+  };
+}
+
 // Index page content structure matching backend
 export interface IndexPageContent {
   meta: {
@@ -152,6 +185,42 @@ class ContentService {
     return this.saveContentPage(
       brandId,
       'index',
+      content,
+      content.meta.title,
+      content.meta.description,
+      content.meta.keywords
+    );
+  }
+
+  /**
+   * Get typed about page content
+   */
+  async getAboutPageContent(brandId: number): Promise<ApiResponse<AboutPageContent>> {
+    const response = await this.getContentPage(brandId, 'about');
+    if (response.ok && response.data) {
+      // Extract content from the ContentPageDto structure
+      const content = response.data.content as AboutPageContent;
+      return {
+        ok: true,
+        data: content
+      };
+    }
+    return {
+      ok: false,
+      error: response.error || { code: 'LOAD_ERROR', message: 'Failed to load content' }
+    };
+  }
+
+  /**
+   * Save typed about page content
+   */
+  async saveAboutPageContent(
+    brandId: number,
+    content: AboutPageContent
+  ): Promise<ApiResponse<ContentPageDto>> {
+    return this.saveContentPage(
+      brandId,
+      'about',
       content,
       content.meta.title,
       content.meta.description,
