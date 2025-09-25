@@ -48,13 +48,28 @@ class AuthService {
   private readonly USER_KEY = 'user';
 
   async login(request: LoginRequest): Promise<ApiResponse<LoginResponse>> {
-    const response = await api.post<LoginResponse>('/api/admin/v1/auth/login', request);
-    
-    if (response.ok && response.data) {
-      this.setTokens(response.data.accessToken, response.data.refreshToken);
-      this.setUser(response.data.user);
+    const response = await api.post<any>('/api/v1/auth/login', request);
+
+    if (response.ok && (response as any).accessToken) {
+      // Backend returns data directly, not wrapped in a data property
+      const backendData = response as any;
+      this.setTokens(backendData.accessToken, backendData.refreshToken);
+      this.setUser(backendData.user);
+
+      // Transform backend response to expected format
+      return {
+        ok: true,
+        data: {
+          ok: backendData.ok,
+          accessToken: backendData.accessToken,
+          refreshToken: backendData.refreshToken,
+          expiresIn: backendData.expiresIn,
+          user: backendData.user,
+          permissions: backendData.permissions
+        }
+      };
     }
-    
+
     return response;
   }
 
@@ -63,7 +78,7 @@ class AuthService {
     console.log('Logging out, refresh token:', refreshToken);
     if (refreshToken) {
       try {
-        await api.post('/api/admin/v1/auth/logout', { refreshToken });
+        await api.post('/api/v1/auth/logout', { refreshToken });
       } catch (error) {
         console.error('Error during logout:', error);
       }
@@ -84,7 +99,7 @@ class AuthService {
       };
     }
 
-    const response = await api.post<LoginResponse>('/api/admin/v1/auth/refresh', { refreshToken });
+    const response = await api.post<LoginResponse>('/api/v1/auth/refresh', { refreshToken });
     
     if (response.ok && response.data) {
       this.setTokens(response.data.accessToken, response.data.refreshToken);
@@ -97,11 +112,11 @@ class AuthService {
   }
 
   async changePassword(request: ChangePasswordRequest): Promise<ApiResponse<any>> {
-    return api.post('/api/admin/v1/auth/change-password', request);
+    return api.post('/api/v1/auth/change-password', request);
   }
 
   async updateProfile(request: ProfileUpdateRequest): Promise<ApiResponse<User>> {
-    const response = await api.put<User>('/api/admin/v1/auth/profile', request);
+    const response = await api.put<User>('/api/v1/auth/me', request);
     
     if (response.ok && response.data) {
       this.setUser(response.data);
@@ -111,7 +126,17 @@ class AuthService {
   }
 
   async getCurrentUser(): Promise<ApiResponse<User>> {
-    return api.get<User>('/api/admin/v1/auth/profile');
+    const response = await api.get<any>('/api/v1/auth/me');
+
+    if (response.ok && (response as any).id) {
+      // Backend returns user data directly, wrap it in expected format
+      return {
+        ok: true,
+        data: response as unknown as User
+      };
+    }
+
+    return response;
   }
 
   getAccessToken(): string | null {

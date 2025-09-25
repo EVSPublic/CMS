@@ -1,21 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import FormInput from '../../components/Base/Form/FormInput';
 import FormLabel from '../../components/Base/Form/FormLabel';
 import Button from '../../components/Base/Button';
 import Lucide from '../../components/Base/Lucide';
-
-interface MediaItem {
-  id: string;
-  filename: string;
-  url: string;
-  thumbnail: string;
-  size: number;
-  type: string;
-  uploadDate: Date;
-  alt: string;
-  tags: string[];
-  category: string;
-}
+import { mediaService, MediaItem, MediaResponse } from '../../services/media';
+import { authService } from '../../services/auth';
 
 interface MediaFolder {
   id: string;
@@ -24,32 +13,12 @@ interface MediaFolder {
 }
 
 const MediaGallery: React.FC = () => {
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>([
-    {
-      id: '1',
-      filename: 'hero-image.jpg',
-      url: '/assets/img/hero-image.jpg',
-      thumbnail: '/assets/img/thumbnails/hero-image.jpg',
-      size: 245760,
-      type: 'image/jpeg',
-      uploadDate: new Date('2024-01-15'),
-      alt: 'Hero section background image',
-      tags: ['hero', 'background'],
-      category: 'backgrounds'
-    },
-    {
-      id: '2',
-      filename: 'logo.svg',
-      url: '/assets/img/logo.svg',
-      thumbnail: '/assets/img/thumbnails/logo.svg',
-      size: 12340,
-      type: 'image/svg+xml',
-      uploadDate: new Date('2024-01-10'),
-      alt: 'Company logo',
-      tags: ['logo', 'branding'],
-      category: 'logos'
-    }
-  ]);
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [currentBrandId, setCurrentBrandId] = useState<number>(1); // Default to brand 1
+  const [totalCount, setTotalCount] = useState(0);
 
   const [folders] = useState<MediaFolder[]>([
     { id: 'all', name: 'All Images', itemCount: mediaItems.length },
@@ -65,8 +34,36 @@ const MediaGallery: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isDragging, setIsDragging] = useState(false);
   const [previewItem, setPreviewItem] = useState<MediaItem | null>(null);
+  const [editingMetadata, setEditingMetadata] = useState<{alt: string; tags: string} | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    loadMediaItems();
+  }, [currentBrandId]);
+
+  const loadMediaItems = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await mediaService.getMediaItems(currentBrandId, {
+        search: searchQuery,
+        pageSize: 100 // Load more items initially
+      });
+
+      if (response.ok && response.data) {
+        setMediaItems(response.data.mediaItems);
+        setTotalCount(response.data.totalCount);
+      } else {
+        setError(response.error?.message || 'Failed to load media items');
+      }
+    } catch (err) {
+      setError('Failed to load media items');
+      console.error('Media error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredItems = mediaItems.filter(item => {
     const matchesSearch = item.filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -83,26 +80,42 @@ const MediaGallery: React.FC = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const handleFileUpload = (files: FileList | null) => {
-    if (!files) return;
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!files || uploading) return;
 
-    Array.from(files).forEach(file => {
+    setUploading(true);
+    const uploadPromises = Array.from(files).map(async (file) => {
       if (file.type.startsWith('image/')) {
-        const newItem: MediaItem = {
-          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-          filename: file.name,
-          url: URL.createObjectURL(file),
-          thumbnail: URL.createObjectURL(file),
-          size: file.size,
-          type: file.type,
-          uploadDate: new Date(),
-          alt: '',
-          tags: [],
-          category: 'content'
-        };
-        setMediaItems(prev => [newItem, ...prev]);
+        try {
+          const response = await mediaService.uploadFile(currentBrandId, file);
+          if (response.ok && response.data) {
+            return response.data;
+          } else {
+            console.error('Upload failed:', response.error);
+            alert(`Failed to upload ${file.name}: ${response.error?.message}`);
+          }
+        } catch (error) {
+          console.error('Upload error:', error);
+          alert(`Failed to upload ${file.name}`);
+        }
       }
+      return null;
     });
+
+    try {
+      const uploadedItems = await Promise.all(uploadPromises);
+      const validItems = uploadedItems.filter(item => item !== null) as MediaItem[];
+
+      if (validItems.length > 0) {
+        setMediaItems(prev => [...validItems, ...prev]);
+        setTotalCount(prev => prev + validItems.length);
+        alert(`Successfully uploaded ${validItems.length} file(s)`);
+      }
+    } catch (error) {
+      console.error('Batch upload error:', error);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -129,19 +142,109 @@ const MediaGallery: React.FC = () => {
     );
   };
 
-  const deleteSelectedItems = () => {
+  const deleteSelectedItems = async () => {
     if (selectedItems.length === 0) return;
 
     if (confirm(`Are you sure you want to delete ${selectedItems.length} item(s)?`)) {
-      setMediaItems(prev => prev.filter(item => !selectedItems.includes(item.id)));
-      setSelectedItems([]);
+      try {
+        const deletePromises = selectedItems.map(async (itemId) => {
+          const response = await mediaService.deleteMediaItem(currentBrandId, itemId);
+          if (!response.ok) {
+            console.error(`Failed to delete ${itemId}:`, response.error);
+          }
+          return response.ok;
+        });
+
+        const results = await Promise.all(deletePromises);
+        const successCount = results.filter(Boolean).length;
+
+        setMediaItems(prev => prev.filter(item => !selectedItems.includes(item.id)));
+        setSelectedItems([]);
+        setTotalCount(prev => prev - successCount);
+
+        if (successCount === selectedItems.length) {
+          alert(`Successfully deleted ${successCount} item(s)`);
+        } else {
+          alert(`Deleted ${successCount} of ${selectedItems.length} item(s). Some deletions failed.`);
+        }
+      } catch (error) {
+        console.error('Delete error:', error);
+        alert('Failed to delete items');
+      }
     }
   };
 
-  const updateItemMetadata = (itemId: string, updates: Partial<MediaItem>) => {
-    setMediaItems(prev => prev.map(item =>
-      item.id === itemId ? { ...item, ...updates } : item
-    ));
+  const openPreviewModal = (item: MediaItem) => {
+    setPreviewItem(item);
+    setEditingMetadata({
+      alt: item.alt || '',
+      tags: item.tags.join(', ')
+    });
+  };
+
+  const closePreviewModal = () => {
+    setPreviewItem(null);
+    setEditingMetadata(null);
+  };
+
+  const saveMetadataChanges = async () => {
+    if (!previewItem || !editingMetadata) return;
+
+    try {
+      const updateData = {
+        fileName: previewItem.filename,
+        altText: editingMetadata.alt.trim(),
+        caption: editingMetadata.alt.trim()
+      };
+
+      const response = await mediaService.updateMediaItem(currentBrandId, previewItem.id, updateData);
+
+      if (response.ok && response.data) {
+        // Update the item in the list
+        setMediaItems(prev => prev.map(item =>
+          item.id === previewItem.id ? response.data! : item
+        ));
+
+        // Update preview item
+        setPreviewItem(response.data);
+        setEditingMetadata({
+          alt: response.data.alt || '',
+          tags: response.data.tags.join(', ')
+        });
+
+        alert('Metadata updated successfully');
+      } else {
+        console.error('Update failed:', response.error);
+        alert('Failed to update metadata: ' + response.error?.message);
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      alert('Failed to update metadata');
+    }
+  };
+
+  const updateItemMetadata = async (itemId: string, updates: Partial<MediaItem>) => {
+    try {
+      const updateData = {
+        fileName: updates.filename,
+        altText: updates.alt,
+        caption: updates.alt // Using alt as caption for simplicity
+      };
+
+      const response = await mediaService.updateMediaItem(currentBrandId, itemId, updateData);
+
+      if (response.ok && response.data) {
+        setMediaItems(prev => prev.map(item =>
+          item.id === itemId ? response.data! : item
+        ));
+      } else {
+        console.error('Update failed:', response.error);
+        alert('Failed to update item metadata');
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      alert('Failed to update item metadata');
+    }
   };
 
   return (
@@ -200,8 +303,9 @@ const MediaGallery: React.FC = () => {
                 variant="primary"
                 onClick={() => fileInputRef.current?.click()}
                 className="w-full"
+                disabled={uploading}
               >
-                Select Files
+                {uploading ? 'Uploading...' : 'Select Files'}
               </Button>
               <input
                 ref={fileInputRef}
@@ -264,7 +368,20 @@ const MediaGallery: React.FC = () => {
 
           {/* Media Grid */}
           <div className="bg-white dark:bg-gray-800 shadow p-4">
-            {filteredItems.length === 0 ? (
+            {loading ? (
+              <div className="text-center py-12">
+                <Lucide icon="Loader2" className="mx-auto h-12 w-12 text-gray-400 animate-spin mb-3" />
+                <p className="text-gray-500 dark:text-gray-400">Loading media items...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-12">
+                <Lucide icon="AlertCircle" className="mx-auto h-12 w-12 text-red-400 mb-3" />
+                <p className="text-red-500">{error}</p>
+                <Button variant="primary" onClick={loadMediaItems} className="mt-3">
+                  Retry
+                </Button>
+              </div>
+            ) : filteredItems.length === 0 ? (
               <div className="text-center py-12">
                 <Lucide icon="ImageIcon" className="mx-auto h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-gray-500 dark:text-gray-400">
@@ -301,7 +418,7 @@ const MediaGallery: React.FC = () => {
                             size="sm"
                             onClick={(e: React.MouseEvent) => {
                               e.stopPropagation();
-                              setPreviewItem(item);
+                              openPreviewModal(item);
                             }}
                           >
                             <Lucide icon="Eye" className="w-4 h-4" />
@@ -341,13 +458,13 @@ const MediaGallery: React.FC = () => {
                         <div className="flex-1">
                           <p className="font-medium text-gray-900 dark:text-white">{item.filename}</p>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {formatFileSize(item.size)} • {item.uploadDate.toLocaleDateString()}
+                            {formatFileSize(item.size)} • {new Date(item.uploadDate).toLocaleDateString()}
                           </p>
                         </div>
                         <Button
                           variant="secondary"
                           size="sm"
-                          onClick={() => setPreviewItem(item)}
+                          onClick={() => openPreviewModal(item)}
                         >
                           <Lucide icon="Eye" className="w-4 h-4" />
                         </Button>
@@ -370,7 +487,7 @@ const MediaGallery: React.FC = () => {
                 <h3 className="text-lg font-semibold">Image Details</h3>
                 <Button
                   variant="secondary"
-                  onClick={() => setPreviewItem(null)}
+                  onClick={closePreviewModal}
                 >
                   <Lucide icon="X" className="w-4 h-4" />
                 </Button>
@@ -394,8 +511,8 @@ const MediaGallery: React.FC = () => {
                   <div>
                     <FormLabel>Alt Text</FormLabel>
                     <FormInput
-                      value={previewItem.alt}
-                      onChange={(e) => updateItemMetadata(previewItem.id, { alt: e.target.value })}
+                      value={editingMetadata?.alt || ''}
+                      onChange={(e) => setEditingMetadata(prev => prev ? { ...prev, alt: e.target.value } : { alt: e.target.value, tags: '' })}
                       placeholder="Describe this image..."
                     />
                   </div>
@@ -403,11 +520,8 @@ const MediaGallery: React.FC = () => {
                   <div>
                     <FormLabel>Tags (comma separated)</FormLabel>
                     <FormInput
-                      value={previewItem.tags.join(', ')}
-                      onChange={(e) => {
-                        const tags = e.target.value.split(',').map(tag => tag.trim()).filter(Boolean);
-                        updateItemMetadata(previewItem.id, { tags });
-                      }}
+                      value={editingMetadata?.tags || ''}
+                      onChange={(e) => setEditingMetadata(prev => prev ? { ...prev, tags: e.target.value } : { alt: '', tags: e.target.value })}
                       placeholder="Enter tags..."
                     />
                   </div>
@@ -417,23 +531,35 @@ const MediaGallery: React.FC = () => {
                     <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                       <p>Size: {formatFileSize(previewItem.size)}</p>
                       <p>Type: {previewItem.type}</p>
-                      <p>Uploaded: {previewItem.uploadDate.toLocaleDateString()}</p>
+                      <p>Uploaded: {new Date(previewItem.uploadDate).toLocaleDateString()}</p>
                     </div>
                   </div>
 
                   <div className="flex space-x-2 pt-4">
                     <Button
                       variant="primary"
-                      onClick={() => setPreviewItem(null)}
+                      onClick={saveMetadataChanges}
                     >
                       Save Changes
                     </Button>
                     <Button
                       variant="danger"
-                      onClick={() => {
+                      onClick={async () => {
                         if (confirm('Are you sure you want to delete this image?')) {
-                          setMediaItems(prev => prev.filter(item => item.id !== previewItem.id));
-                          setPreviewItem(null);
+                          try {
+                            const response = await mediaService.deleteMediaItem(currentBrandId, previewItem.id);
+                            if (response.ok) {
+                              setMediaItems(prev => prev.filter(item => item.id !== previewItem.id));
+                              setTotalCount(prev => prev - 1);
+                              closePreviewModal();
+                              alert('Image deleted successfully');
+                            } else {
+                              alert('Failed to delete image: ' + response.error?.message);
+                            }
+                          } catch (error) {
+                            console.error('Delete error:', error);
+                            alert('Failed to delete image');
+                          }
                         }
                       }}
                     >

@@ -5,6 +5,13 @@ import react from "@vitejs/plugin-react";
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  server: {
+    proxy: {
+      '/uploads': 'http://localhost:5050',
+      '/thumbnails': 'http://localhost:5050',
+      '/media': 'http://localhost:5050'
+    }
+  },
   build: {
     commonjsOptions: {
       include: ["tailwind.config.js", "node_modules/**"],

@@ -127,9 +127,53 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AdminPanelCORS");
 
+app.UseStaticFiles(); // Enable serving static files from wwwroot
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Custom route for media files
+app.MapGet("/media/{brandId}/{filename}", (string brandId, string filename, IWebHostEnvironment env) =>
+{
+    var filePath = Path.Combine(env.WebRootPath, "uploads", brandId, filename);
+    if (File.Exists(filePath))
+    {
+        var extension = Path.GetExtension(filename).ToLowerInvariant();
+        var contentType = extension switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            ".webp" => "image/webp",
+            ".svg" => "image/svg+xml",
+            _ => "application/octet-stream"
+        };
+        return Results.File(filePath, contentType);
+    }
+    return Results.NotFound();
+});
+
+// Custom route for thumbnails
+app.MapGet("/thumbnails/{brandId}/{filename}", (string brandId, string filename, IWebHostEnvironment env) =>
+{
+    var filePath = Path.Combine(env.WebRootPath, "thumbnails", brandId, filename);
+    if (File.Exists(filePath))
+    {
+        var extension = Path.GetExtension(filename).ToLowerInvariant();
+        var contentType = extension switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            ".webp" => "image/webp",
+            ".svg" => "image/svg+xml",
+            _ => "application/octet-stream"
+        };
+        return Results.File(filePath, contentType);
+    }
+    return Results.NotFound();
+});
 
 app.Run();

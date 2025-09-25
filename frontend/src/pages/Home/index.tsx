@@ -1,6 +1,34 @@
 import Lucide from "@/components/Base/Lucide";
+import { useState, useEffect } from "react";
+import { dashboardService, DashboardStats } from "@/services/dashboard";
 
 function Home() {
+  const [dashboardData, setDashboardData] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await dashboardService.getDashboardStats();
+
+      if (response.ok && response.data) {
+        setDashboardData(response.data);
+      } else {
+        setError(response.error?.message || 'Failed to load dashboard data');
+      }
+    } catch (err) {
+      setError('Failed to load dashboard data');
+      console.error('Dashboard error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <>
       <div className="grid grid-cols-12 gap-6">
@@ -26,20 +54,47 @@ function Home() {
               </div>
               <div className="text-lg font-semibold">System Status</div>
             </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-600 dark:text-slate-300">Database</span>
-                <span className="text-success font-medium">Connected</span>
+            {loading ? (
+              <div className="flex items-center justify-center py-4">
+                <Lucide icon="Loader2" className="w-5 h-5 animate-spin text-slate-500" />
+                <span className="ml-2 text-slate-500">Loading...</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-600 dark:text-slate-300">API Services</span>
-                <span className="text-success font-medium">Running</span>
+            ) : error ? (
+              <div className="flex items-center justify-center py-4 text-red-500">
+                <Lucide icon="AlertCircle" className="w-5 h-5 mr-2" />
+                <span>{error}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-600 dark:text-slate-300">Authentication</span>
-                <span className="text-success font-medium">Active</span>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-600 dark:text-slate-300">API Status</span>
+                  <span className={`font-medium ${dashboardData?.systemHealth?.status === 'Healthy' ? 'text-success' : 'text-danger'}`}>
+                    {dashboardData?.systemHealth?.status || 'Unknown'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-600 dark:text-slate-300">Version</span>
+                  <span className="text-slate-600 dark:text-slate-300 font-medium">
+                    {dashboardData?.systemHealth?.version || 'Unknown'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-600 dark:text-slate-300">Environment</span>
+                  <span className="text-slate-600 dark:text-slate-300 font-medium">
+                    {dashboardData?.systemHealth?.environment || 'Unknown'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-600 dark:text-slate-300">Last Check</span>
+                  <span className="text-slate-500 text-sm">
+                    {dashboardData?.systemHealth?.timestamp ?
+                      new Date(dashboardData.systemHealth.timestamp).toLocaleTimeString() :
+                      'Unknown'
+                    }
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
