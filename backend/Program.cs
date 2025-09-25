@@ -3,8 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using System.Drawing;
-using System.Drawing.Imaging;
+using SkiaSharp;
 using AdminPanel.Data;
 using AdminPanel.Models;
 using AdminPanel.Services;
@@ -196,48 +195,45 @@ app.MapGet("/thumbnails/{brandId}/{filename}", (string brandId, string filename,
 
         try
         {
-            // Compress and resize image
-            using var originalImage = Image.FromFile(originalPath);
+            Console.WriteLine($"Attempting to compress: {originalPath}");
+
+            // Load and compress image with SkiaSharp
+            using var inputStream = File.OpenRead(originalPath);
+            using var originalBitmap = SKBitmap.Decode(inputStream);
+
+            if (originalBitmap == null)
+            {
+                Console.WriteLine("Failed to decode bitmap");
+                throw new InvalidOperationException("Could not decode image");
+            }
+
+            Console.WriteLine($"Original size: {originalBitmap.Width}x{originalBitmap.Height}");
 
             // Calculate thumbnail size (max 300x300, maintain aspect ratio)
             var maxSize = 300;
-            var ratioX = (double)maxSize / originalImage.Width;
-            var ratioY = (double)maxSize / originalImage.Height;
+            var ratioX = (double)maxSize / originalBitmap.Width;
+            var ratioY = (double)maxSize / originalBitmap.Height;
             var ratio = Math.Min(ratioX, ratioY);
 
-            var newWidth = (int)(originalImage.Width * ratio);
-            var newHeight = (int)(originalImage.Height * ratio);
+            var newWidth = (int)(originalBitmap.Width * ratio);
+            var newHeight = (int)(originalBitmap.Height * ratio);
 
-            using var thumbnail = new Bitmap(newWidth, newHeight);
-            using var graphics = Graphics.FromImage(thumbnail);
+            Console.WriteLine($"New size: {newWidth}x{newHeight}");
 
-            // High quality resize
-            graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-            graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            // Create resized bitmap
+            using var resizedBitmap = originalBitmap.Resize(new SKImageInfo(newWidth, newHeight), SKSamplingOptions.Default);
+            using var image = SKImage.FromBitmap(resizedBitmap);
 
-            graphics.DrawImage(originalImage, 0, 0, newWidth, newHeight);
+            // Encode as JPEG with compression
+            using var data = image.Encode(SKEncodedImageFormat.Jpeg, 80); // 80% quality
 
-            // Save to memory stream with compression
-            using var memoryStream = new MemoryStream();
-            var encoder = ImageCodecInfo.GetImageEncoders().FirstOrDefault(c => c.FormatID == ImageFormat.Jpeg.Guid);
-            if (encoder != null)
-            {
-                var encoderParams = new EncoderParameters(1);
-                encoderParams.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 80L); // 80% quality
-                thumbnail.Save(memoryStream, encoder, encoderParams);
-            }
-            else
-            {
-                thumbnail.Save(memoryStream, ImageFormat.Jpeg);
-            }
-            memoryStream.Position = 0;
+            Console.WriteLine($"Compressed size: {data.Size} bytes");
 
-            var compressedData = memoryStream.ToArray();
-            return Results.File(compressedData, "image/jpeg");
+            return Results.File(data.ToArray(), "image/jpeg");
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"Compression failed: {ex.Message}");
             // If compression fails, return original
             var contentType = extension switch
             {
