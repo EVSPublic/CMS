@@ -155,11 +155,12 @@ app.MapGet("/media/{brandId}/{filename}", (string brandId, string filename, IWeb
     return Results.NotFound();
 });
 
-// Custom route for thumbnails
+// Custom route for thumbnails - fallback to original image for now
 app.MapGet("/thumbnails/{brandId}/{filename}", (string brandId, string filename, IWebHostEnvironment env) =>
 {
-    var filePath = Path.Combine(env.WebRootPath, "thumbnails", brandId, filename);
-    if (File.Exists(filePath))
+    // First try to find actual thumbnail
+    var thumbnailPath = Path.Combine(env.WebRootPath, "thumbnails", brandId, filename);
+    if (File.Exists(thumbnailPath))
     {
         var extension = Path.GetExtension(filename).ToLowerInvariant();
         var contentType = extension switch
@@ -171,8 +172,26 @@ app.MapGet("/thumbnails/{brandId}/{filename}", (string brandId, string filename,
             ".svg" => "image/svg+xml",
             _ => "application/octet-stream"
         };
-        return Results.File(filePath, contentType);
+        return Results.File(thumbnailPath, contentType);
     }
+
+    // Fallback to original image
+    var originalPath = Path.Combine(env.WebRootPath, "uploads", brandId, filename);
+    if (File.Exists(originalPath))
+    {
+        var extension = Path.GetExtension(filename).ToLowerInvariant();
+        var contentType = extension switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            ".webp" => "image/webp",
+            ".svg" => "image/svg+xml",
+            _ => "application/octet-stream"
+        };
+        return Results.File(originalPath, contentType);
+    }
+
     return Results.NotFound();
 });
 
