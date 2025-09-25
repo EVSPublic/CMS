@@ -12,6 +12,7 @@ const MediaGallery: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [currentBrandId, setCurrentBrandId] = useState<number>(1); // Default to brand 1
   const [totalCount, setTotalCount] = useState(0);
 
@@ -192,8 +193,9 @@ const MediaGallery: React.FC = () => {
   };
 
   const saveMetadataChanges = async () => {
-    if (!previewItem || !editingMetadata) return;
+    if (!previewItem || !editingMetadata || isSaving) return;
 
+    setIsSaving(true);
     try {
       // Update alt text first
       const updateData = {
@@ -240,6 +242,8 @@ const MediaGallery: React.FC = () => {
     } catch (error) {
       console.error('Update error:', error);
       alert('Failed to update metadata');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -548,7 +552,7 @@ const MediaGallery: React.FC = () => {
                     <FormLabel>Alt Text</FormLabel>
                     <FormInput
                       value={editingMetadata?.alt || ''}
-                      onChange={(e) => setEditingMetadata(prev => prev ? { ...prev, alt: e.target.value } : { alt: e.target.value, tags: '' })}
+                      onChange={(e) => setEditingMetadata(prev => prev ? { ...prev, alt: e.target.value } : { alt: e.target.value, selectedFolders: [] })}
                       placeholder="Describe this image..."
                     />
                   </div>
@@ -589,8 +593,16 @@ const MediaGallery: React.FC = () => {
                     <Button
                       variant="primary"
                       onClick={saveMetadataChanges}
+                      disabled={isSaving}
                     >
-                      Save Changes
+                      {isSaving ? (
+                        <>
+                          <Lucide icon="Loader2" className="w-4 h-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        'Save Changes'
+                      )}
                     </Button>
                     <Button
                       variant="danger"

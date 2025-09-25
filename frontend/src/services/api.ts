@@ -72,11 +72,18 @@ class ApiService {
           }
         }
         
-        // If refresh fails, clear auth data but don't auto-logout
-        // Let the auth hook handle the redirect
+        // If refresh fails, clear auth data and trigger storage event for same-tab detection
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
+
+        // Dispatch a custom event to notify the auth hook in the same tab
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'access_token',
+          oldValue: token,
+          newValue: null,
+          storageArea: localStorage
+        }));
       }
 
       const data = await response.json();

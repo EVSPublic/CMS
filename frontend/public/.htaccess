@@ -1,0 +1,21 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Don’t rewrite existing files or directories
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Proxy static API folders
+  RewriteRule ^uploads/(.*)$ http://localhost:5050/uploads/$1 [P,L]
+  RewriteRule ^thumbnails/(.*)$ http://localhost:5050/thumbnails/$1 [P,L]
+  RewriteRule ^media/(.*)$ http://localhost:5050/media/$1 [P,L]
+
+  # Fallback to index.html (SPA support)
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+<IfModule mod_proxy.c>
+  ProxyPreserveHost On
+</IfModule>

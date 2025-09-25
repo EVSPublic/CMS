@@ -3,18 +3,7 @@ import FormInput from '../Base/Form/FormInput';
 import FormLabel from '../Base/Form/FormLabel';
 import Button from '../Base/Button';
 import Lucide from '../Base/Lucide';
-
-interface MediaItem {
-  id: string;
-  filename: string;
-  url: string;
-  thumbnail: string;
-  size: number;
-  type: string;
-  alt: string;
-  tags: string[];
-  category: string;
-}
+import { mediaService, MediaItem, MediaFolder } from '@/services/media';
 
 interface ImageSelectorProps {
   isOpen: boolean;
@@ -31,79 +20,78 @@ const ImageSelector: React.FC<ImageSelectorProps> = ({
   selectedImageId,
   title = "Select Image"
 }) => {
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>([
-    {
-      id: '1',
-      filename: 'hero-image.jpg',
-      url: '/assets/img/hero-image.jpg',
-      thumbnail: '/assets/img/thumbnails/hero-image.jpg',
-      size: 245760,
-      type: 'image/jpeg',
-      alt: 'Hero section background image',
-      tags: ['hero', 'background'],
-      category: 'backgrounds'
-    },
-    {
-      id: '2',
-      filename: 'logo.svg',
-      url: '/assets/img/logo.svg',
-      thumbnail: '/assets/img/thumbnails/logo.svg',
-      size: 12340,
-      type: 'image/svg+xml',
-      alt: 'Company logo',
-      tags: ['logo', 'branding'],
-      category: 'logos'
-    },
-    {
-      id: '3',
-      filename: 'service-icon-1.svg',
-      url: '/assets/img/service-icon-1.svg',
-      thumbnail: '/assets/img/thumbnails/service-icon-1.svg',
-      size: 8960,
-      type: 'image/svg+xml',
-      alt: 'Service icon 1',
-      tags: ['icon', 'service'],
-      category: 'icons'
-    },
-    {
-      id: '4',
-      filename: 'charging-station.jpg',
-      url: '/assets/img/charging-station.jpg',
-      thumbnail: '/assets/img/thumbnails/charging-station.jpg',
-      size: 189340,
-      type: 'image/jpeg',
-      alt: 'Electric car charging station',
-      tags: ['charging', 'station', 'electric'],
-      category: 'content'
-    }
-  ]);
-
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [folders, setFolders] = useState<MediaFolder[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
+  const [currentBrandId] = useState<number>(1); // Default to brand 1
 
   const categories = [
     { id: 'all', name: 'All Images', count: mediaItems.length },
-    { id: 'logos', name: 'Logos', count: mediaItems.filter(item => item.category === 'logos').length },
-    { id: 'backgrounds', name: 'Backgrounds', count: mediaItems.filter(item => item.category === 'backgrounds').length },
-    { id: 'icons', name: 'Icons', count: mediaItems.filter(item => item.category === 'icons').length },
-    { id: 'content', name: 'Content Images', count: mediaItems.filter(item => item.category === 'content').length }
+    ...folders.map(folder => ({
+      id: folder.id.toString(),
+      name: folder.name,
+      count: mediaItems.filter(item =>
+        item.folders.some(f => f.id === folder.id)
+      ).length
+    }))
   ];
 
   const filteredItems = mediaItems.filter(item => {
     const matchesSearch = item.filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
                          item.alt.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+    const matchesCategory = selectedCategory === 'all' ||
+                           item.folders.some(f => f.id.toString() === selectedCategory);
     return matchesSearch && matchesCategory;
   });
 
+  // Load media items and folders when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      loadMediaData();
+    }
+  }, [isOpen]);
+
+  // Update selected item when selectedImageId changes
   useEffect(() => {
     if (selectedImageId) {
       const item = mediaItems.find(item => item.id === selectedImageId);
       setSelectedItem(item || null);
     }
   }, [selectedImageId, mediaItems]);
+
+  const loadMediaData = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Load media items
+      const mediaResponse = await mediaService.getMediaItems(currentBrandId, {
+        pageSize: 100 // Get all images
+      });
+
+      if (mediaResponse.ok && mediaResponse.data) {
+        setMediaItems(mediaResponse.data.mediaItems);
+      } else {
+        setError('Failed to load media items');
+      }
+
+      // Load folders
+      const foldersResponse = await mediaService.getMediaFolders(currentBrandId);
+      if (foldersResponse.ok && foldersResponse.data) {
+        setFolders(foldersResponse.data);
+      }
+    } catch (err) {
+      setError('Failed to load media data');
+      console.error('Media loading error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSelect = () => {
     if (selectedItem) {
@@ -172,7 +160,24 @@ const ImageSelector: React.FC<ImageSelectorProps> = ({
           <div className="flex-1 flex flex-col">
             {/* Image Grid */}
             <div className="flex-1 p-4 overflow-y-auto">
-              {filteredItems.length === 0 ? (
+              {loading ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <Lucide icon="Loader2" className="mx-auto h-12 w-12 text-gray-400 animate-spin mb-3" />
+                    <p className="text-gray-500 dark:text-gray-400">Loading images...</p>
+                  </div>
+                </div>
+              ) : error ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <Lucide icon="AlertCircle" className="mx-auto h-12 w-12 text-red-400 mb-3" />
+                    <p className="text-red-500 mb-3">{error}</p>
+                    <Button variant="primary" onClick={loadMediaData}>
+                      Try Again
+                    </Button>
+                  </div>
+                </div>
+              ) : filteredItems.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
                     <Lucide icon="ImageIcon" className="mx-auto h-12 w-12 text-gray-400 mb-3" />

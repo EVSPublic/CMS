@@ -25,7 +25,7 @@ export function useAuth(): UseAuthState & UseAuthActions {
   });
 
   useEffect(() => {
-    const initAuth = async () => {
+    const initAuth = () => {
       const user = authService.getUser();
       const isAuthenticated = authService.isAuthenticated();
       
@@ -45,6 +45,18 @@ export function useAuth(): UseAuthState & UseAuthActions {
     };
 
     initAuth();
+
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'access_token' || event.key === 'user') {
+        initAuth();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const login = useCallback(async (credentials: LoginRequest): Promise<{ success: boolean; error?: string }> => {
