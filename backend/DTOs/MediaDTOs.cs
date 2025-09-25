@@ -14,6 +14,7 @@ public class MediaItemDto
     public string Alt { get; set; } = string.Empty; // Frontend expects 'alt' not 'AltText'
     public List<string> Tags { get; set; } = new(); // Frontend expects tags array
     public string Category { get; set; } = string.Empty; // Frontend expects category
+    public List<MediaFolderDto> Folders { get; set; } = new(); // Folders this image belongs to
     public DateTime UploadDate { get; set; } // Frontend expects 'uploadDate'
     public string Status { get; set; } = string.Empty;
     public int? CreatedBy { get; set; }
@@ -64,4 +65,39 @@ public class PublishMediaItemDto
 {
     [Required]
     public bool Publish { get; set; } = true;
+}
+
+public class MediaFolderDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public int ItemCount { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+}
+
+public class CreateMediaFolderDto
+{
+    [Required]
+    [MaxLength(100)]
+    public string Name { get; set; } = string.Empty;
+
+    [MaxLength(500)]
+    public string? Description { get; set; }
+}
+
+public class UpdateMediaFolderDto
+{
+    [MaxLength(100)]
+    public string? Name { get; set; }
+
+    [MaxLength(500)]
+    public string? Description { get; set; }
+}
+
+public class UpdateMediaItemFoldersDto
+{
+    [Required]
+    public List<int> FolderIds { get; set; } = new();
 }

@@ -31,6 +31,8 @@ public class MediaController : ControllerBase
                 .Include(m => m.Brand)
                 .Include(m => m.Creator)
                 .Include(m => m.Updater)
+                .Include(m => m.MediaItemFolders)
+                    .ThenInclude(mif => mif.MediaFolder)
                 .Where(m => m.BrandId == brandId);
 
             if (!string.IsNullOrEmpty(search))
@@ -65,6 +67,13 @@ public class MediaController : ControllerBase
                     Alt = m.AltText ?? "",
                     Tags = new List<string>(), // TODO: Implement tags system
                     Category = "general", // TODO: Implement categories
+                    Folders = m.MediaItemFolders.Select(mif => new MediaFolderDto
+                    {
+                        Id = mif.MediaFolder.Id,
+                        Name = mif.MediaFolder.Name,
+                        Description = mif.MediaFolder.Description,
+                        ItemCount = 0 // Will be calculated separately if needed
+                    }).ToList(),
                     UploadDate = m.CreatedAt,
                     Status = m.Status.ToString(),
                     CreatedBy = m.CreatedBy,
@@ -442,6 +451,216 @@ public class MediaController : ControllerBase
         {
             _logger.LogError(ex, "Error uploading file for brand {BrandId}", brandId);
             return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while uploading file" } });
+        }
+    }
+
+    // FOLDER ENDPOINTS
+
+    [HttpGet("{brandId}/folders")]
+    public async Task<IActionResult> GetMediaFolders(int brandId)
+    {
+        try
+        {
+            var folders = await _context.MediaFolders
+                .Where(f => f.BrandId == brandId)
+                .Select(f => new MediaFolderDto
+                {
+                    Id = f.Id,
+                    Name = f.Name,
+                    Description = f.Description,
+                    ItemCount = f.MediaItemFolders.Count(),
+                    CreatedAt = f.CreatedAt,
+                    UpdatedAt = f.UpdatedAt
+                })
+                .OrderBy(f => f.Name)
+                .ToListAsync();
+
+            return Ok(folders);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving media folders for brand {BrandId}", brandId);
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while retrieving media folders" } });
+        }
+    }
+
+    [HttpPost("{brandId}/folders")]
+    [Authorize(Roles = "Admin,Editor")]
+    public async Task<IActionResult> CreateMediaFolder(int brandId, [FromBody] CreateMediaFolderDto request)
+    {
+        try
+        {
+            var existingFolder = await _context.MediaFolders
+                .Where(f => f.BrandId == brandId && f.Name == request.Name)
+                .FirstOrDefaultAsync();
+
+            if (existingFolder != null)
+            {
+                return BadRequest(new { error = new { code = "FOLDER_NAME_EXISTS", message = "A folder with this name already exists" } });
+            }
+
+            var folder = new MediaFolder
+            {
+                BrandId = brandId,
+                Name = request.Name,
+                Description = request.Description
+            };
+
+            _context.MediaFolders.Add(folder);
+            await _context.SaveChangesAsync();
+
+            var folderDto = new MediaFolderDto
+            {
+                Id = folder.Id,
+                Name = folder.Name,
+                Description = folder.Description,
+                ItemCount = 0,
+                CreatedAt = folder.CreatedAt,
+                UpdatedAt = folder.UpdatedAt
+            };
+
+            return Ok(folderDto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating media folder for brand {BrandId}", brandId);
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while creating media folder" } });
+        }
+    }
+
+    [HttpPut("{brandId}/folders/{folderId}")]
+    [Authorize(Roles = "Admin,Editor")]
+    public async Task<IActionResult> UpdateMediaFolder(int brandId, int folderId, [FromBody] UpdateMediaFolderDto request)
+    {
+        try
+        {
+            var folder = await _context.MediaFolders
+                .Where(f => f.Id == folderId && f.BrandId == brandId)
+                .FirstOrDefaultAsync();
+
+            if (folder == null)
+            {
+                return NotFound(new { error = new { code = "FOLDER_NOT_FOUND", message = "Media folder not found" } });
+            }
+
+            if (!string.IsNullOrEmpty(request.Name))
+            {
+                var existingFolder = await _context.MediaFolders
+                    .Where(f => f.BrandId == brandId && f.Name == request.Name && f.Id != folderId)
+                    .FirstOrDefaultAsync();
+
+                if (existingFolder != null)
+                {
+                    return BadRequest(new { error = new { code = "FOLDER_NAME_EXISTS", message = "A folder with this name already exists" } });
+                }
+
+                folder.Name = request.Name;
+            }
+
+            if (request.Description != null)
+            {
+                folder.Description = request.Description;
+            }
+
+            folder.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            var folderDto = new MediaFolderDto
+            {
+                Id = folder.Id,
+                Name = folder.Name,
+                Description = folder.Description,
+                ItemCount = await _context.MediaItemFolders.CountAsync(mif => mif.MediaFolderId == folderId),
+                CreatedAt = folder.CreatedAt,
+                UpdatedAt = folder.UpdatedAt
+            };
+
+            return Ok(folderDto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating media folder {FolderId} for brand {BrandId}", folderId, brandId);
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while updating media folder" } });
+        }
+    }
+
+    [HttpDelete("{brandId}/folders/{folderId}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteMediaFolder(int brandId, int folderId)
+    {
+        try
+        {
+            var folder = await _context.MediaFolders
+                .Where(f => f.Id == folderId && f.BrandId == brandId)
+                .FirstOrDefaultAsync();
+
+            if (folder == null)
+            {
+                return NotFound(new { error = new { code = "FOLDER_NOT_FOUND", message = "Media folder not found" } });
+            }
+
+            _context.MediaFolders.Remove(folder);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Media folder deleted successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting media folder {FolderId} for brand {BrandId}", folderId, brandId);
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while deleting media folder" } });
+        }
+    }
+
+    [HttpPut("{brandId}/{mediaItemId}/folders")]
+    [Authorize(Roles = "Admin,Editor")]
+    public async Task<IActionResult> UpdateMediaItemFolders(int brandId, int mediaItemId, [FromBody] UpdateMediaItemFoldersDto request)
+    {
+        try
+        {
+            var mediaItem = await _context.MediaItems
+                .Where(m => m.Id == mediaItemId && m.BrandId == brandId)
+                .FirstOrDefaultAsync();
+
+            if (mediaItem == null)
+            {
+                return NotFound(new { error = new { code = "MEDIA_ITEM_NOT_FOUND", message = "Media item not found" } });
+            }
+
+            // Verify all folders exist and belong to the brand
+            var folders = await _context.MediaFolders
+                .Where(f => request.FolderIds.Contains(f.Id) && f.BrandId == brandId)
+                .ToListAsync();
+
+            if (folders.Count != request.FolderIds.Count)
+            {
+                return BadRequest(new { error = new { code = "INVALID_FOLDER_IDS", message = "One or more folder IDs are invalid" } });
+            }
+
+            // Remove existing folder relationships
+            var existingRelationships = await _context.MediaItemFolders
+                .Where(mif => mif.MediaItemId == mediaItemId)
+                .ToListAsync();
+
+            _context.MediaItemFolders.RemoveRange(existingRelationships);
+
+            // Add new folder relationships
+            foreach (var folderId in request.FolderIds)
+            {
+                _context.MediaItemFolders.Add(new MediaItemFolder
+                {
+                    MediaItemId = mediaItemId,
+                    MediaFolderId = folderId
+                });
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Media item folders updated successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating folders for media item {MediaItemId} in brand {BrandId}", mediaItemId, brandId);
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while updating media item folders" } });
         }
     }
 }

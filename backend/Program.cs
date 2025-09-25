@@ -195,19 +195,12 @@ app.MapGet("/thumbnails/{brandId}/{filename}", (string brandId, string filename,
 
         try
         {
-            Console.WriteLine($"Attempting to compress: {originalPath}");
-
             // Load and compress image with SkiaSharp
             using var inputStream = File.OpenRead(originalPath);
             using var originalBitmap = SKBitmap.Decode(inputStream);
 
             if (originalBitmap == null)
-            {
-                Console.WriteLine("Failed to decode bitmap");
                 throw new InvalidOperationException("Could not decode image");
-            }
-
-            Console.WriteLine($"Original size: {originalBitmap.Width}x{originalBitmap.Height}");
 
             // Calculate thumbnail size (max 300x300, maintain aspect ratio)
             var maxSize = 300;
@@ -218,8 +211,6 @@ app.MapGet("/thumbnails/{brandId}/{filename}", (string brandId, string filename,
             var newWidth = (int)(originalBitmap.Width * ratio);
             var newHeight = (int)(originalBitmap.Height * ratio);
 
-            Console.WriteLine($"New size: {newWidth}x{newHeight}");
-
             // Create resized bitmap
             using var resizedBitmap = originalBitmap.Resize(new SKImageInfo(newWidth, newHeight), SKSamplingOptions.Default);
             using var image = SKImage.FromBitmap(resizedBitmap);
@@ -227,13 +218,10 @@ app.MapGet("/thumbnails/{brandId}/{filename}", (string brandId, string filename,
             // Encode as JPEG with compression
             using var data = image.Encode(SKEncodedImageFormat.Jpeg, 80); // 80% quality
 
-            Console.WriteLine($"Compressed size: {data.Size} bytes");
-
             return Results.File(data.ToArray(), "image/jpeg");
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"Compression failed: {ex.Message}");
             // If compression fails, return original
             var contentType = extension switch
             {

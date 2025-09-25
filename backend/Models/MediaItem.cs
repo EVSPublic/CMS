@@ -49,4 +49,6 @@ public class MediaItem
 
     [ForeignKey("UpdatedBy")]
     public virtual User? Updater { get; set; }
+
+    public virtual ICollection<MediaItemFolder> MediaItemFolders { get; set; } = new List<MediaItemFolder>();
 }

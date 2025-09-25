@@ -1,5 +1,14 @@
 import { api, ApiResponse } from './api';
 
+export interface MediaFolder {
+  id: number;
+  name: string;
+  description?: string;
+  itemCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface MediaItem {
   id: string;
   brandId: number;
@@ -11,6 +20,7 @@ export interface MediaItem {
   alt: string;
   tags: string[];
   category: string;
+  folders: MediaFolder[];
   uploadDate: string;
   status: string;
   createdBy: number;
@@ -54,6 +64,20 @@ export interface UpdateMediaItemRequest {
 
 export interface PublishMediaItemRequest {
   publish: boolean;
+}
+
+export interface CreateMediaFolderRequest {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateMediaFolderRequest {
+  name?: string;
+  description?: string;
+}
+
+export interface UpdateMediaItemFoldersRequest {
+  folderIds: number[];
 }
 
 class MediaService {
@@ -201,6 +225,65 @@ class MediaService {
         }
       };
     }
+  }
+
+  // Folder methods
+  async getMediaFolders(brandId: number): Promise<ApiResponse<MediaFolder[]>> {
+    const response = await api.get<any>(`/api/v1/media/${brandId}/folders`);
+
+    if (response.ok === false) {
+      return response as ApiResponse<MediaFolder[]>;
+    }
+
+    return {
+      ok: true,
+      data: response as MediaFolder[]
+    };
+  }
+
+  async createMediaFolder(
+    brandId: number,
+    request: CreateMediaFolderRequest
+  ): Promise<ApiResponse<MediaFolder>> {
+    const response = await api.post<any>(`/api/v1/media/${brandId}/folders`, request);
+
+    if (response.ok === false) {
+      return response as ApiResponse<MediaFolder>;
+    }
+
+    return {
+      ok: true,
+      data: response as MediaFolder
+    };
+  }
+
+  async updateMediaFolder(
+    brandId: number,
+    folderId: number,
+    request: UpdateMediaFolderRequest
+  ): Promise<ApiResponse<MediaFolder>> {
+    const response = await api.put<any>(`/api/v1/media/${brandId}/folders/${folderId}`, request);
+
+    if (response.ok === false) {
+      return response as ApiResponse<MediaFolder>;
+    }
+
+    return {
+      ok: true,
+      data: response as MediaFolder
+    };
+  }
+
+  async deleteMediaFolder(brandId: number, folderId: number): Promise<ApiResponse<any>> {
+    return api.delete(`/api/v1/media/${brandId}/folders/${folderId}`);
+  }
+
+  async updateMediaItemFolders(
+    brandId: number,
+    mediaItemId: string,
+    request: UpdateMediaItemFoldersRequest
+  ): Promise<ApiResponse<any>> {
+    return api.put(`/api/v1/media/${brandId}/${mediaItemId}/folders`, request);
   }
 }
 

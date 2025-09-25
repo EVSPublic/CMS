@@ -3,14 +3,9 @@ import FormInput from '../../components/Base/Form/FormInput';
 import FormLabel from '../../components/Base/Form/FormLabel';
 import Button from '../../components/Base/Button';
 import Lucide from '../../components/Base/Lucide';
-import { mediaService, MediaItem, MediaResponse } from '../../services/media';
+import { mediaService, MediaItem, MediaResponse, MediaFolder } from '../../services/media';
 import { authService } from '../../services/auth';
 
-interface MediaFolder {
-  id: string;
-  name: string;
-  itemCount: number;
-}
 
 const MediaGallery: React.FC = () => {
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
@@ -20,26 +15,21 @@ const MediaGallery: React.FC = () => {
   const [currentBrandId, setCurrentBrandId] = useState<number>(1); // Default to brand 1
   const [totalCount, setTotalCount] = useState(0);
 
-  const [folders] = useState<MediaFolder[]>([
-    { id: 'all', name: 'All Images', itemCount: mediaItems.length },
-    { id: 'logos', name: 'Logos', itemCount: 1 },
-    { id: 'backgrounds', name: 'Backgrounds', itemCount: 1 },
-    { id: 'icons', name: 'Icons', itemCount: 0 },
-    { id: 'content', name: 'Content Images', itemCount: 0 }
-  ]);
+  const [folders, setFolders] = useState<MediaFolder[]>([]);
 
-  const [selectedFolder, setSelectedFolder] = useState('all');
+  const [selectedFolder, setSelectedFolder] = useState<string | number>('all');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isDragging, setIsDragging] = useState(false);
   const [previewItem, setPreviewItem] = useState<MediaItem | null>(null);
-  const [editingMetadata, setEditingMetadata] = useState<{alt: string; tags: string} | null>(null);
+  const [editingMetadata, setEditingMetadata] = useState<{alt: string; selectedFolders: number[]} | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadMediaItems();
+    loadFolders();
   }, [currentBrandId]);
 
   const loadMediaItems = async () => {
@@ -65,10 +55,24 @@ const MediaGallery: React.FC = () => {
     }
   };
 
+  const loadFolders = async () => {
+    try {
+      const response = await mediaService.getMediaFolders(currentBrandId);
+      if (response.ok && response.data) {
+        setFolders(response.data);
+      } else {
+        console.error('Failed to load folders:', response.error);
+      }
+    } catch (err) {
+      console.error('Failed to load folders:', err);
+    }
+  };
+
   const filteredItems = mediaItems.filter(item => {
     const matchesSearch = item.filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesFolder = selectedFolder === 'all' || item.category === selectedFolder;
+    const matchesFolder = selectedFolder === 'all' ||
+                         (typeof selectedFolder === 'number' && item.folders.some(f => f.id === selectedFolder));
     return matchesSearch && matchesFolder;
   });
 
@@ -178,7 +182,7 @@ const MediaGallery: React.FC = () => {
     setPreviewItem(item);
     setEditingMetadata({
       alt: item.alt || '',
-      tags: item.tags.join(', ')
+      selectedFolders: item.folders.map(f => f.id)
     });
   };
 
@@ -191,6 +195,7 @@ const MediaGallery: React.FC = () => {
     if (!previewItem || !editingMetadata) return;
 
     try {
+      // Update alt text first
       const updateData = {
         fileName: previewItem.filename,
         altText: editingMetadata.alt.trim(),
@@ -200,19 +205,34 @@ const MediaGallery: React.FC = () => {
       const response = await mediaService.updateMediaItem(currentBrandId, previewItem.id, updateData);
 
       if (response.ok && response.data) {
-        // Update the item in the list
-        setMediaItems(prev => prev.map(item =>
-          item.id === previewItem.id ? response.data! : item
-        ));
+        // Update folders separately
+        const foldersResponse = await mediaService.updateMediaItemFolders(
+          currentBrandId,
+          previewItem.id,
+          { folderIds: editingMetadata.selectedFolders }
+        );
 
-        // Update preview item
-        setPreviewItem(response.data);
-        setEditingMetadata({
-          alt: response.data.alt || '',
-          tags: response.data.tags.join(', ')
-        });
+        if (foldersResponse.ok) {
+          // Reload media items to get updated folder information
+          await loadMediaItems();
 
-        alert('Metadata updated successfully');
+          // Find the updated item to update preview
+          const updatedItems = await mediaService.getMediaItems(currentBrandId, { pageSize: 100 });
+          if (updatedItems.ok && updatedItems.data) {
+            const updatedItem = updatedItems.data.mediaItems.find(item => item.id === previewItem.id);
+            if (updatedItem) {
+              setPreviewItem(updatedItem);
+              setEditingMetadata({
+                alt: updatedItem.alt || '',
+                selectedFolders: updatedItem.folders.map(f => f.id)
+              });
+            }
+          }
+
+          alert('Metadata updated successfully');
+        } else {
+          alert('Failed to update folders: ' + (foldersResponse.error?.message || 'Unknown error'));
+        }
       } else {
         console.error('Update failed:', response.error);
         alert('Failed to update metadata: ' + response.error?.message);
@@ -264,6 +284,22 @@ const MediaGallery: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 shadow p-4 mb-4">
             <h3 className="font-semibold mb-3">Folders</h3>
             <div className="space-y-1">
+              {/* All Images folder */}
+              <button
+                onClick={() => setSelectedFolder('all')}
+                className={`w-full text-left px-3 py-2 text-sm font-medium transition-colors ${
+                  selectedFolder === 'all'
+                    ? 'bg-primary text-white'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <span>All Images</span>
+                  <span className="text-xs opacity-75">({mediaItems.length})</span>
+                </div>
+              </button>
+
+              {/* Dynamic folders from API */}
               {folders.map(folder => (
                 <button
                   key={folder.id}
@@ -518,12 +554,26 @@ const MediaGallery: React.FC = () => {
                   </div>
 
                   <div>
-                    <FormLabel>Tags (comma separated)</FormLabel>
-                    <FormInput
-                      value={editingMetadata?.tags || ''}
-                      onChange={(e) => setEditingMetadata(prev => prev ? { ...prev, tags: e.target.value } : { alt: '', tags: e.target.value })}
-                      placeholder="Enter tags..."
-                    />
+                    <FormLabel>Folders</FormLabel>
+                    <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded p-3">
+                      {folders.map(folder => (
+                        <label key={folder.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={editingMetadata?.selectedFolders.includes(folder.id) || false}
+                            onChange={(e) => {
+                              if (!editingMetadata) return;
+                              const selectedFolders = e.target.checked
+                                ? [...editingMetadata.selectedFolders, folder.id]
+                                : editingMetadata.selectedFolders.filter(id => id !== folder.id);
+                              setEditingMetadata({ ...editingMetadata, selectedFolders });
+                            }}
+                            className="rounded"
+                          />
+                          <span className="text-sm">{folder.name}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
 
                   <div>

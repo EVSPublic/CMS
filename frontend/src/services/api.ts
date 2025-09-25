@@ -91,7 +91,16 @@ class ApiService {
         };
       }
 
-      return data;
+      // If the response has the ApiResponse structure, return as-is
+      if (data.hasOwnProperty('ok')) {
+        return data;
+      }
+
+      // Otherwise, wrap the response in our ApiResponse structure
+      return {
+        ok: true,
+        data: data
+      };
     } catch (error) {
       return {
         ok: false,

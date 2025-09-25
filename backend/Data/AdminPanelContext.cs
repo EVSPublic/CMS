@@ -18,6 +18,8 @@ public class AdminPanelContext : IdentityDbContext<User, IdentityRole<int>, int>
     public DbSet<Partnership> Partnerships { get; set; }
     public DbSet<MediaFile> MediaFiles { get; set; }
     public DbSet<MediaItem> MediaItems { get; set; }
+    public DbSet<MediaFolder> MediaFolders { get; set; }
+    public DbSet<MediaItemFolder> MediaItemFolders { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -157,10 +159,77 @@ public class AdminPanelContext : IdentityDbContext<User, IdentityRole<int>, int>
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
+        // Configure MediaItem entity
+        builder.Entity<MediaItem>(entity =>
+        {
+            entity.Property(e => e.Status).HasConversion<string>();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+
+            entity.HasOne(e => e.Brand)
+                .WithMany()
+                .HasForeignKey(e => e.BrandId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Creator)
+                .WithMany()
+                .HasForeignKey(e => e.CreatedBy)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.Updater)
+                .WithMany()
+                .HasForeignKey(e => e.UpdatedBy)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configure MediaFolder entity
+        builder.Entity<MediaFolder>(entity =>
+        {
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+            entity.HasIndex(e => new { e.BrandId, e.Name }).IsUnique();
+
+            entity.HasOne(e => e.Brand)
+                .WithMany()
+                .HasForeignKey(e => e.BrandId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure MediaItemFolder entity (Many-to-Many relationship)
+        builder.Entity<MediaItemFolder>(entity =>
+        {
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.HasIndex(e => new { e.MediaItemId, e.MediaFolderId }).IsUnique();
+
+            entity.HasOne(e => e.MediaItem)
+                .WithMany(e => e.MediaItemFolders)
+                .HasForeignKey(e => e.MediaItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.MediaFolder)
+                .WithMany(e => e.MediaItemFolders)
+                .HasForeignKey(e => e.MediaFolderId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         // Seed initial data
         builder.Entity<Brand>().HasData(
             new Brand { Id = 1, Name = "Ovolt", Domain = "ovolt.com" },
             new Brand { Id = 2, Name = "Sharz.net", Domain = "sharz.net" }
+        );
+
+        // Seed default media folders for each brand
+        builder.Entity<MediaFolder>().HasData(
+            // Ovolt folders
+            new MediaFolder { Id = 1, BrandId = 1, Name = "Logos", Description = "Brand logos and variations" },
+            new MediaFolder { Id = 2, BrandId = 1, Name = "Backgrounds", Description = "Background images and textures" },
+            new MediaFolder { Id = 3, BrandId = 1, Name = "Icons", Description = "Icons and small graphics" },
+            new MediaFolder { Id = 4, BrandId = 1, Name = "Content Images", Description = "General content images" },
+            // Sharz.net folders
+            new MediaFolder { Id = 5, BrandId = 2, Name = "Logos", Description = "Brand logos and variations" },
+            new MediaFolder { Id = 6, BrandId = 2, Name = "Backgrounds", Description = "Background images and textures" },
+            new MediaFolder { Id = 7, BrandId = 2, Name = "Icons", Description = "Icons and small graphics" },
+            new MediaFolder { Id = 8, BrandId = 2, Name = "Content Images", Description = "General content images" }
         );
     }
 }
