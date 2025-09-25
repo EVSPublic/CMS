@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Drawing;
+using System.Drawing.Imaging;
 using AdminPanel.Data;
 using AdminPanel.Models;
 using AdminPanel.Services;
@@ -155,7 +157,7 @@ app.MapGet("/media/{brandId}/{filename}", (string brandId, string filename, IWeb
     return Results.NotFound();
 });
 
-// Custom route for thumbnails - fallback to original image for now
+// Custom route for thumbnails with compression
 app.MapGet("/thumbnails/{brandId}/{filename}", (string brandId, string filename, IWebHostEnvironment env) =>
 {
     // First try to find actual thumbnail
@@ -175,21 +177,78 @@ app.MapGet("/thumbnails/{brandId}/{filename}", (string brandId, string filename,
         return Results.File(thumbnailPath, contentType);
     }
 
-    // Fallback to original image
+    // Fallback to original image with compression
     var originalPath = Path.Combine(env.WebRootPath, "uploads", brandId, filename);
     if (File.Exists(originalPath))
     {
         var extension = Path.GetExtension(filename).ToLowerInvariant();
-        var contentType = extension switch
+
+        // For non-image files, return as-is
+        if (extension is not (".jpg" or ".jpeg" or ".png" or ".gif" or ".webp"))
         {
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".png" => "image/png",
-            ".gif" => "image/gif",
-            ".webp" => "image/webp",
-            ".svg" => "image/svg+xml",
-            _ => "application/octet-stream"
-        };
-        return Results.File(originalPath, contentType);
+            var contentType = extension switch
+            {
+                ".svg" => "image/svg+xml",
+                _ => "application/octet-stream"
+            };
+            return Results.File(originalPath, contentType);
+        }
+
+        try
+        {
+            // Compress and resize image
+            using var originalImage = Image.FromFile(originalPath);
+
+            // Calculate thumbnail size (max 300x300, maintain aspect ratio)
+            var maxSize = 300;
+            var ratioX = (double)maxSize / originalImage.Width;
+            var ratioY = (double)maxSize / originalImage.Height;
+            var ratio = Math.Min(ratioX, ratioY);
+
+            var newWidth = (int)(originalImage.Width * ratio);
+            var newHeight = (int)(originalImage.Height * ratio);
+
+            using var thumbnail = new Bitmap(newWidth, newHeight);
+            using var graphics = Graphics.FromImage(thumbnail);
+
+            // High quality resize
+            graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+
+            graphics.DrawImage(originalImage, 0, 0, newWidth, newHeight);
+
+            // Save to memory stream with compression
+            using var memoryStream = new MemoryStream();
+            var encoder = ImageCodecInfo.GetImageEncoders().FirstOrDefault(c => c.FormatID == ImageFormat.Jpeg.Guid);
+            if (encoder != null)
+            {
+                var encoderParams = new EncoderParameters(1);
+                encoderParams.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 80L); // 80% quality
+                thumbnail.Save(memoryStream, encoder, encoderParams);
+            }
+            else
+            {
+                thumbnail.Save(memoryStream, ImageFormat.Jpeg);
+            }
+            memoryStream.Position = 0;
+
+            var compressedData = memoryStream.ToArray();
+            return Results.File(compressedData, "image/jpeg");
+        }
+        catch
+        {
+            // If compression fails, return original
+            var contentType = extension switch
+            {
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".gif" => "image/gif",
+                ".webp" => "image/webp",
+                _ => "application/octet-stream"
+            };
+            return Results.File(originalPath, contentType);
+        }
     }
 
     return Results.NotFound();
