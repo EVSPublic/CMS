@@ -30,6 +30,30 @@ export interface PublishContentPageDto {
   publish: boolean;
 }
 
+// Individual Solutions page content structure matching backend
+export interface IndividualSolutionsPageContent {
+  meta: {
+    title: string;
+    description: string;
+    keywords: string;
+  };
+  hero: {
+    image: string;
+  };
+  mainSolution: {
+    title: string;
+    description: string;
+    image: string;
+  };
+  bottomItems: Array<{
+    image: string;
+    paragraph: string;
+  }>;
+  footerSection: {
+    altText: string;
+  };
+}
+
 // About page content structure matching backend
 export interface AboutPageContent {
   meta: {
