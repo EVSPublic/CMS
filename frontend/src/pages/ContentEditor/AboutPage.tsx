@@ -46,12 +46,30 @@ const AboutPageEditor: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentBrandId] = useState<number>(1); // Default to brand 1 (Ovolt)
+  // Get current brand ID from localStorage
+  const getCurrentBrandId = (): number => {
+    const selectedBrand = localStorage.getItem('selectedBrand') || 'Ovolt';
+    return selectedBrand === 'Ovolt' ? 1 : 2; // Ovolt = 1, Sharz.net = 2
+  };
+
+  const [currentBrandId, setCurrentBrandId] = useState<number>(getCurrentBrandId());
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
   // Load content on component mount
   useEffect(() => {
     loadContent();
+  }, []);
+
+  // Listen for brand changes and reload content
+  useEffect(() => {
+    const handleBrandChange = () => {
+      const newBrandId = getCurrentBrandId();
+      setCurrentBrandId(newBrandId);
+      loadContent(); // Reload content for new brand
+    };
+
+    window.addEventListener('brandChanged', handleBrandChange);
+    return () => window.removeEventListener('brandChanged', handleBrandChange);
   }, []);
 
   const loadContent = async () => {

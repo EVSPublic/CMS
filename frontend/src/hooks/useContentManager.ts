@@ -222,6 +222,19 @@ export const useContentManager = (options: UseContentManagerOptions): UseContent
     refreshBackups();
   }, [pageId]);
 
+  // Listen for brand changes and reload content
+  useEffect(() => {
+    const handleBrandChange = () => {
+      // Brand changed, reload content and backups
+      loadContent();
+      refreshBackups();
+    };
+
+    // Custom event for brand changes
+    window.addEventListener('brandChanged', handleBrandChange);
+    return () => window.removeEventListener('brandChanged', handleBrandChange);
+  }, [loadContent, refreshBackups]);
+
   // Warning on page unload with unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {

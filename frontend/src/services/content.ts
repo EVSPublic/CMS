@@ -186,8 +186,16 @@ class ContentService {
   async getIndexPageContent(brandId: number): Promise<ApiResponse<IndexPageContent>> {
     const response = await this.getContentPage(brandId, 'index');
     if (response.ok && response.data) {
-      // Extract content from the ContentPageDto structure
+      // Extract content from the ContentPageDto structure and merge meta fields
       const content = response.data.content as IndexPageContent;
+
+      // Merge meta fields from DTO into content structure
+      if (content.meta) {
+        content.meta.title = response.data.metaTitle || content.meta.title || '';
+        content.meta.description = response.data.metaDescription || content.meta.description || '';
+        content.meta.keywords = response.data.metaKeywords || content.meta.keywords || '';
+      }
+
       return {
         ok: true,
         data: content
@@ -222,8 +230,16 @@ class ContentService {
   async getAboutPageContent(brandId: number): Promise<ApiResponse<AboutPageContent>> {
     const response = await this.getContentPage(brandId, 'about');
     if (response.ok && response.data) {
-      // Extract content from the ContentPageDto structure
+      // Extract content from the ContentPageDto structure and merge meta fields
       const content = response.data.content as AboutPageContent;
+
+      // Merge meta fields from DTO into content structure
+      if (content.meta) {
+        content.meta.title = response.data.metaTitle || content.meta.title || '';
+        content.meta.description = response.data.metaDescription || content.meta.description || '';
+        content.meta.keywords = response.data.metaKeywords || content.meta.keywords || '';
+      }
+
       return {
         ok: true,
         data: content

@@ -62,6 +62,14 @@ function Main() {
   const handleBrandChange = (brand: string) => {
     setSelectedBrand(brand);
     localStorage.setItem('selectedBrand', brand);
+
+    // Dispatch custom event to notify content managers
+    window.dispatchEvent(new CustomEvent('brandChanged', { detail: { brand } }));
+
+    // Refresh the page to ensure complete reload
+    setTimeout(() => {
+      window.location.reload();
+    }, 100); // Small delay to ensure localStorage is saved
   };
 
   // Generate breadcrumbs based on current location and menu structure

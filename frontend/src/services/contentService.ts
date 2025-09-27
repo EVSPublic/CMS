@@ -32,6 +32,17 @@ export class ContentService {
     this.apiKey = apiKey;
   }
 
+  // Get current brand/project from localStorage
+  private getCurrentBrand(): string {
+    return localStorage.getItem('selectedBrand') || 'Ovolt';
+  }
+
+  // Generate brand-specific storage key
+  private getStorageKey(pageId: string, suffix: string = ''): string {
+    const brand = this.getCurrentBrand().toLowerCase().replace(/[^a-z0-9]/g, '-');
+    return suffix ? `${brand}_${pageId}_${suffix}` : `${brand}_content_${pageId}`;
+  }
+
   // Enhanced validation with warnings
   validateContent(content: any, validationRules: any): ContentValidationResult {
     const errors: string[] = [];
@@ -133,7 +144,7 @@ export class ContentService {
       };
 
       // For now, save to localStorage as a fallback
-      const storageKey = `content_${pageId}`;
+      const storageKey = this.getStorageKey(pageId);
       localStorage.setItem(storageKey, JSON.stringify(payload));
 
       // TODO: Implement actual API call
@@ -175,7 +186,7 @@ export class ContentService {
   async loadContent(pageId: string): Promise<any> {
     try {
       // First try localStorage
-      const storageKey = `content_${pageId}`;
+      const storageKey = this.getStorageKey(pageId);
       const stored = localStorage.getItem(storageKey);
 
       if (stored) {
@@ -230,7 +241,7 @@ export class ContentService {
       timestamp: b.timestamp.toISOString()
     }));
 
-    localStorage.setItem(`backups_${pageId}`, JSON.stringify(serializedBackups));
+    localStorage.setItem(this.getStorageKey(pageId, 'backups'), JSON.stringify(serializedBackups));
 
     return backup;
   }
@@ -238,7 +249,7 @@ export class ContentService {
   // Get backups for a page
   getBackups(pageId: string): ContentBackup[] {
     try {
-      const stored = localStorage.getItem(`backups_${pageId}`);
+      const stored = localStorage.getItem(this.getStorageKey(pageId, 'backups'));
       if (!stored) return [];
 
       const backups = JSON.parse(stored);
@@ -291,7 +302,7 @@ export class ContentService {
         timestamp: b.timestamp.toISOString()
       }));
 
-      localStorage.setItem(`backups_${pageId}`, JSON.stringify(serializedBackups));
+      localStorage.setItem(this.getStorageKey(pageId, 'backups'), JSON.stringify(serializedBackups));
       return true;
     } catch {
       return false;
