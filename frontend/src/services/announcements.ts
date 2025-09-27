@@ -54,10 +54,16 @@ export interface AnnouncementsResponse {
 }
 
 class AnnouncementsService {
+  private getSelectedBrandId(): number {
+    const selectedBrand = localStorage.getItem('selectedBrand') || 'Ovolt';
+    return selectedBrand === 'Ovolt' ? 1 : 2; // Ovolt = 1, Sharz.net = 2
+  }
+
   async getAnnouncements(
-    brandId: number,
+    brandId?: number,
     searchRequest: AnnouncementSearchRequest = {}
   ): Promise<ApiResponse<AnnouncementsResponse>> {
+    const actualBrandId = brandId || this.getSelectedBrandId();
     const params = new URLSearchParams();
 
     if (searchRequest.page) params.append('page', searchRequest.page.toString());
@@ -66,39 +72,44 @@ class AnnouncementsService {
     if (searchRequest.type) params.append('type', searchRequest.type);
     if (searchRequest.status) params.append('status', searchRequest.status);
 
-    const endpoint = `/api/v1/announcements/${brandId}${params.toString() ? `?${params.toString()}` : ''}`;
+    const endpoint = `/api/v1/announcements/${actualBrandId}${params.toString() ? `?${params.toString()}` : ''}`;
     return api.get<AnnouncementsResponse>(endpoint);
   }
 
-  async getAnnouncementById(brandId: number, id: number): Promise<ApiResponse<Announcement>> {
-    return api.get<Announcement>(`/api/v1/announcements/${brandId}/${id}`);
+  async getAnnouncementById(id: number, brandId?: number): Promise<ApiResponse<Announcement>> {
+    const actualBrandId = brandId || this.getSelectedBrandId();
+    return api.get<Announcement>(`/api/v1/announcements/${actualBrandId}/${id}`);
   }
 
   async createAnnouncement(
-    brandId: number,
-    request: CreateAnnouncementRequest
+    request: CreateAnnouncementRequest,
+    brandId?: number
   ): Promise<ApiResponse<Announcement>> {
-    return api.post<Announcement>(`/api/v1/announcements/${brandId}`, request);
+    const actualBrandId = brandId || this.getSelectedBrandId();
+    return api.post<Announcement>(`/api/v1/announcements/${actualBrandId}`, request);
   }
 
   async updateAnnouncement(
-    brandId: number,
     id: number,
-    request: UpdateAnnouncementRequest
+    request: UpdateAnnouncementRequest,
+    brandId?: number
   ): Promise<ApiResponse<Announcement>> {
-    return api.put<Announcement>(`/api/v1/announcements/${brandId}/${id}`, request);
+    const actualBrandId = brandId || this.getSelectedBrandId();
+    return api.put<Announcement>(`/api/v1/announcements/${actualBrandId}/${id}`, request);
   }
 
-  async deleteAnnouncement(brandId: number, id: number): Promise<ApiResponse<any>> {
-    return api.delete(`/api/v1/announcements/${brandId}/${id}`);
+  async deleteAnnouncement(id: number, brandId?: number): Promise<ApiResponse<any>> {
+    const actualBrandId = brandId || this.getSelectedBrandId();
+    return api.delete(`/api/v1/announcements/${actualBrandId}/${id}`);
   }
 
   async publishAnnouncement(
-    brandId: number,
     id: number,
-    request: PublishAnnouncementRequest
+    request: PublishAnnouncementRequest,
+    brandId?: number
   ): Promise<ApiResponse<any>> {
-    return api.post(`/api/v1/announcements/${brandId}/${id}/publish`, request);
+    const actualBrandId = brandId || this.getSelectedBrandId();
+    return api.post(`/api/v1/announcements/${actualBrandId}/${id}/publish`, request);
   }
 }
 

@@ -1,16 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FormInput from '../../components/Base/Form/FormInput';
 import FormTextarea from '../../components/Base/Form/FormTextarea';
 import FormLabel from '../../components/Base/Form/FormLabel';
 import Button from '../../components/Base/Button';
 import Tab from '../../components/Base/Headless/Tab';
 import ImageInput from '../../components/ImageInput';
+import Lucide from '../../components/Base/Lucide';
+import { announcementsService, Announcement as ApiAnnouncement } from '../../services/announcements';
 
 interface Announcement {
-  id: string;
+  id: number;
   title: string;
   content: string;
-  image: string;
+  imageUrl: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 interface AnnouncementsPageContent {
@@ -40,6 +45,66 @@ const initialContent: AnnouncementsPageContent = {
 const AnnouncementsPageEditor: React.FC = () => {
   const [content, setContent] = useState<AnnouncementsPageContent>(initialContent);
   const [isSaving, setIsSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Get current brand ID from localStorage
+  const getCurrentBrandId = (): number => {
+    const selectedBrand = localStorage.getItem('selectedBrand') || 'Ovolt';
+    return selectedBrand === 'Ovolt' ? 1 : 2; // Ovolt = 1, Sharz.net = 2
+  };
+
+  const [currentBrandId, setCurrentBrandId] = useState<number>(getCurrentBrandId());
+
+  // Load announcements on component mount
+  useEffect(() => {
+    loadAnnouncements();
+  }, []);
+
+  // Listen for brand changes and reload announcements
+  useEffect(() => {
+    const handleBrandChange = () => {
+      const newBrandId = getCurrentBrandId();
+      setCurrentBrandId(newBrandId);
+      loadAnnouncements(newBrandId);
+    };
+
+    window.addEventListener('brandChanged', handleBrandChange);
+    return () => window.removeEventListener('brandChanged', handleBrandChange);
+  }, []);
+
+  const loadAnnouncements = async (brandId?: number) => {
+    const actualBrandId = brandId || currentBrandId;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await announcementsService.getAnnouncements(actualBrandId);
+
+      if (response.ok && response.data) {
+        const apiAnnouncements = response.data.announcements;
+        const convertedAnnouncements: Announcement[] = apiAnnouncements.map(a => ({
+          id: a.id,
+          title: a.title,
+          content: a.content,
+          imageUrl: a.imageUrl || '',
+          status: a.status,
+          startDate: a.startDate,
+          endDate: a.endDate
+        }));
+
+        setContent(prev => ({
+          ...prev,
+          announcements: convertedAnnouncements
+        }));
+      }
+    } catch (err) {
+      setError('Duyurular yüklenirken bir hata oluştu');
+      console.error('Announcements load error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const updateContent = (path: string, value: any) => {
     const keys = path.split('.');
@@ -67,24 +132,64 @@ const AnnouncementsPageEditor: React.FC = () => {
     }));
   };
 
-  const addAnnouncement = () => {
-    const newAnnouncement: Announcement = {
-      id: Date.now().toString(),
-      title: "",
-      content: "",
-      image: ""
-    };
-    setContent(prev => ({
-      ...prev,
-      announcements: [...prev.announcements, newAnnouncement]
-    }));
+  const addAnnouncement = async () => {
+    try {
+      const response = await announcementsService.createAnnouncement({
+        title: "Yeni Duyuru",
+        content: "Duyuru içeriği buraya gelecek...",
+        imageUrl: ""
+      });
+
+      if (response.ok) {
+        await loadAnnouncements(); // Reload to get updated list
+      } else {
+        alert('Duyuru eklenirken bir hata oluştu: ' + (response.error?.message || 'Bilinmeyen hata'));
+      }
+    } catch (error) {
+      console.error('Add announcement error:', error);
+      alert('Duyuru eklenirken bir hata oluştu!');
+    }
   };
 
-  const removeAnnouncement = (index: number) => {
-    setContent(prev => ({
-      ...prev,
-      announcements: prev.announcements.filter((_, i) => i !== index)
-    }));
+  const removeAnnouncement = async (index: number) => {
+    const announcement = content.announcements[index];
+    if (announcement && typeof announcement.id === 'number') {
+      if (confirm('Bu duyuruyu silmek istediğinizden emin misiniz?')) {
+        try {
+          const response = await announcementsService.deleteAnnouncement(announcement.id);
+
+          if (response.ok) {
+            await loadAnnouncements(); // Reload to get updated list
+          } else {
+            alert('Duyuru silinirken bir hata oluştu: ' + (response.error?.message || 'Bilinmeyen hata'));
+          }
+        } catch (error) {
+          console.error('Delete announcement error:', error);
+          alert('Duyuru silinirken bir hata oluştu!');
+        }
+      }
+    }
+  };
+
+  const toggleAnnouncementStatus = async (index: number) => {
+    const announcement = content.announcements[index];
+    if (announcement && typeof announcement.id === 'number') {
+      try {
+        const isPublished = announcement.status === 'Published';
+        const response = await announcementsService.publishAnnouncement(announcement.id, {
+          publish: !isPublished
+        });
+
+        if (response.ok) {
+          await loadAnnouncements(); // Reload to get updated status
+        } else {
+          alert('Duyuru durumu değiştirilirken bir hata oluştu: ' + (response.error?.message || 'Bilinmeyen hata'));
+        }
+      } catch (error) {
+        console.error('Toggle announcement status error:', error);
+        alert('Duyuru durumu değiştirilirken bir hata oluştu!');
+      }
+    }
   };
 
   const moveAnnouncement = (index: number, direction: 'up' | 'down') => {
@@ -122,6 +227,27 @@ const AnnouncementsPageEditor: React.FC = () => {
     };
   };
 
+  const saveAnnouncement = async (announcement: Announcement) => {
+    if (typeof announcement.id === 'number') {
+      try {
+        const response = await announcementsService.updateAnnouncement(announcement.id, {
+          title: announcement.title,
+          content: announcement.content,
+          imageUrl: announcement.imageUrl,
+          startDate: announcement.startDate,
+          endDate: announcement.endDate
+        });
+
+        if (!response.ok) {
+          throw new Error(response.error?.message || 'Güncelleme başarısız');
+        }
+      } catch (error) {
+        console.error('Update announcement error:', error);
+        throw error;
+      }
+    }
+  };
+
   const handleSave = async () => {
     const validation = validateContent();
 
@@ -132,17 +258,32 @@ const AnnouncementsPageEditor: React.FC = () => {
 
     setIsSaving(true);
     try {
-      // TODO: Implement API call to save content
-      console.log('Saving content:', content);
-      // await api.savePageContent('announcements', content);
-      alert('İçerik başarıyla kaydedildi!');
+      // Save all announcements
+      const savePromises = content.announcements.map(announcement => saveAnnouncement(announcement));
+      await Promise.all(savePromises);
+
+      await loadAnnouncements(); // Reload to get updated data
+      alert('Tüm duyurular başarıyla kaydedildi!');
     } catch (error) {
       console.error('Save error:', error);
-      alert('Kaydetme sırasında bir hata oluştu!');
+      alert('Kaydetme sırasında bir hata oluştu: ' + (error instanceof Error ? error.message : 'Bilinmeyen hata'));
     } finally {
       setIsSaving(false);
     }
   };
+
+  if (loading || !content) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Lucide icon="Loader2" className="mx-auto h-12 w-12 text-gray-400 animate-spin mb-3" />
+            <p className="text-gray-500 dark:text-gray-400">Duyurular yükleniyor...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -153,6 +294,11 @@ const AnnouncementsPageEditor: React.FC = () => {
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
           Duyurular sayfası içeriklerini düzenleyin
         </p>
+        {error && (
+          <div className="mt-2 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
@@ -248,10 +394,30 @@ const AnnouncementsPageEditor: React.FC = () => {
                     {content.announcements.map((announcement, index) => (
                       <div key={announcement.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-800">
                         <div className="flex justify-between items-start mb-4">
-                          <h4 className="text-lg font-medium text-gray-900 dark:text-white">
-                            Duyuru {index + 1}
-                          </h4>
+                          <div className="flex items-center gap-3">
+                            <h4 className="text-lg font-medium text-gray-900 dark:text-white">
+                              Duyuru {index + 1}
+                            </h4>
+                            <span className={`px-2 py-1 text-xs rounded-full ${
+                              announcement.status === 'Published'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {announcement.status === 'Published' ? 'Yayında' : 'Taslak'}
+                            </span>
+                          </div>
                           <div className="flex gap-2">
+                            <Button
+                              variant="soft-secondary"
+                              onClick={() => toggleAnnouncementStatus(index)}
+                              className={`text-xs ${
+                                announcement.status === 'Published'
+                                  ? 'text-orange-600 hover:text-orange-800'
+                                  : 'text-green-600 hover:text-green-800'
+                              }`}
+                            >
+                              {announcement.status === 'Published' ? 'Yayından Kaldır' : 'Yayınla'}
+                            </Button>
                             <Button
                               variant="soft-secondary"
                               onClick={() => moveAnnouncement(index, 'up')}
@@ -303,8 +469,8 @@ const AnnouncementsPageEditor: React.FC = () => {
                           <div>
                             <FormLabel htmlFor={`announcement-image-${index}`}>Duyuru Görseli</FormLabel>
                             <ImageInput
-                              value={announcement.image}
-                              onChange={(url) => updateAnnouncement(index, 'image', url)}
+                              value={announcement.imageUrl}
+                              onChange={(url) => updateAnnouncement(index, 'imageUrl', url)}
                               placeholder="Duyuru görseli seçin..."
                             />
                           </div>
