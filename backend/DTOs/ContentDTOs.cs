@@ -83,6 +83,114 @@ public class SustainabilityDto
     public string BackgroundImage { get; set; } = string.Empty;
 }
 
+// Contact page DTOs
+public class ContactPageContentDto
+{
+    public ContactMetaDto Meta { get; set; } = new();
+    public ContactHeroDto Hero { get; set; } = new();
+    public ContactPageHeroDto PageHero { get; set; } = new();
+    public ContactInfoDto ContactInfo { get; set; } = new();
+    public ContactFormDto ContactForm { get; set; } = new();
+    public List<SocialMediaDto> SocialMedia { get; set; } = new();
+}
+
+public class ContactMetaDto
+{
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string Keywords { get; set; } = string.Empty;
+}
+
+public class ContactHeroDto
+{
+    public string Image { get; set; } = string.Empty;
+}
+
+public class ContactPageHeroDto
+{
+    public string BackgroundImage { get; set; } = string.Empty;
+    public string LogoImage { get; set; } = string.Empty;
+    public string LogoAlt { get; set; } = string.Empty;
+}
+
+public class ContactInfoDto
+{
+    public string Title { get; set; } = string.Empty;
+    public OfficeDto Office { get; set; } = new();
+    public EmailDto Email { get; set; } = new();
+    public PhoneDto Phone { get; set; } = new();
+}
+
+public class OfficeDto
+{
+    public string Title { get; set; } = string.Empty;
+    public List<string> Address { get; set; } = new();
+}
+
+public class EmailDto
+{
+    public string Title { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+}
+
+public class PhoneDto
+{
+    public string Title { get; set; } = string.Empty;
+    public string Number { get; set; } = string.Empty;
+}
+
+public class ContactFormDto
+{
+    public string Title { get; set; } = string.Empty;
+    public ContactFormTabsDto Tabs { get; set; } = new();
+    public ContactFormFieldsDto Fields { get; set; } = new();
+    public List<SubjectOptionDto> SubjectOptions { get; set; } = new();
+    public EmailConfigDto EmailConfig { get; set; } = new();
+    public string SubmitButton { get; set; } = string.Empty;
+    public string KvkkText { get; set; } = string.Empty;
+    public string KvkkLinkText { get; set; } = string.Empty;
+}
+
+public class ContactFormTabsDto
+{
+    public string Individual { get; set; } = string.Empty;
+    public string Corporate { get; set; } = string.Empty;
+}
+
+public class ContactFormFieldsDto
+{
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string Company { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Subject { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+}
+
+public class SubjectOptionDto
+{
+    public string Value { get; set; } = string.Empty;
+    public string Label { get; set; } = string.Empty;
+}
+
+public class EmailConfigDto
+{
+    public string SmtpHost { get; set; } = string.Empty;
+    public string SmtpPort { get; set; } = string.Empty;
+    public string SmtpUsername { get; set; } = string.Empty;
+    public string SmtpPassword { get; set; } = string.Empty;
+    public string ExtraDetails { get; set; } = string.Empty;
+}
+
+public class SocialMediaDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Url { get; set; } = string.Empty;
+    public string Icon { get; set; } = string.Empty;
+}
+
 public class UpdateContentPageDto
 {
     [Required]

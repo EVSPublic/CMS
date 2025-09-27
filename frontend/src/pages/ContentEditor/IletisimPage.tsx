@@ -1,77 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FormInput from '../../components/Base/Form/FormInput';
 import FormTextarea from '../../components/Base/Form/FormTextarea';
 import FormLabel from '../../components/Base/Form/FormLabel';
 import Button from '../../components/Base/Button';
 import Tab from '../../components/Base/Headless/Tab';
 import ImageInput from '../../components/ImageInput';
-
-interface ContactPageContent {
-  meta: {
-    title: string;
-    description: string;
-    keywords: string;
-  };
-  hero: {
-    image: string;
-  };
-  pageHero: {
-    backgroundImage: string;
-    logoImage: string;
-    logoAlt: string;
-  };
-  contactInfo: {
-    title: string;
-    office: {
-      title: string;
-      address: string[];
-    };
-    email: {
-      title: string;
-      address: string;
-    };
-    phone: {
-      title: string;
-      number: string;
-    };
-  };
-  contactForm: {
-    title: string;
-    tabs: {
-      individual: string;
-      corporate: string;
-    };
-    fields: {
-      firstName: string;
-      lastName: string;
-      email: string;
-      phone: string;
-      company: string;
-      title: string;
-      subject: string;
-      message: string;
-    };
-    subjectOptions: Array<{
-      value: string;
-      label: string;
-    }>;
-    emailConfig: {
-      smtpHost: string;
-      smtpPort: string;
-      smtpUsername: string;
-      smtpPassword: string;
-      extraDetails: string;
-    };
-    submitButton: string;
-    kvkkText: string;
-    kvkkLinkText: string;
-  };
-  socialMedia: Array<{
-    name: string;
-    url: string;
-    icon: string;
-  }>;
-}
+import { contentService, ContactPageContent } from '../../services/content';
 
 const initialContent: ContactPageContent = {
   meta: {
@@ -148,6 +82,41 @@ const initialContent: ContactPageContent = {
 const IletisimPageEditor: React.FC = () => {
   const [content, setContent] = useState<ContactPageContent>(initialContent);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Get project selection from localStorage
+  const getSelectedBrandId = (): number => {
+    const selectedBrand = localStorage.getItem('selectedBrand');
+    switch (selectedBrand?.toLowerCase()) {
+      case 'ovolt': return 1;
+      case 'sharz': return 2;
+      default: return 1;
+    }
+  };
+
+  useEffect(() => {
+    loadContent();
+  }, []);
+
+  const loadContent = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const brandId = getSelectedBrandId();
+      const response = await contentService.getContactPageContent(brandId);
+      if (response.ok && response.data) {
+        setContent(response.data);
+      } else {
+        setError(response.error?.message || 'Failed to load content');
+      }
+    } catch (err) {
+      setError('An error occurred while loading content');
+      console.error('Load content error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const updateContent = (path: string, value: any) => {
     const keys = path.split('.');
@@ -206,63 +175,71 @@ const IletisimPageEditor: React.FC = () => {
 
   const updateOfficeAddress = (index: number, value: string) => {
     const newContent = { ...content };
+    if (!newContent.contactInfo) newContent.contactInfo = { title: '', office: { title: '', address: [] }, email: { title: '', address: '' }, phone: { title: '', number: '' } };
+    if (!newContent.contactInfo.office) newContent.contactInfo.office = { title: '', address: [] };
+    if (!newContent.contactInfo.office.address) newContent.contactInfo.office.address = [];
     newContent.contactInfo.office.address[index] = value;
     setContent(newContent);
   };
 
   const addOfficeAddress = () => {
     const newContent = { ...content };
+    if (!newContent.contactInfo) newContent.contactInfo = { title: '', office: { title: '', address: [] }, email: { title: '', address: '' }, phone: { title: '', number: '' } };
+    if (!newContent.contactInfo.office) newContent.contactInfo.office = { title: '', address: [] };
+    if (!newContent.contactInfo.office.address) newContent.contactInfo.office.address = [];
     newContent.contactInfo.office.address.push("");
     setContent(newContent);
   };
 
   const removeOfficeAddress = (index: number) => {
     const newContent = { ...content };
-    newContent.contactInfo.office.address.splice(index, 1);
-    setContent(newContent);
+    if (newContent.contactInfo?.office?.address) {
+      newContent.contactInfo.office.address.splice(index, 1);
+      setContent(newContent);
+    }
   };
 
   const validateContent = () => {
     const errors: string[] = [];
 
-    if (!content.meta.title.trim()) {
+    if (!content.meta?.title?.trim()) {
       errors.push('Sayfa başlığı boş olamaz');
     }
 
-    if (!content.contactInfo.title.trim()) {
+    if (!content.contactInfo?.title?.trim()) {
       errors.push('İletişim başlığı boş olamaz');
     }
 
-    if (!content.contactInfo.office.title.trim()) {
+    if (!content.contactInfo?.office?.title?.trim()) {
       errors.push('Merkez ofis başlığı boş olamaz');
     }
 
-    if (!content.contactInfo.email.address.trim()) {
+    if (!content.contactInfo?.email?.address?.trim()) {
       errors.push('E-mail adresi boş olamaz');
     }
 
-    if (!content.contactInfo.phone.number.trim()) {
+    if (!content.contactInfo?.phone?.number?.trim()) {
       errors.push('Telefon numarası boş olamaz');
     }
 
-    if (!content.contactForm.title.trim()) {
+    if (!content.contactForm?.title?.trim()) {
       errors.push('İletişim formu başlığı boş olamaz');
     }
 
-    content.contactForm.subjectOptions.forEach((option, index) => {
-      if (!option.label.trim()) {
+    (content.contactForm?.subjectOptions || []).forEach((option, index) => {
+      if (!option?.label?.trim()) {
         errors.push(`Konu seçeneği ${index + 1} etiketi boş olamaz`);
       }
-      if (!option.value.trim()) {
+      if (!option?.value?.trim()) {
         errors.push(`Konu seçeneği ${index + 1} değeri boş olamaz`);
       }
     });
 
-    content.socialMedia.forEach((social, index) => {
-      if (!social.name.trim()) {
+    (content.socialMedia || []).forEach((social, index) => {
+      if (!social?.name?.trim()) {
         errors.push(`Sosyal medya ${index + 1} adı boş olamaz`);
       }
-      if (!social.url.trim()) {
+      if (!social?.url?.trim()) {
         errors.push(`Sosyal medya ${index + 1} URL'i boş olamaz`);
       }
     });
@@ -283,10 +260,15 @@ const IletisimPageEditor: React.FC = () => {
 
     setIsSaving(true);
     try {
-      // TODO: Implement API call to save content
-      console.log('Saving content:', content);
-      // await api.savePageContent('iletisim', content);
-      alert('İçerik başarıyla kaydedildi!');
+      const brandId = getSelectedBrandId();
+      const response = await contentService.saveContactPageContent(brandId, content);
+
+      if (response.ok) {
+        alert('İçerik başarıyla kaydedildi!');
+        await loadContent();
+      } else {
+        alert('Kaydetme sırasında bir hata oluştu: ' + (response.error?.message || 'Bilinmeyen hata'));
+      }
     } catch (error) {
       console.error('Save error:', error);
       alert('Kaydetme sırasında bir hata oluştu!');
@@ -294,6 +276,47 @@ const IletisimPageEditor: React.FC = () => {
       setIsSaving(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">İçerik yükleniyor...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Hata</h3>
+              <p className="mt-1 text-sm text-red-700 dark:text-red-300">{error}</p>
+              <div className="mt-3">
+                <button
+                  onClick={loadContent}
+                  className="bg-red-100 hover:bg-red-200 dark:bg-red-800 dark:hover:bg-red-700 text-red-800 dark:text-red-200 px-3 py-1 rounded text-sm"
+                >
+                  Tekrar Dene
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -334,7 +357,7 @@ const IletisimPageEditor: React.FC = () => {
                   <FormLabel htmlFor="meta.title">Sayfa Başlığı</FormLabel>
                   <FormInput
                     id="meta.title"
-                    value={content.meta.title}
+                    value={content.meta?.title || ''}
                     onChange={(e) => updateContent('meta.title', e.target.value)}
                     placeholder="İletişim - Ovolt"
                   />
@@ -344,7 +367,7 @@ const IletisimPageEditor: React.FC = () => {
                   <FormLabel htmlFor="meta.description">Açıklama</FormLabel>
                   <FormTextarea
                     id="meta.description"
-                    value={content.meta.description}
+                    value={content.meta?.description || ''}
                     onChange={(e) => updateContent('meta.description', e.target.value)}
                     placeholder="Sayfa açıklamasını girin"
                     rows={3}
@@ -355,7 +378,7 @@ const IletisimPageEditor: React.FC = () => {
                   <FormLabel htmlFor="meta.keywords">Anahtar Kelimeler</FormLabel>
                   <FormTextarea
                     id="meta.keywords"
-                    value={content.meta.keywords}
+                    value={content.meta?.keywords || ''}
                     onChange={(e) => updateContent('meta.keywords', e.target.value)}
                     placeholder="Anahtar kelimeleri virgülle ayırarak girin"
                     rows={2}
@@ -366,7 +389,7 @@ const IletisimPageEditor: React.FC = () => {
                   <FormLabel htmlFor="contactInfo.title">Ana Başlık</FormLabel>
                   <FormInput
                     id="contactInfo.title"
-                    value={content.contactInfo.title}
+                    value={content.contactInfo?.title || ''}
                     onChange={(e) => updateContent('contactInfo.title', e.target.value)}
                     placeholder="İletişim"
                   />
@@ -381,7 +404,7 @@ const IletisimPageEditor: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <ImageInput
-                      value={content.hero.image}
+                      value={content.hero?.image || ''}
                       onChange={(url) => updateContent('hero.image', url)}
                       label="Hero Görseli"
                       placeholder="Hero görseli seçin..."
@@ -402,7 +425,7 @@ const IletisimPageEditor: React.FC = () => {
                       <FormLabel htmlFor="office.title">Ofis Başlığı</FormLabel>
                       <FormInput
                         id="office.title"
-                        value={content.contactInfo.office.title}
+                        value={content.contactInfo?.office?.title || ''}
                         onChange={(e) => updateContent('contactInfo.office.title', e.target.value)}
                         placeholder="Merkez Ofis"
                       />
@@ -419,7 +442,7 @@ const IletisimPageEditor: React.FC = () => {
                         </Button>
                       </div>
 
-                      {content.contactInfo.office.address.map((line, index) => (
+                      {(content.contactInfo?.office?.address || []).map((line, index) => (
                         <div key={index} className="flex gap-2 mb-2">
                           <FormInput
                             value={line}
@@ -446,7 +469,7 @@ const IletisimPageEditor: React.FC = () => {
                       <FormLabel htmlFor="email.title">E-mail Başlığı</FormLabel>
                       <FormInput
                         id="email.title"
-                        value={content.contactInfo.email.title}
+                        value={content.contactInfo?.email?.title || ''}
                         onChange={(e) => updateContent('contactInfo.email.title', e.target.value)}
                         placeholder="E-Mail"
                       />
@@ -456,7 +479,7 @@ const IletisimPageEditor: React.FC = () => {
                       <FormLabel htmlFor="email.address">E-mail Adresi</FormLabel>
                       <FormInput
                         id="email.address"
-                        value={content.contactInfo.email.address}
+                        value={content.contactInfo?.email?.address || ''}
                         onChange={(e) => updateContent('contactInfo.email.address', e.target.value)}
                         placeholder="info@ovolt.com"
                       />
@@ -472,7 +495,7 @@ const IletisimPageEditor: React.FC = () => {
                       <FormLabel htmlFor="phone.title">Telefon Başlığı</FormLabel>
                       <FormInput
                         id="phone.title"
-                        value={content.contactInfo.phone.title}
+                        value={content.contactInfo?.phone?.title || ''}
                         onChange={(e) => updateContent('contactInfo.phone.title', e.target.value)}
                         placeholder="Telefon"
                       />
@@ -482,7 +505,7 @@ const IletisimPageEditor: React.FC = () => {
                       <FormLabel htmlFor="phone.number">Telefon Numarası</FormLabel>
                       <FormInput
                         id="phone.number"
-                        value={content.contactInfo.phone.number}
+                        value={content.contactInfo?.phone?.number || ''}
                         onChange={(e) => updateContent('contactInfo.phone.number', e.target.value)}
                         placeholder="+90 850 474 60 11"
                       />
@@ -503,7 +526,7 @@ const IletisimPageEditor: React.FC = () => {
                       <FormLabel htmlFor="contactForm.title">Form Başlığı</FormLabel>
                       <FormInput
                         id="contactForm.title"
-                        value={content.contactForm.title}
+                        value={content.contactForm?.title || ''}
                         onChange={(e) => updateContent('contactForm.title', e.target.value)}
                         placeholder="İletişim Formu"
                       />
@@ -514,7 +537,7 @@ const IletisimPageEditor: React.FC = () => {
                         <FormLabel htmlFor="tabs.individual">Bireysel Sekme</FormLabel>
                         <FormInput
                           id="tabs.individual"
-                          value={content.contactForm.tabs.individual}
+                          value={content.contactForm?.tabs?.individual || ''}
                           onChange={(e) => updateContent('contactForm.tabs.individual', e.target.value)}
                           placeholder="Bireysel"
                         />
@@ -524,7 +547,7 @@ const IletisimPageEditor: React.FC = () => {
                         <FormLabel htmlFor="tabs.corporate">Kurumsal Sekme</FormLabel>
                         <FormInput
                           id="tabs.corporate"
-                          value={content.contactForm.tabs.corporate}
+                          value={content.contactForm?.tabs?.corporate || ''}
                           onChange={(e) => updateContent('contactForm.tabs.corporate', e.target.value)}
                           placeholder="Kurumsal"
                         />
@@ -542,7 +565,7 @@ const IletisimPageEditor: React.FC = () => {
                       <FormLabel htmlFor="emailConfig.smtpHost">SMTP Host</FormLabel>
                       <FormInput
                         id="emailConfig.smtpHost"
-                        value={content.contactForm.emailConfig.smtpHost}
+                        value={content.contactForm?.emailConfig?.smtpHost || ''}
                         onChange={(e) => updateContent('contactForm.emailConfig.smtpHost', e.target.value)}
                         placeholder="smtp.gmail.com"
                       />
@@ -552,7 +575,7 @@ const IletisimPageEditor: React.FC = () => {
                       <FormLabel htmlFor="emailConfig.smtpPort">SMTP Port</FormLabel>
                       <FormInput
                         id="emailConfig.smtpPort"
-                        value={content.contactForm.emailConfig.smtpPort}
+                        value={content.contactForm?.emailConfig?.smtpPort || ''}
                         onChange={(e) => updateContent('contactForm.emailConfig.smtpPort', e.target.value)}
                         placeholder="587"
                       />
@@ -562,7 +585,7 @@ const IletisimPageEditor: React.FC = () => {
                       <FormLabel htmlFor="emailConfig.smtpUsername">SMTP Username</FormLabel>
                       <FormInput
                         id="emailConfig.smtpUsername"
-                        value={content.contactForm.emailConfig.smtpUsername}
+                        value={content.contactForm?.emailConfig?.smtpUsername || ''}
                         onChange={(e) => updateContent('contactForm.emailConfig.smtpUsername', e.target.value)}
                         placeholder="your-email@example.com"
                       />
@@ -573,7 +596,7 @@ const IletisimPageEditor: React.FC = () => {
                       <FormInput
                         id="emailConfig.smtpPassword"
                         type="password"
-                        value={content.contactForm.emailConfig.smtpPassword}
+                        value={content.contactForm?.emailConfig?.smtpPassword || ''}
                         onChange={(e) => updateContent('contactForm.emailConfig.smtpPassword', e.target.value)}
                         placeholder="your-password"
                       />
@@ -583,7 +606,7 @@ const IletisimPageEditor: React.FC = () => {
                       <FormLabel htmlFor="emailConfig.extraDetails">Extra Details</FormLabel>
                       <FormTextarea
                         id="emailConfig.extraDetails"
-                        value={content.contactForm.emailConfig.extraDetails}
+                        value={content.contactForm?.emailConfig?.extraDetails || ''}
                         onChange={(e) => updateContent('contactForm.emailConfig.extraDetails', e.target.value)}
                         rows={3}
                         placeholder="Additional email configuration details or notes"
@@ -607,7 +630,7 @@ const IletisimPageEditor: React.FC = () => {
                     </Button>
                   </div>
 
-                  {content.contactForm.subjectOptions.map((option, index) => (
+                  {(content.contactForm?.subjectOptions || []).map((option, index) => (
                     <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4">
                       <div className="flex justify-between items-start mb-4">
                         <h4 className="font-medium text-gray-900 dark:text-white">Seçenek {index + 1}</h4>
@@ -624,7 +647,7 @@ const IletisimPageEditor: React.FC = () => {
                           <FormLabel htmlFor={`option-value-${index}`}>Değer</FormLabel>
                           <FormInput
                             id={`option-value-${index}`}
-                            value={option.value}
+                            value={option?.value || ''}
                             onChange={(e) => updateArrayItem('contactForm.subjectOptions', index, 'value', e.target.value)}
                             placeholder="tarifeler"
                           />
@@ -634,7 +657,7 @@ const IletisimPageEditor: React.FC = () => {
                           <FormLabel htmlFor={`option-label-${index}`}>Etiket</FormLabel>
                           <FormInput
                             id={`option-label-${index}`}
-                            value={option.label}
+                            value={option?.label || ''}
                             onChange={(e) => updateArrayItem('contactForm.subjectOptions', index, 'label', e.target.value)}
                             placeholder="Tarifeler Hakkında Bilgilendirme"
                           />
@@ -664,7 +687,7 @@ const IletisimPageEditor: React.FC = () => {
                   </Button>
                 </div>
 
-                {content.socialMedia.map((social, index) => (
+                {(content.socialMedia || []).map((social, index) => (
                   <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                     <div className="flex justify-between items-start mb-4">
                       <h4 className="font-medium text-gray-900 dark:text-white">Sosyal Medya {index + 1}</h4>
@@ -681,7 +704,7 @@ const IletisimPageEditor: React.FC = () => {
                         <FormLabel htmlFor={`social-name-${index}`}>Platform Adı</FormLabel>
                         <FormInput
                           id={`social-name-${index}`}
-                          value={social.name}
+                          value={social?.name || ''}
                           onChange={(e) => updateArrayItem('socialMedia', index, 'name', e.target.value)}
                           placeholder="LinkedIn"
                         />
@@ -691,7 +714,7 @@ const IletisimPageEditor: React.FC = () => {
                         <FormLabel htmlFor={`social-url-${index}`}>URL</FormLabel>
                         <FormInput
                           id={`social-url-${index}`}
-                          value={social.url}
+                          value={social?.url || ''}
                           onChange={(e) => updateArrayItem('socialMedia', index, 'url', e.target.value)}
                           placeholder="https://linkedin.com/company/ovolt"
                         />
@@ -701,7 +724,7 @@ const IletisimPageEditor: React.FC = () => {
                         <FormLabel htmlFor={`social-icon-${index}`}>İkon Tipi</FormLabel>
                         <FormInput
                           id={`social-icon-${index}`}
-                          value={social.icon}
+                          value={social?.icon || ''}
                           onChange={(e) => updateArrayItem('socialMedia', index, 'icon', e.target.value)}
                           placeholder="linkedin"
                         />

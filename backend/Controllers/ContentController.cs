@@ -354,6 +354,92 @@ public class ContentController : ControllerBase
                     BackgroundImage = ""
                 }
             },
+            PageType.Contact => new ContactPageContentDto
+            {
+                Meta = new ContactMetaDto
+                {
+                    Title = $"İletişim - {brandName}",
+                    Description = "",
+                    Keywords = ""
+                },
+                Hero = new ContactHeroDto
+                {
+                    Image = ""
+                },
+                PageHero = new ContactPageHeroDto
+                {
+                    BackgroundImage = "assets/img/iletisim-bg.jpg",
+                    LogoImage = "assets/img/page-hero-logo.svg",
+                    LogoAlt = $"{brandName} Logo"
+                },
+                ContactInfo = new ContactInfoDto
+                {
+                    Title = "İletişim",
+                    Office = new OfficeDto
+                    {
+                        Title = "Merkez Ofis",
+                        Address = new List<string>
+                        {
+                            "Kısıklı Alemdağ Caddesi No:60",
+                            "34000 Üsküdar / İstanbul"
+                        }
+                    },
+                    Email = new EmailDto
+                    {
+                        Title = "E-Mail",
+                        Address = $"info@{brandName.ToLower()}.com"
+                    },
+                    Phone = new PhoneDto
+                    {
+                        Title = "Telefon",
+                        Number = "+90 850 474 60 11"
+                    }
+                },
+                ContactForm = new ContactFormDto
+                {
+                    Title = "İletişim Formu",
+                    Tabs = new ContactFormTabsDto
+                    {
+                        Individual = "Bireysel",
+                        Corporate = "Kurumsal"
+                    },
+                    Fields = new ContactFormFieldsDto
+                    {
+                        FirstName = "Ad",
+                        LastName = "Soyad",
+                        Email = "E-Mail",
+                        Phone = "Telefon",
+                        Company = "Şirket",
+                        Title = "Ünvan",
+                        Subject = "Konu",
+                        Message = "Mesajınız"
+                    },
+                    SubjectOptions = new List<SubjectOptionDto>
+                    {
+                        new() { Value = "tarifeler", Label = "Tarifeler Hakkında Bilgilendirme" },
+                        new() { Value = "teknik", Label = "Teknik Destek" },
+                        new() { Value = "genel", Label = "Genel Bilgi" },
+                        new() { Value = "sikayet", Label = "Şikayet" },
+                        new() { Value = "oneriler", Label = "Öneriler" }
+                    },
+                    EmailConfig = new EmailConfigDto
+                    {
+                        SmtpHost = "",
+                        SmtpPort = "",
+                        SmtpUsername = "",
+                        SmtpPassword = "",
+                        ExtraDetails = ""
+                    },
+                    SubmitButton = "Gönder",
+                    KvkkText = "Formu doldurarak, kişisel verilerinizin 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında işlenmesine örtülü şekilde onay vermiş oluyorsunuz.",
+                    KvkkLinkText = "KVKK Aydınlatma Metni için lütfen tıklayın."
+                },
+                SocialMedia = new List<SocialMediaDto>
+                {
+                    new() { Name = "LinkedIn", Url = "#", Icon = "linkedin" },
+                    new() { Name = "Instagram", Url = "#", Icon = "instagram" }
+                }
+            },
             _ => new { message = "Default content not implemented for this page type" }
         };
     }

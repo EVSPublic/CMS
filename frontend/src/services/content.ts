@@ -182,6 +182,74 @@ export interface IndexPageContent {
   };
 }
 
+// Contact page content structure matching backend
+export interface ContactPageContent {
+  meta: {
+    title: string;
+    description: string;
+    keywords: string;
+  };
+  hero: {
+    image: string;
+  };
+  pageHero: {
+    backgroundImage: string;
+    logoImage: string;
+    logoAlt: string;
+  };
+  contactInfo: {
+    title: string;
+    office: {
+      title: string;
+      address: string[];
+    };
+    email: {
+      title: string;
+      address: string;
+    };
+    phone: {
+      title: string;
+      number: string;
+    };
+  };
+  contactForm: {
+    title: string;
+    tabs: {
+      individual: string;
+      corporate: string;
+    };
+    fields: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      phone: string;
+      company: string;
+      title: string;
+      subject: string;
+      message: string;
+    };
+    subjectOptions: Array<{
+      value: string;
+      label: string;
+    }>;
+    emailConfig: {
+      smtpHost: string;
+      smtpPort: string;
+      smtpUsername: string;
+      smtpPassword: string;
+      extraDetails: string;
+    };
+    submitButton: string;
+    kvkkText: string;
+    kvkkLinkText: string;
+  };
+  socialMedia: Array<{
+    name: string;
+    url: string;
+    icon: string;
+  }>;
+}
+
 export type PageType = 'Index' | 'About' | 'IndividualSolutions' | 'CorporateSolutions' |
   'Tariffs' | 'Contact' | 'StationMap';
 
@@ -449,6 +517,50 @@ class ContentService {
     return this.saveContentPage(
       brandId,
       'Tariffs',
+      content,
+      content.meta.title,
+      content.meta.description,
+      content.meta.keywords
+    );
+  }
+
+  /**
+   * Get typed contact page content
+   */
+  async getContactPageContent(brandId: number): Promise<ApiResponse<ContactPageContent>> {
+    const response = await this.getContentPage(brandId, 'Contact');
+    if (response.ok && response.data) {
+      // Extract content from the ContentPageDto structure and merge meta fields
+      const content = response.data.content as ContactPageContent;
+
+      // Merge meta fields from DTO into content structure
+      if (content.meta) {
+        content.meta.title = response.data.metaTitle || content.meta.title || '';
+        content.meta.description = response.data.metaDescription || content.meta.description || '';
+        content.meta.keywords = response.data.metaKeywords || content.meta.keywords || '';
+      }
+
+      return {
+        ok: true,
+        data: content
+      };
+    }
+    return {
+      ok: false,
+      error: response.error || { code: 'LOAD_ERROR', message: 'Failed to load content' }
+    };
+  }
+
+  /**
+   * Save typed contact page content
+   */
+  async saveContactPageContent(
+    brandId: number,
+    content: ContactPageContent
+  ): Promise<ApiResponse<ContentPageDto>> {
+    return this.saveContentPage(
+      brandId,
+      'Contact',
       content,
       content.meta.title,
       content.meta.description,
