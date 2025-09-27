@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FormInput from '../../components/Base/Form/FormInput';
 import FormLabel from '../../components/Base/Form/FormLabel';
 import Button from '../../components/Base/Button';
 import ImageInput from '../../components/ImageInput';
+import Lucide from '../../components/Base/Lucide';
+import { partnershipsService, Partner as ApiPartner } from '../../services/partnerships';
 
 interface Partner {
-  id: string;
+  id: number;
   logo: string;
   title: string;
   alt: string;
+  status?: string;
+  displayOrder?: number;
 }
 
 interface PartnershipPageContent {
@@ -22,6 +26,65 @@ const initialContent: PartnershipPageContent = {
 const PartnershipPageEditor: React.FC = () => {
   const [content, setContent] = useState<PartnershipPageContent>(initialContent);
   const [isSaving, setIsSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Get current brand ID from localStorage
+  const getCurrentBrandId = (): number => {
+    const selectedBrand = localStorage.getItem('selectedBrand') || 'Ovolt';
+    return selectedBrand === 'Ovolt' ? 1 : 2; // Ovolt = 1, Sharz.net = 2
+  };
+
+  const [currentBrandId, setCurrentBrandId] = useState<number>(getCurrentBrandId());
+
+  // Load partners on component mount
+  useEffect(() => {
+    loadPartners();
+  }, []);
+
+  // Listen for brand changes and reload partners
+  useEffect(() => {
+    const handleBrandChange = () => {
+      const newBrandId = getCurrentBrandId();
+      setCurrentBrandId(newBrandId);
+      loadPartners(newBrandId);
+    };
+
+    window.addEventListener('brandChanged', handleBrandChange);
+    return () => window.removeEventListener('brandChanged', handleBrandChange);
+  }, []);
+
+  const loadPartners = async (brandId?: number) => {
+    const actualBrandId = brandId || currentBrandId;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await partnershipsService.getPartners(actualBrandId);
+
+      if (response.ok && response.data) {
+        const apiPartners = response.data.partners;
+        const convertedPartners: Partner[] = apiPartners.map(p => ({
+          id: p.id,
+          title: p.title,
+          logo: p.logo || '',
+          alt: p.alt || '',
+          status: p.status,
+          displayOrder: p.displayOrder
+        }));
+
+        setContent(prev => ({
+          ...prev,
+          partners: convertedPartners
+        }));
+      }
+    } catch (err) {
+      setError('Partnerler yüklenirken bir hata oluştu');
+      console.error('Partners load error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const updatePartner = (index: number, field: keyof Partner, value: string) => {
     const newPartners = [...content.partners];
@@ -35,36 +98,73 @@ const PartnershipPageEditor: React.FC = () => {
     }));
   };
 
-  const addPartner = () => {
-    const newPartner: Partner = {
-      id: Date.now().toString(),
-      logo: "",
-      title: "",
-      alt: ""
-    };
-    setContent(prev => ({
-      ...prev,
-      partners: [...prev.partners, newPartner]
-    }));
+  const addPartner = async () => {
+    try {
+      const response = await partnershipsService.createPartner({
+        title: "Yeni Partner",
+        logo: "",
+        alt: "Yeni Partner"
+      });
+
+      if (response.ok) {
+        await loadPartners(); // Reload to get updated list
+      } else {
+        alert('Partner eklenirken bir hata oluştu: ' + (response.error?.message || 'Bilinmeyen hata'));
+      }
+    } catch (error) {
+      console.error('Add partner error:', error);
+      alert('Partner eklenirken bir hata oluştu!');
+    }
   };
 
-  const removePartner = (index: number) => {
-    setContent(prev => ({
-      ...prev,
-      partners: prev.partners.filter((_, i) => i !== index)
-    }));
+  const removePartner = async (index: number) => {
+    const partner = content.partners[index];
+    if (partner && typeof partner.id === 'number') {
+      if (confirm('Bu partneri silmek istediğinizden emin misiniz?')) {
+        try {
+          const response = await partnershipsService.deletePartner(partner.id);
+
+          if (response.ok) {
+            await loadPartners(); // Reload to get updated list
+          } else {
+            alert('Partner silinirken bir hata oluştu: ' + (response.error?.message || 'Bilinmeyen hata'));
+          }
+        } catch (error) {
+          console.error('Delete partner error:', error);
+          alert('Partner silinirken bir hata oluştu!');
+        }
+      }
+    }
   };
 
-  const movePartner = (index: number, direction: 'up' | 'down') => {
+  const movePartner = async (index: number, direction: 'up' | 'down') => {
     const newPartners = [...content.partners];
     const newIndex = direction === 'up' ? index - 1 : index + 1;
 
     if (newIndex >= 0 && newIndex < newPartners.length) {
       [newPartners[index], newPartners[newIndex]] = [newPartners[newIndex], newPartners[index]];
+
+      // Update local state immediately for better UX
       setContent(prev => ({
         ...prev,
         partners: newPartners
       }));
+
+      // Update order in backend
+      try {
+        const partnerIds = newPartners.map(p => p.id as number);
+        const response = await partnershipsService.reorderPartners({ partnerIds });
+
+        if (!response.ok) {
+          // Revert on error
+          await loadPartners();
+          alert('Partner sıralaması değiştirilirken bir hata oluştu: ' + (response.error?.message || 'Bilinmeyen hata'));
+        }
+      } catch (error) {
+        console.error('Reorder partners error:', error);
+        await loadPartners(); // Revert on error
+        alert('Partner sıralaması değiştirilirken bir hata oluştu!');
+      }
     }
   };
 
@@ -86,6 +186,25 @@ const PartnershipPageEditor: React.FC = () => {
     };
   };
 
+  const savePartner = async (partner: Partner) => {
+    if (typeof partner.id === 'number') {
+      try {
+        const response = await partnershipsService.updatePartner(partner.id, {
+          title: partner.title,
+          logo: partner.logo,
+          alt: partner.alt
+        });
+
+        if (!response.ok) {
+          throw new Error(response.error?.message || 'Güncelleme başarısız');
+        }
+      } catch (error) {
+        console.error('Update partner error:', error);
+        throw error;
+      }
+    }
+  };
+
   const handleSave = async () => {
     const validation = validateContent();
 
@@ -96,17 +215,32 @@ const PartnershipPageEditor: React.FC = () => {
 
     setIsSaving(true);
     try {
-      // TODO: Implement API call to save content
-      console.log('Saving content:', content);
-      // await api.savePageContent('partnership', content);
-      alert('İçerik başarıyla kaydedildi!');
+      // Save all partners
+      const savePromises = content.partners.map(partner => savePartner(partner));
+      await Promise.all(savePromises);
+
+      await loadPartners(); // Reload to get updated data
+      alert('Tüm partnerler başarıyla kaydedildi!');
     } catch (error) {
       console.error('Save error:', error);
-      alert('Kaydetme sırasında bir hata oluştu!');
+      alert('Kaydetme sırasında bir hata oluştu: ' + (error instanceof Error ? error.message : 'Bilinmeyen hata'));
     } finally {
       setIsSaving(false);
     }
   };
+
+  if (loading || !content) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Lucide icon="Loader2" className="mx-auto h-12 w-12 text-gray-400 animate-spin mb-3" />
+            <p className="text-gray-500 dark:text-gray-400">Partnerler yükleniyor...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -117,6 +251,11 @@ const PartnershipPageEditor: React.FC = () => {
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
           Partnerlik sayfası içeriklerini düzenleyin
         </p>
+        {error && (
+          <div className="mt-2 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow">

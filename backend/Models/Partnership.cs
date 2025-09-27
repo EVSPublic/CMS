@@ -13,24 +13,18 @@ public class Partnership
 
     [Required]
     [MaxLength(255)]
-    public string CompanyName { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+
+    [MaxLength(500)]
+    public string? Logo { get; set; }
 
     [MaxLength(255)]
-    public string? ContactPerson { get; set; }
-
-    [MaxLength(255)]
-    public string? Email { get; set; }
-
-    [MaxLength(50)]
-    public string? Phone { get; set; }
-
-    public string? Description { get; set; }
+    public string? Alt { get; set; }
 
     [Required]
-    public PartnershipStatus Status { get; set; } = PartnershipStatus.Pending;
+    public PartnershipStatus Status { get; set; } = PartnershipStatus.Active;
 
-    public DateTime? ContractStart { get; set; }
-    public DateTime? ContractEnd { get; set; }
+    public int DisplayOrder { get; set; } = 0;
 
     public int? CreatedBy { get; set; }
     public int? UpdatedBy { get; set; }
@@ -51,7 +45,6 @@ public class Partnership
 
 public enum PartnershipStatus
 {
-    Pending,
     Active,
     Inactive
 }

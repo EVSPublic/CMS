@@ -23,328 +23,330 @@ public class PartnershipsController : ControllerBase
     }
 
     [HttpGet("{brandId}")]
-    public async Task<IActionResult> GetPartnerships(int brandId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? search = null, [FromQuery] string? status = null)
+    public async Task<IActionResult> GetPartners(int brandId)
     {
         try
         {
-            var query = _context.Partnerships
+            var partners = await _context.Partnerships
                 .Include(p => p.Brand)
                 .Include(p => p.Creator)
                 .Include(p => p.Updater)
-                .Where(p => p.BrandId == brandId);
-
-            if (!string.IsNullOrEmpty(search))
-            {
-                query = query.Where(p => p.CompanyName.Contains(search) || (p.Description != null && p.Description.Contains(search)));
-            }
-
-            if (!string.IsNullOrEmpty(status) && Enum.TryParse<PartnershipStatus>(status, true, out var statusEnum))
-            {
-                query = query.Where(p => p.Status == statusEnum);
-            }
-
-            var totalCount = await query.CountAsync();
-            var partnerships = await query
-                .OrderByDescending(p => p.CreatedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .Select(p => new PartnershipDto
+                .Where(p => p.BrandId == brandId)
+                .OrderBy(p => p.DisplayOrder)
+                .ThenBy(p => p.CreatedAt)
+                .Select(p => new PartnerDto
                 {
                     Id = p.Id,
                     BrandId = p.BrandId,
-                    Name = p.CompanyName,
-                    LogoUrl = null,
-                    WebsiteUrl = null,
-                    Description = p.Description,
-                    ContactEmail = p.Email,
-                    ContactPhone = p.Phone,
+                    Title = p.Title,
+                    Logo = p.Logo,
+                    Alt = p.Alt,
                     Status = p.Status.ToString(),
+                    DisplayOrder = p.DisplayOrder,
                     CreatedBy = p.CreatedBy,
                     UpdatedBy = p.UpdatedBy,
                     CreatedAt = p.CreatedAt,
                     UpdatedAt = p.UpdatedAt,
                     BrandName = p.Brand.Name,
-                    CreatorName = p.Creator!.Name,
-                    UpdaterName = p.Updater!.Name
+                    CreatorName = p.Creator != null ? p.Creator.Name : null,
+                    UpdaterName = p.Updater != null ? p.Updater.Name : null
                 })
                 .ToListAsync();
 
-            return Ok(new { partnerships, totalCount, page, pageSize });
+            return Ok(new { partners });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving partnerships for brand {BrandId}", brandId);
-            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while retrieving partnerships" } });
+            _logger.LogError(ex, "Error retrieving partners for brand {BrandId}", brandId);
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while retrieving partners" } });
         }
     }
 
     [HttpGet("{brandId}/{id}")]
-    public async Task<IActionResult> GetPartnership(int brandId, int id)
+    public async Task<IActionResult> GetPartner(int brandId, int id)
     {
         try
         {
-            var partnershipEntity = await _context.Partnerships
+            var partnerEntity = await _context.Partnerships
                 .Include(p => p.Brand)
                 .Include(p => p.Creator)
                 .Include(p => p.Updater)
                 .Where(p => p.Id == id && p.BrandId == brandId)
                 .FirstOrDefaultAsync();
 
-            if (partnershipEntity == null)
+            if (partnerEntity == null)
             {
-                return NotFound(new { error = new { code = "PARTNERSHIP_NOT_FOUND", message = "Partnership not found" } });
+                return NotFound(new { error = new { code = "PARTNER_NOT_FOUND", message = "Partner not found" } });
             }
 
-            var partnership = new PartnershipDto
+            var partner = new PartnerDto
             {
-                Id = partnershipEntity.Id,
-                BrandId = partnershipEntity.BrandId,
-                Name = partnershipEntity.CompanyName,
-                LogoUrl = null,
-                WebsiteUrl = null,
-                Description = partnershipEntity.Description,
-                ContactEmail = partnershipEntity.Email,
-                ContactPhone = partnershipEntity.Phone,
-                Status = partnershipEntity.Status.ToString(),
-                CreatedBy = partnershipEntity.CreatedBy,
-                UpdatedBy = partnershipEntity.UpdatedBy,
-                CreatedAt = partnershipEntity.CreatedAt,
-                UpdatedAt = partnershipEntity.UpdatedAt,
-                BrandName = partnershipEntity.Brand.Name,
-                CreatorName = partnershipEntity.Creator?.Name,
-                UpdaterName = partnershipEntity.Updater?.Name
+                Id = partnerEntity.Id,
+                BrandId = partnerEntity.BrandId,
+                Title = partnerEntity.Title,
+                Logo = partnerEntity.Logo,
+                Alt = partnerEntity.Alt,
+                Status = partnerEntity.Status.ToString(),
+                DisplayOrder = partnerEntity.DisplayOrder,
+                CreatedBy = partnerEntity.CreatedBy,
+                UpdatedBy = partnerEntity.UpdatedBy,
+                CreatedAt = partnerEntity.CreatedAt,
+                UpdatedAt = partnerEntity.UpdatedAt,
+                BrandName = partnerEntity.Brand.Name,
+                CreatorName = partnerEntity.Creator?.Name,
+                UpdaterName = partnerEntity.Updater?.Name
             };
 
-            return Ok(partnership);
+            return Ok(partner);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving partnership {Id} for brand {BrandId}", id, brandId);
-            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while retrieving partnership" } });
+            _logger.LogError(ex, "Error retrieving partner {Id} for brand {BrandId}", id, brandId);
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while retrieving partner" } });
         }
     }
 
     [HttpPost("{brandId}")]
     [Authorize(Roles = "Admin,Editor")]
-    public async Task<IActionResult> CreatePartnership(int brandId, [FromBody] CreatePartnershipDto request)
+    public async Task<IActionResult> CreatePartner(int brandId, [FromBody] CreatePartnerDto request)
     {
         try
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            var currentUser = await _context.Users.FindAsync(currentUserId);
 
-            if (currentUser == null)
-            {
-                return Unauthorized();
-            }
+            // Get the next display order
+            var maxDisplayOrder = await _context.Partnerships
+                .Where(p => p.BrandId == brandId)
+                .MaxAsync(p => (int?)p.DisplayOrder) ?? 0;
 
-            // Check if partnership name is unique within the brand
-            var nameExists = await _context.Partnerships
-                .AnyAsync(p => p.BrandId == brandId && p.CompanyName == request.Name);
-
-            if (nameExists)
-            {
-                return BadRequest(new { error = new { code = "DUPLICATE_PARTNERSHIP_NAME", message = "A partnership with this name already exists for this brand" } });
-            }
-
-            var partnership = new Partnership
+            var partner = new Partnership
             {
                 BrandId = brandId,
-                CompanyName = request.Name,
-                Email = request.ContactEmail,
-                Phone = request.ContactPhone,
-                Description = request.Description,
-                Status = PartnershipStatus.Pending,
+                Title = request.Title,
+                Logo = request.Logo,
+                Alt = request.Alt,
+                Status = PartnershipStatus.Active,
+                DisplayOrder = maxDisplayOrder + 1,
                 CreatedBy = currentUserId,
                 UpdatedBy = currentUserId,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
 
-            _context.Partnerships.Add(partnership);
+            _context.Partnerships.Add(partner);
             await _context.SaveChangesAsync();
 
-            // Return the newly created partnership
-            var createdPartnershipEntity = await _context.Partnerships
+            // Return the newly created partner
+            var createdPartnerEntity = await _context.Partnerships
                 .Include(p => p.Brand)
                 .Include(p => p.Creator)
                 .Include(p => p.Updater)
-                .Where(p => p.Id == partnership.Id)
-                .FirstOrDefaultAsync();
+                .FirstAsync(p => p.Id == partner.Id);
 
-            var createdPartnership = new PartnershipDto
+            var createdPartner = new PartnerDto
             {
-                Id = createdPartnershipEntity!.Id,
-                BrandId = createdPartnershipEntity.BrandId,
-                Name = createdPartnershipEntity.CompanyName,
-                LogoUrl = null,
-                WebsiteUrl = null,
-                Description = createdPartnershipEntity.Description,
-                ContactEmail = createdPartnershipEntity.Email,
-                ContactPhone = createdPartnershipEntity.Phone,
-                Status = createdPartnershipEntity.Status.ToString(),
-                CreatedBy = createdPartnershipEntity.CreatedBy,
-                UpdatedBy = createdPartnershipEntity.UpdatedBy,
-                CreatedAt = createdPartnershipEntity.CreatedAt,
-                UpdatedAt = createdPartnershipEntity.UpdatedAt,
-                BrandName = createdPartnershipEntity.Brand.Name,
-                CreatorName = createdPartnershipEntity.Creator?.Name,
-                UpdaterName = createdPartnershipEntity.Updater?.Name
+                Id = createdPartnerEntity.Id,
+                BrandId = createdPartnerEntity.BrandId,
+                Title = createdPartnerEntity.Title,
+                Logo = createdPartnerEntity.Logo,
+                Alt = createdPartnerEntity.Alt,
+                Status = createdPartnerEntity.Status.ToString(),
+                DisplayOrder = createdPartnerEntity.DisplayOrder,
+                CreatedBy = createdPartnerEntity.CreatedBy,
+                UpdatedBy = createdPartnerEntity.UpdatedBy,
+                CreatedAt = createdPartnerEntity.CreatedAt,
+                UpdatedAt = createdPartnerEntity.UpdatedAt,
+                BrandName = createdPartnerEntity.Brand.Name,
+                CreatorName = createdPartnerEntity.Creator?.Name,
+                UpdaterName = createdPartnerEntity.Updater?.Name
             };
 
-            return Ok(createdPartnership);
+            return CreatedAtAction(nameof(GetPartner), new { brandId, id = partner.Id }, createdPartner);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating partnership for brand {BrandId}", brandId);
-            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while creating partnership" } });
+            _logger.LogError(ex, "Error creating partner for brand {BrandId}", brandId);
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while creating partner" } });
         }
     }
 
     [HttpPut("{brandId}/{id}")]
     [Authorize(Roles = "Admin,Editor")]
-    public async Task<IActionResult> UpdatePartnership(int brandId, int id, [FromBody] UpdatePartnershipDto request)
+    public async Task<IActionResult> UpdatePartner(int brandId, int id, [FromBody] UpdatePartnerDto request)
     {
         try
         {
-            var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            var currentUser = await _context.Users.FindAsync(currentUserId);
-
-            if (currentUser == null)
+            if (!ModelState.IsValid)
             {
-                return Unauthorized();
+                return BadRequest(ModelState);
             }
 
-            var partnership = await _context.Partnerships
+            var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+            var partner = await _context.Partnerships
                 .Where(p => p.Id == id && p.BrandId == brandId)
                 .FirstOrDefaultAsync();
 
-            if (partnership == null)
+            if (partner == null)
             {
-                return NotFound(new { error = new { code = "PARTNERSHIP_NOT_FOUND", message = "Partnership not found" } });
-            }
-
-            // Check if partnership name is unique within the brand (excluding current partnership)
-            if (!string.IsNullOrEmpty(request.Name))
-            {
-                var nameExists = await _context.Partnerships
-                    .AnyAsync(p => p.BrandId == brandId && p.CompanyName == request.Name && p.Id != id);
-
-                if (nameExists)
-                {
-                    return BadRequest(new { error = new { code = "DUPLICATE_PARTNERSHIP_NAME", message = "A partnership with this name already exists for this brand" } });
-                }
+                return NotFound(new { error = new { code = "PARTNER_NOT_FOUND", message = "Partner not found" } });
             }
 
             // Update fields if provided
-            partnership.CompanyName = request.Name ?? partnership.CompanyName;
-            partnership.Description = request.Description ?? partnership.Description;
-            partnership.Email = request.ContactEmail ?? partnership.Email;
-            partnership.Phone = request.ContactPhone ?? partnership.Phone;
-            partnership.UpdatedBy = currentUserId;
-            partnership.UpdatedAt = DateTime.UtcNow;
+            if (!string.IsNullOrEmpty(request.Title))
+                partner.Title = request.Title;
+            if (request.Logo != null)
+                partner.Logo = request.Logo;
+            if (request.Alt != null)
+                partner.Alt = request.Alt;
+
+            partner.UpdatedBy = currentUserId;
+            partner.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
-            // Return updated partnership
-            var updatedPartnershipEntity = await _context.Partnerships
+            // Return updated partner
+            var updatedPartnerEntity = await _context.Partnerships
                 .Include(p => p.Brand)
                 .Include(p => p.Creator)
                 .Include(p => p.Updater)
-                .Where(p => p.Id == id)
-                .FirstOrDefaultAsync();
+                .FirstAsync(p => p.Id == id);
 
-            var updatedPartnership = new PartnershipDto
+            var updatedPartner = new PartnerDto
             {
-                Id = updatedPartnershipEntity!.Id,
-                BrandId = updatedPartnershipEntity.BrandId,
-                Name = updatedPartnershipEntity.CompanyName,
-                LogoUrl = null,
-                WebsiteUrl = null,
-                Description = updatedPartnershipEntity.Description,
-                ContactEmail = updatedPartnershipEntity.Email,
-                ContactPhone = updatedPartnershipEntity.Phone,
-                Status = updatedPartnershipEntity.Status.ToString(),
-                CreatedBy = updatedPartnershipEntity.CreatedBy,
-                UpdatedBy = updatedPartnershipEntity.UpdatedBy,
-                CreatedAt = updatedPartnershipEntity.CreatedAt,
-                UpdatedAt = updatedPartnershipEntity.UpdatedAt,
-                BrandName = updatedPartnershipEntity.Brand.Name,
-                CreatorName = updatedPartnershipEntity.Creator?.Name,
-                UpdaterName = updatedPartnershipEntity.Updater?.Name
+                Id = updatedPartnerEntity.Id,
+                BrandId = updatedPartnerEntity.BrandId,
+                Title = updatedPartnerEntity.Title,
+                Logo = updatedPartnerEntity.Logo,
+                Alt = updatedPartnerEntity.Alt,
+                Status = updatedPartnerEntity.Status.ToString(),
+                DisplayOrder = updatedPartnerEntity.DisplayOrder,
+                CreatedBy = updatedPartnerEntity.CreatedBy,
+                UpdatedBy = updatedPartnerEntity.UpdatedBy,
+                CreatedAt = updatedPartnerEntity.CreatedAt,
+                UpdatedAt = updatedPartnerEntity.UpdatedAt,
+                BrandName = updatedPartnerEntity.Brand.Name,
+                CreatorName = updatedPartnerEntity.Creator?.Name,
+                UpdaterName = updatedPartnerEntity.Updater?.Name
             };
 
-            return Ok(updatedPartnership);
+            return Ok(updatedPartner);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating partnership {Id} for brand {BrandId}", id, brandId);
-            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while updating partnership" } });
+            _logger.LogError(ex, "Error updating partner {Id} for brand {BrandId}", id, brandId);
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while updating partner" } });
         }
     }
 
     [HttpDelete("{brandId}/{id}")]
     [Authorize(Roles = "Admin,Editor")]
-    public async Task<IActionResult> DeletePartnership(int brandId, int id)
+    public async Task<IActionResult> DeletePartner(int brandId, int id)
     {
         try
         {
-            var partnership = await _context.Partnerships
+            var partner = await _context.Partnerships
                 .Where(p => p.Id == id && p.BrandId == brandId)
                 .FirstOrDefaultAsync();
 
-            if (partnership == null)
+            if (partner == null)
             {
-                return NotFound(new { error = new { code = "PARTNERSHIP_NOT_FOUND", message = "Partnership not found" } });
+                return NotFound(new { error = new { code = "PARTNER_NOT_FOUND", message = "Partner not found" } });
             }
 
-            _context.Partnerships.Remove(partnership);
+            _context.Partnerships.Remove(partner);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Partnership deleted successfully" });
+            return Ok(new { message = "Partner deleted successfully" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting partnership {Id} for brand {BrandId}", id, brandId);
-            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while deleting partnership" } });
+            _logger.LogError(ex, "Error deleting partner {Id} for brand {BrandId}", id, brandId);
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while deleting partner" } });
         }
     }
 
-    [HttpPost("{brandId}/{id}/publish")]
+    [HttpPut("{brandId}/reorder")]
     [Authorize(Roles = "Admin,Editor")]
-    public async Task<IActionResult> PublishPartnership(int brandId, int id, [FromBody] PublishPartnershipDto request)
+    public async Task<IActionResult> ReorderPartners(int brandId, [FromBody] UpdatePartnerOrderDto request)
     {
         try
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            var currentUser = await _context.Users.FindAsync(currentUserId);
 
-            if (currentUser == null)
+            var partners = await _context.Partnerships
+                .Where(p => p.BrandId == brandId && request.PartnerIds.Contains(p.Id))
+                .ToListAsync();
+
+            if (partners.Count != request.PartnerIds.Count)
             {
-                return Unauthorized();
+                return BadRequest(new { error = new { code = "INVALID_PARTNER_IDS", message = "Some partner IDs are invalid" } });
             }
 
-            var partnership = await _context.Partnerships
-                .Where(p => p.Id == id && p.BrandId == brandId)
-                .FirstOrDefaultAsync();
-
-            if (partnership == null)
+            // Update display order based on the provided order
+            for (int i = 0; i < request.PartnerIds.Count; i++)
             {
-                return NotFound(new { error = new { code = "PARTNERSHIP_NOT_FOUND", message = "Partnership not found" } });
+                var partner = partners.First(p => p.Id == request.PartnerIds[i]);
+                partner.DisplayOrder = i;
+                partner.UpdatedBy = currentUserId;
+                partner.UpdatedAt = DateTime.UtcNow;
             }
-
-            partnership.Status = request.Publish ? PartnershipStatus.Active : PartnershipStatus.Inactive;
-            partnership.UpdatedBy = currentUserId;
-            partnership.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = request.Publish ? "Partnership published successfully" : "Partnership unpublished successfully" });
+            return Ok(new { message = "Partner order updated successfully" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error publishing partnership {Id} for brand {BrandId}", id, brandId);
-            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while publishing partnership" } });
+            _logger.LogError(ex, "Error reordering partners for brand {BrandId}", brandId);
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while reordering partners" } });
+        }
+    }
+
+    [HttpPut("{brandId}/{id}/toggle-status")]
+    [Authorize(Roles = "Admin,Editor")]
+    public async Task<IActionResult> TogglePartnerStatus(int brandId, int id, [FromBody] TogglePartnerStatusDto request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+            var partner = await _context.Partnerships
+                .Where(p => p.Id == id && p.BrandId == brandId)
+                .FirstOrDefaultAsync();
+
+            if (partner == null)
+            {
+                return NotFound(new { error = new { code = "PARTNER_NOT_FOUND", message = "Partner not found" } });
+            }
+
+            partner.Status = request.Active ? PartnershipStatus.Active : PartnershipStatus.Inactive;
+            partner.UpdatedBy = currentUserId;
+            partner.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = request.Active ? "Partner activated successfully" : "Partner deactivated successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error toggling partner status {Id} for brand {BrandId}", id, brandId);
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while toggling partner status" } });
         }
     }
 }

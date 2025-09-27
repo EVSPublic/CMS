@@ -2,17 +2,15 @@ using System.ComponentModel.DataAnnotations;
 
 namespace AdminPanel.DTOs;
 
-public class PartnershipDto
+public class PartnerDto
 {
     public int Id { get; set; }
     public int BrandId { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string? LogoUrl { get; set; }
-    public string? WebsiteUrl { get; set; }
-    public string? Description { get; set; }
-    public string? ContactEmail { get; set; }
-    public string? ContactPhone { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? Logo { get; set; }
+    public string? Alt { get; set; }
     public string Status { get; set; } = string.Empty;
+    public int DisplayOrder { get; set; }
     public int? CreatedBy { get; set; }
     public int? UpdatedBy { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -22,52 +20,39 @@ public class PartnershipDto
     public string? UpdaterName { get; set; }
 }
 
-public class CreatePartnershipDto
+public class CreatePartnerDto
 {
     [Required]
     [MaxLength(255)]
-    public string Name { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
 
     [MaxLength(500)]
-    public string? LogoUrl { get; set; }
-
-    [MaxLength(500)]
-    public string? WebsiteUrl { get; set; }
-
-    public string? Description { get; set; }
+    public string? Logo { get; set; }
 
     [MaxLength(255)]
-    [EmailAddress]
-    public string? ContactEmail { get; set; }
-
-    [MaxLength(50)]
-    public string? ContactPhone { get; set; }
-
+    public string? Alt { get; set; }
 }
 
-public class UpdatePartnershipDto
+public class UpdatePartnerDto
 {
     [MaxLength(255)]
-    public string? Name { get; set; }
+    public string? Title { get; set; }
 
     [MaxLength(500)]
-    public string? LogoUrl { get; set; }
-
-    [MaxLength(500)]
-    public string? WebsiteUrl { get; set; }
-
-    public string? Description { get; set; }
+    public string? Logo { get; set; }
 
     [MaxLength(255)]
-    [EmailAddress]
-    public string? ContactEmail { get; set; }
-
-    [MaxLength(50)]
-    public string? ContactPhone { get; set; }
+    public string? Alt { get; set; }
 }
 
-public class PublishPartnershipDto
+public class UpdatePartnerOrderDto
 {
     [Required]
-    public bool Publish { get; set; } = true;
+    public List<int> PartnerIds { get; set; } = new();
+}
+
+public class TogglePartnerStatusDto
+{
+    [Required]
+    public bool Active { get; set; } = true;
 }
