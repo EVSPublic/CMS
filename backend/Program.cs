@@ -58,6 +58,7 @@ builder.Services.AddAuthentication(options =>
 // Add services
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<AdminPanel.Services.SystemUsage>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Add controllers
 builder.Services.AddControllers();
