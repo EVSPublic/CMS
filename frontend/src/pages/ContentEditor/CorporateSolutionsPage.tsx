@@ -45,18 +45,22 @@ const initialContent: CorporateSolutionsPageContent = {
   },
   managementCards: [
     {
+      image: "",
       title: "Yönetim Paneli",
       content: "Şarj ünitelerinizin uzaktan yönetimi, kullanıcı tanımlamaları ve yetkilendirme işlemleri tek bir panel üzerinden yapılabilir."
     },
     {
+      image: "",
       title: "Raporlama Paneli",
       content: "Tüm şarj işlemlerine ait detaylı veriler, grafiklerle desteklenmiş raporlarla kolayca görüntülenebilir."
     },
     {
+      image: "",
       title: "Filo Paneli",
       content: "Filo müşterileri, araçlarını yönetebilir, şarj limitleri tanımlayabilir ve kullanım verilerini kontrol altında tutabilir."
     },
     {
+      image: "",
       title: "Mobil Uygulama",
       content: "Kullanıcılar, şarj noktalarını harita üzerinden görüntüleyebilir, ünitelerde şarja başlayabilir ve ödemelerini kolayca yapabilir."
     }
@@ -133,18 +137,22 @@ const CorporateSolutionsPageEditor: React.FC = () => {
   };
 
   const updateBusinessCard = (index: number, field: string, value: string) => {
-    if (!content?.businessSolutions?.cards) return;
-    const newCards = [...content.businessSolutions.cards];
+    const currentCards = content?.businessSolutions?.cards || initialContent.businessSolutions.cards;
+    const newCards = [...currentCards];
     newCards[index] = { ...newCards[index], [field]: value };
     setContent(prev => ({
       ...prev,
-      businessSolutions: { ...prev.businessSolutions, cards: newCards }
+      businessSolutions: {
+        ...prev.businessSolutions,
+        title: prev.businessSolutions?.title || initialContent.businessSolutions.title,
+        cards: newCards
+      }
     }));
   };
 
   const updateManagementCard = (index: number, field: string, value: string) => {
-    if (!content?.managementCards) return;
-    const newCards = [...content.managementCards];
+    const currentCards = content?.managementCards || initialContent.managementCards;
+    const newCards = [...currentCards];
     newCards[index] = { ...newCards[index], [field]: value };
     setContent(prev => ({
       ...prev,
@@ -386,7 +394,7 @@ const CorporateSolutionsPageEditor: React.FC = () => {
                   </div>
                 </div>
 
-                {(content?.businessSolutions?.cards || []).map((card, index) => (
+                {(content?.businessSolutions?.cards || initialContent.businessSolutions.cards).map((card, index) => (
                   <div key={index} className="bg-white dark:bg-gray-800 shadow p-6">
                     <h3 className="text-lg font-semibold mb-4">Kart {index + 1}</h3>
                     <div className="space-y-4">
@@ -423,10 +431,18 @@ const CorporateSolutionsPageEditor: React.FC = () => {
 
             <Tab.Panel>
               <div className="space-y-6">
-                {(content?.managementCards || []).map((card, index) => (
+                {(content?.managementCards || initialContent.managementCards).map((card, index) => (
                   <div key={index} className="bg-white dark:bg-gray-800 shadow p-6">
                     <h3 className="text-lg font-semibold mb-4">Kart {index + 1}</h3>
                     <div className="space-y-4">
+                      <div>
+                        <ImageInput
+                          value={card?.image || ''}
+                          onChange={(url) => updateManagementCard(index, 'image', url)}
+                          label={`Kart ${index + 1} Görseli`}
+                          placeholder={`Kart ${index + 1} görseli seçin...`}
+                        />
+                      </div>
                       <div>
                         <FormLabel>Başlık</FormLabel>
                         <FormInput

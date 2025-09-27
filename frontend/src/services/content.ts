@@ -78,6 +78,7 @@ export interface CorporateSolutionsPageContent {
     }>;
   };
   managementCards: Array<{
+    image: string;
     title: string;
     content: string;
   }>;

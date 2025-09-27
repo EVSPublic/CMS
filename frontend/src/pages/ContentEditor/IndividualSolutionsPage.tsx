@@ -81,7 +81,13 @@ const IndividualSolutionsPageEditor: React.FC = () => {
       let finalContent = initialContent;
 
       if (response.ok && response.data) {
-        finalContent = response.data;
+        finalContent = {
+          ...initialContent,
+          ...response.data,
+          bottomItems: response.data.bottomItems && response.data.bottomItems.length > 0
+            ? response.data.bottomItems
+            : initialContent.bottomItems
+        };
       }
 
       setContent(finalContent);
@@ -108,8 +114,8 @@ const IndividualSolutionsPageEditor: React.FC = () => {
   };
 
   const updateBottomItem = (index: number, field: string, value: string) => {
-    if (!content?.bottomItems) return;
-    const newBottomItems = [...content.bottomItems];
+    const currentBottomItems = content?.bottomItems || initialContent.bottomItems;
+    const newBottomItems = [...currentBottomItems];
     newBottomItems[index] = { ...newBottomItems[index], [field]: value };
     setContent(prev => ({
       ...prev,
@@ -325,7 +331,7 @@ const IndividualSolutionsPageEditor: React.FC = () => {
 
             <Tab.Panel>
               <div className="space-y-6">
-                {content?.bottomItems?.map((item, index) => (
+                {(content?.bottomItems || initialContent.bottomItems).map((item, index) => (
                   <div key={index} className="bg-white dark:bg-gray-800 shadow p-6">
                     <h3 className="text-lg font-semibold mb-4">Alt Bölüm {index + 1}</h3>
                     <div className="space-y-4">
