@@ -380,36 +380,36 @@ export const contentService = new ContentService();
 
 // Export validation rules for each page type
 export const pageValidationRules = {
-  index: {
+  Index: {
     'meta.title': { required: true, minLength: 3, maxLength: 60 },
     'hero.title': { required: true, minLength: 5, maxLength: 100 },
     'hero.subtitle': { required: true, minLength: 10, maxLength: 200 }
   },
-  about: {
+  About: {
     'meta.title': { required: true, minLength: 3, maxLength: 60 },
     'about.title': { required: true, minLength: 5, maxLength: 100 },
     'about.description': { required: true, minLength: 20, maxLength: 500 }
   },
-  'individual-solutions': {
+  IndividualSolutions: {
     'meta.title': { required: true, minLength: 3, maxLength: 60 },
     'solution.title': { required: true, minLength: 5, maxLength: 100 }
   },
-  'corporate-solutions': {
+  CorporateSolutions: {
     'meta.title': { required: true, minLength: 3, maxLength: 60 },
     'solution.title': { required: true, minLength: 5, maxLength: 100 }
   },
-  tarifeler: {
+  Tariffs: {
     'meta.title': { required: true, minLength: 3, maxLength: 60 },
     'pageHeader.title': { required: true, minLength: 3, maxLength: 50 },
     'pageHeader.description': { required: true, minLength: 10, maxLength: 300 }
   },
-  iletisim: {
+  Contact: {
     'meta.title': { required: true, minLength: 3, maxLength: 60 },
     'contactInfo.title': { required: true, minLength: 3, maxLength: 50 },
     'contactInfo.email.address': { required: true, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
     'contactInfo.phone.number': { required: true, minLength: 10 }
   },
-  'istasyon-haritasi': {
+  StationMap: {
     'meta.title': { required: true, minLength: 3, maxLength: 60 },
     'mapHeader.title': { required: true, minLength: 3, maxLength: 50 },
     'mapConfig.embedUrl': { required: true, pattern: /^https?:\/\/.+/ }

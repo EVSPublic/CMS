@@ -54,6 +54,35 @@ export interface IndividualSolutionsPageContent {
   };
 }
 
+// Corporate Solutions page content structure matching backend
+export interface CorporateSolutionsPageContent {
+  meta: {
+    title: string;
+    description: string;
+    keywords: string;
+  };
+  hero: {
+    image: string;
+  };
+  mainSolution: {
+    title: string;
+    description: string;
+    image: string;
+  };
+  businessSolutions: {
+    title: string;
+    cards: Array<{
+      image: string;
+      title: string;
+      content: string;
+    }>;
+  };
+  managementCards: Array<{
+    title: string;
+    content: string;
+  }>;
+}
+
 // About page content structure matching backend
 export interface AboutPageContent {
   meta: {
@@ -126,8 +155,8 @@ export interface IndexPageContent {
   };
 }
 
-export type PageType = 'index' | 'about' | 'individual-solutions' | 'corporate-solutions' |
-  'tarifeler' | 'iletisim' | 'istasyon-haritasi' | 'announcements' | 'partnership';
+export type PageType = 'Index' | 'About' | 'IndividualSolutions' | 'CorporateSolutions' |
+  'Tariffs' | 'Contact' | 'StationMap';
 
 class ContentService {
   /**
@@ -184,7 +213,7 @@ class ContentService {
    * Get typed index page content
    */
   async getIndexPageContent(brandId: number): Promise<ApiResponse<IndexPageContent>> {
-    const response = await this.getContentPage(brandId, 'index');
+    const response = await this.getContentPage(brandId, 'Index');
     if (response.ok && response.data) {
       // Extract content from the ContentPageDto structure and merge meta fields
       const content = response.data.content as IndexPageContent;
@@ -216,7 +245,7 @@ class ContentService {
   ): Promise<ApiResponse<ContentPageDto>> {
     return this.saveContentPage(
       brandId,
-      'index',
+      'Index',
       content,
       content.meta.title,
       content.meta.description,
@@ -228,7 +257,7 @@ class ContentService {
    * Get typed about page content
    */
   async getAboutPageContent(brandId: number): Promise<ApiResponse<AboutPageContent>> {
-    const response = await this.getContentPage(brandId, 'about');
+    const response = await this.getContentPage(brandId, 'About');
     if (response.ok && response.data) {
       // Extract content from the ContentPageDto structure and merge meta fields
       const content = response.data.content as AboutPageContent;
@@ -260,7 +289,95 @@ class ContentService {
   ): Promise<ApiResponse<ContentPageDto>> {
     return this.saveContentPage(
       brandId,
-      'about',
+      'About',
+      content,
+      content.meta.title,
+      content.meta.description,
+      content.meta.keywords
+    );
+  }
+
+  /**
+   * Get typed individual solutions page content
+   */
+  async getIndividualSolutionsPageContent(brandId: number): Promise<ApiResponse<IndividualSolutionsPageContent>> {
+    const response = await this.getContentPage(brandId, 'IndividualSolutions');
+    if (response.ok && response.data) {
+      // Extract content from the ContentPageDto structure and merge meta fields
+      const content = response.data.content as IndividualSolutionsPageContent;
+
+      // Merge meta fields from DTO into content structure
+      if (content.meta) {
+        content.meta.title = response.data.metaTitle || content.meta.title || '';
+        content.meta.description = response.data.metaDescription || content.meta.description || '';
+        content.meta.keywords = response.data.metaKeywords || content.meta.keywords || '';
+      }
+
+      return {
+        ok: true,
+        data: content
+      };
+    }
+    return {
+      ok: false,
+      error: response.error || { code: 'LOAD_ERROR', message: 'Failed to load content' }
+    };
+  }
+
+  /**
+   * Save typed individual solutions page content
+   */
+  async saveIndividualSolutionsPageContent(
+    brandId: number,
+    content: IndividualSolutionsPageContent
+  ): Promise<ApiResponse<ContentPageDto>> {
+    return this.saveContentPage(
+      brandId,
+      'IndividualSolutions',
+      content,
+      content.meta.title,
+      content.meta.description,
+      content.meta.keywords
+    );
+  }
+
+  /**
+   * Get typed corporate solutions page content
+   */
+  async getCorporateSolutionsPageContent(brandId: number): Promise<ApiResponse<CorporateSolutionsPageContent>> {
+    const response = await this.getContentPage(brandId, 'CorporateSolutions');
+    if (response.ok && response.data) {
+      // Extract content from the ContentPageDto structure and merge meta fields
+      const content = response.data.content as CorporateSolutionsPageContent;
+
+      // Merge meta fields from DTO into content structure
+      if (content.meta) {
+        content.meta.title = response.data.metaTitle || content.meta.title || '';
+        content.meta.description = response.data.metaDescription || content.meta.description || '';
+        content.meta.keywords = response.data.metaKeywords || content.meta.keywords || '';
+      }
+
+      return {
+        ok: true,
+        data: content
+      };
+    }
+    return {
+      ok: false,
+      error: response.error || { code: 'LOAD_ERROR', message: 'Failed to load content' }
+    };
+  }
+
+  /**
+   * Save typed corporate solutions page content
+   */
+  async saveCorporateSolutionsPageContent(
+    brandId: number,
+    content: CorporateSolutionsPageContent
+  ): Promise<ApiResponse<ContentPageDto>> {
+    return this.saveContentPage(
+      brandId,
+      'CorporateSolutions',
       content,
       content.meta.title,
       content.meta.description,

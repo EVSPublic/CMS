@@ -1,33 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FormInput from '../../components/Base/Form/FormInput';
 import FormTextarea from '../../components/Base/Form/FormTextarea';
 import FormLabel from '../../components/Base/Form/FormLabel';
 import Button from '../../components/Base/Button';
 import Tab from '../../components/Base/Headless/Tab';
 import ImageInput from '../../components/ImageInput';
+import Lucide from '../../components/Base/Lucide';
+import { contentService, IndividualSolutionsPageContent } from '../../services/content';
 
-interface IndividualSolutionsPageContent {
-  meta: {
-    title: string;
-    description: string;
-    keywords: string;
-  };
-  hero: {
-    image: string;
-  };
-  mainSolution: {
-    title: string;
-    description: string;
-    image: string;
-  };
-  bottomItems: Array<{
-    image: string;
-    paragraph: string;
-  }>;
-  footerSection: {
-    altText: string;
-  };
-}
 
 const initialContent: IndividualSolutionsPageContent = {
   meta: {
@@ -60,18 +40,75 @@ const initialContent: IndividualSolutionsPageContent = {
 
 const IndividualSolutionsPageEditor: React.FC = () => {
   const [content, setContent] = useState<IndividualSolutionsPageContent>(initialContent);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Get current brand ID from localStorage
+  const getCurrentBrandId = (): number => {
+    const selectedBrand = localStorage.getItem('selectedBrand') || 'Ovolt';
+    return selectedBrand === 'Ovolt' ? 1 : 2; // Ovolt = 1, Sharz.net = 2
+  };
+
+  const [currentBrandId, setCurrentBrandId] = useState<number>(getCurrentBrandId());
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+
+  // Load content on component mount
+  useEffect(() => {
+    loadContent();
+  }, []);
+
+  // Listen for brand changes and reload content
+  useEffect(() => {
+    const handleBrandChange = () => {
+      const newBrandId = getCurrentBrandId();
+      setCurrentBrandId(newBrandId);
+      loadContent(newBrandId); // Reload content for new brand with specific ID
+    };
+
+    window.addEventListener('brandChanged', handleBrandChange);
+    return () => window.removeEventListener('brandChanged', handleBrandChange);
+  }, []);
+
+  const loadContent = async (brandId?: number) => {
+    const actualBrandId = brandId || currentBrandId;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await contentService.getIndividualSolutionsPageContent(actualBrandId);
+
+      let finalContent = initialContent;
+
+      if (response.ok && response.data) {
+        finalContent = response.data;
+      }
+
+      setContent(finalContent);
+    } catch (err) {
+      setContent(initialContent);
+      setError('İçerik yüklenirken bir hata oluştu');
+      console.error('Content load error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const updateContent = (section: keyof IndividualSolutionsPageContent, field: string, value: any) => {
-    setContent(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: value
-      }
-    }));
+    setContent(prev => {
+      if (!prev) return initialContent;
+      return {
+        ...prev,
+        [section]: {
+          ...prev[section],
+          [field]: value
+        }
+      };
+    });
   };
 
   const updateBottomItem = (index: number, field: string, value: string) => {
+    if (!content?.bottomItems) return;
     const newBottomItems = [...content.bottomItems];
     newBottomItems[index] = { ...newBottomItems[index], [field]: value };
     setContent(prev => ({
@@ -83,23 +120,23 @@ const IndividualSolutionsPageEditor: React.FC = () => {
   const validateContent = (): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
 
-    if (!content.meta.title.trim()) {
+    if (!content?.meta?.title?.trim()) {
       errors.push('Sayfa başlığı boş olamaz');
     }
 
-    if (!content.mainSolution.title.trim()) {
+    if (!content?.mainSolution?.title?.trim()) {
       errors.push('Ana çözümler başlığı boş olamaz');
     }
 
-    if (!content.mainSolution.description.trim()) {
+    if (!content?.mainSolution?.description?.trim()) {
       errors.push('Ana çözümler açıklaması boş olamaz');
     }
 
-    if (!content.footerSection.altText.trim()) {
+    if (!content?.footerSection?.altText?.trim()) {
       errors.push('Alt metin boş olamaz');
     }
 
-    content.bottomItems.forEach((item, index) => {
+    content?.bottomItems?.forEach((item, index) => {
       if (!item.paragraph.trim()) {
         errors.push(`Alt bölüm ${index + 1} paragrafı boş olamaz`);
       }
@@ -119,25 +156,67 @@ const IndividualSolutionsPageEditor: React.FC = () => {
       return;
     }
 
+    setSaving(true);
+    setError(null);
+
     try {
-      console.log('Saving content:', content);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      alert('İçerik başarıyla kaydedildi!');
+      const response = await contentService.saveIndividualSolutionsPageContent(currentBrandId, content);
+
+      if (response.ok) {
+        setLastSavedAt(new Date());
+        alert('İçerik başarıyla kaydedildi!');
+      } else {
+        setError(response.error?.message || 'İçerik kaydedilemedi');
+        alert('İçerik kaydedilirken bir hata oluştu: ' + (response.error?.message || 'Bilinmeyen hata'));
+      }
     } catch (error) {
       console.error('Save error:', error);
+      setError('İçerik kaydedilirken bir hata oluştu');
       alert('İçerik kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.');
+    } finally {
+      setSaving(false);
     }
   };
+
+  if (loading || !content) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Lucide icon="Loader2" className="mx-auto h-12 w-12 text-gray-400 animate-spin mb-3" />
+            <p className="text-gray-500 dark:text-gray-400">İçerik yükleniyor...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-          Bireysel Çözümler Sayfası İçerik Editörü
-        </h1>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-          Bireysel çözümler sayfası içeriklerini düzenleyin
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+              Bireysel Çözümler Sayfası İçerik Editörü
+            </h1>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+              Bireysel çözümler sayfası içeriklerini düzenleyin
+            </p>
+          </div>
+          {lastSavedAt && (
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              Son kayıt: {lastSavedAt.toLocaleString('tr-TR')}
+            </div>
+          )}
+        </div>
+        {error && (
+          <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm rounded-md">
+            <div className="flex items-center">
+              <Lucide icon="AlertCircle" className="w-4 h-4 mr-2" />
+              {error}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="space-y-6">
@@ -168,7 +247,7 @@ const IndividualSolutionsPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Sayfa Başlığı</FormLabel>
                     <FormInput
-                      value={content.meta.title}
+                      value={content?.meta?.title || ''}
                       onChange={(e) => updateContent('meta', 'title', e.target.value)}
                       placeholder="Sayfa başlığını girin"
                     />
@@ -176,7 +255,7 @@ const IndividualSolutionsPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Açıklama</FormLabel>
                     <FormTextarea
-                      value={content.meta.description}
+                      value={content?.meta?.description || ''}
                       onChange={(e) => updateContent('meta', 'description', e.target.value)}
                       placeholder="Sayfa açıklamasını girin"
                       rows={3}
@@ -185,7 +264,7 @@ const IndividualSolutionsPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Anahtar Kelimeler</FormLabel>
                     <FormTextarea
-                      value={content.meta.keywords}
+                      value={content?.meta?.keywords || ''}
                       onChange={(e) => updateContent('meta', 'keywords', e.target.value)}
                       placeholder="Anahtar kelimeleri virgülle ayırarak girin"
                       rows={2}
@@ -201,7 +280,7 @@ const IndividualSolutionsPageEditor: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <ImageInput
-                      value={content.hero.image}
+                      value={content?.hero?.image || ''}
                       onChange={(url) => updateContent('hero', 'image', url)}
                       label="Hero Görseli"
                       placeholder="Hero görseli seçin..."
@@ -218,7 +297,7 @@ const IndividualSolutionsPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Ana Başlık</FormLabel>
                     <FormInput
-                      value={content.mainSolution.title}
+                      value={content?.mainSolution?.title || ''}
                       onChange={(e) => updateContent('mainSolution', 'title', e.target.value)}
                       placeholder="Ana başlığı girin"
                     />
@@ -226,7 +305,7 @@ const IndividualSolutionsPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Ana Açıklama</FormLabel>
                     <FormTextarea
-                      value={content.mainSolution.description}
+                      value={content?.mainSolution?.description || ''}
                       onChange={(e) => updateContent('mainSolution', 'description', e.target.value)}
                       placeholder="Ana açıklamayı girin"
                       rows={3}
@@ -234,7 +313,7 @@ const IndividualSolutionsPageEditor: React.FC = () => {
                   </div>
                   <div>
                     <ImageInput
-                      value={content.mainSolution.image}
+                      value={content?.mainSolution?.image || ''}
                       onChange={(url) => updateContent('mainSolution', 'image', url)}
                       label="Ana Çözümler Görseli"
                       placeholder="Ana çözümler görseli seçin..."
@@ -246,13 +325,13 @@ const IndividualSolutionsPageEditor: React.FC = () => {
 
             <Tab.Panel>
               <div className="space-y-6">
-                {content.bottomItems.map((item, index) => (
+                {content?.bottomItems?.map((item, index) => (
                   <div key={index} className="bg-white dark:bg-gray-800 shadow p-6">
                     <h3 className="text-lg font-semibold mb-4">Alt Bölüm {index + 1}</h3>
                     <div className="space-y-4">
                       <div>
                         <ImageInput
-                          value={item.image}
+                          value={item?.image || ''}
                           onChange={(url) => updateBottomItem(index, 'image', url)}
                           label={`Alt Bölüm ${index + 1} Görseli`}
                           placeholder={`Alt bölüm ${index + 1} görseli seçin...`}
@@ -261,7 +340,7 @@ const IndividualSolutionsPageEditor: React.FC = () => {
                       <div>
                         <FormLabel>Paragraf İçeriği</FormLabel>
                         <FormTextarea
-                          value={item.paragraph}
+                          value={item?.paragraph || ''}
                           onChange={(e) => updateBottomItem(index, 'paragraph', e.target.value)}
                           placeholder={`Alt bölüm ${index + 1} paragraf içeriği`}
                           rows={4}
@@ -280,7 +359,7 @@ const IndividualSolutionsPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Alt Metin</FormLabel>
                     <FormTextarea
-                      value={content.footerSection.altText}
+                      value={content?.footerSection?.altText || ''}
                       onChange={(e) => updateContent('footerSection', 'altText', e.target.value)}
                       placeholder="Alt metni girin"
                       rows={2}
@@ -293,8 +372,15 @@ const IndividualSolutionsPageEditor: React.FC = () => {
         </Tab.Group>
 
         <div className="flex justify-end mt-6">
-          <Button variant="primary" onClick={handleSave}>
-            Değişiklikleri Kaydet
+          <Button variant="primary" onClick={handleSave} disabled={saving}>
+            {saving ? (
+              <>
+                <Lucide icon="Loader2" className="w-4 h-4 mr-2 animate-spin" />
+                Kaydediliyor...
+              </>
+            ) : (
+              'Değişiklikleri Kaydet'
+            )}
           </Button>
         </div>
       </div>
