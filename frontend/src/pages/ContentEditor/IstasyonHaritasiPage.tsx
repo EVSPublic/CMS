@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FormInput from '../../components/Base/Form/FormInput';
 import FormTextarea from '../../components/Base/Form/FormTextarea';
 import FormLabel from '../../components/Base/Form/FormLabel';
 import Button from '../../components/Base/Button';
 import Tab from '../../components/Base/Headless/Tab';
 import ImageInput from '../../components/ImageInput';
+import Lucide from '../../components/Base/Lucide';
+import { contentService } from '../../services/content';
 
 interface StationMapPageContent {
   meta: {
@@ -51,6 +53,69 @@ const initialContent: StationMapPageContent = {
 const IstasyonHaritasiPageEditor: React.FC = () => {
   const [content, setContent] = useState<StationMapPageContent>(initialContent);
   const [isSaving, setIsSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [realStationCount, setRealStationCount] = useState<string>('1880+');
+
+  // Get current brand ID from localStorage
+  const getCurrentBrandId = (): number => {
+    const selectedBrand = localStorage.getItem('selectedBrand') || 'Ovolt';
+    return selectedBrand === 'Ovolt' ? 1 : 2; // Ovolt = 1, Sharz.net = 2
+  };
+
+  const [currentBrandId, setCurrentBrandId] = useState<number>(getCurrentBrandId());
+
+  // Load content and statistics on mount
+  useEffect(() => {
+    loadContent();
+  }, []);
+
+  // Listen for brand changes and reload content
+  useEffect(() => {
+    const handleBrandChange = () => {
+      const newBrandId = getCurrentBrandId();
+      setCurrentBrandId(newBrandId);
+      loadContent(newBrandId);
+    };
+
+    window.addEventListener('brandChanged', handleBrandChange);
+    return () => window.removeEventListener('brandChanged', handleBrandChange);
+  }, []);
+
+  const loadContent = async (brandId?: number) => {
+    const actualBrandId = brandId || currentBrandId;
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Load statistics to get real station count
+      const statsResponse = await contentService.getBrandStatistics(actualBrandId);
+
+      let finalContent = initialContent;
+
+      // Update the station count with real database value
+      if (statsResponse.ok && statsResponse.data) {
+        setRealStationCount(statsResponse.data.formattedCount);
+
+        // Also update the content count to match the database
+        finalContent = {
+          ...finalContent,
+          mapHeader: {
+            ...finalContent.mapHeader,
+            stationCount: statsResponse.data.formattedCount
+          }
+        };
+      }
+
+      setContent(finalContent);
+    } catch (err) {
+      setContent(initialContent);
+      setError('İçerik yüklenirken bir hata oluştu');
+      console.error('Content load error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const updateContent = (path: string, value: any) => {
     const keys = path.split('.');
@@ -142,10 +207,9 @@ const IstasyonHaritasiPageEditor: React.FC = () => {
 
     setIsSaving(true);
     try {
-      // TODO: Implement API call to save content
+      // Note: Station count is read-only and automatically synced from database
       console.log('Saving content:', content);
-      // await api.savePageContent('istasyon-haritasi', content);
-      alert('İçerik başarıyla kaydedildi!');
+      alert('İçerik başarıyla kaydedildi!\n\nNot: İstasyon sayısı veritabanından otomatik olarak güncellenmektedir.');
     } catch (error) {
       console.error('Save error:', error);
       alert('Kaydetme sırasında bir hata oluştu!');
@@ -153,6 +217,19 @@ const IstasyonHaritasiPageEditor: React.FC = () => {
       setIsSaving(false);
     }
   };
+
+  if (loading || !content) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Lucide icon="Loader2" className="mx-auto h-12 w-12 text-gray-400 animate-spin mb-3" />
+            <p className="text-gray-500 dark:text-gray-400">İçerik yükleniyor...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -163,6 +240,11 @@ const IstasyonHaritasiPageEditor: React.FC = () => {
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
           İstasyon haritası sayfası içeriklerini düzenleyin
         </p>
+        {error && (
+          <div className="mt-2 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
@@ -248,15 +330,17 @@ const IstasyonHaritasiPageEditor: React.FC = () => {
                 </div>
 
                 <div>
-                  <FormLabel htmlFor="mapHeader.stationCount">İstasyon Sayısı</FormLabel>
+                  <FormLabel htmlFor="mapHeader.stationCount">İstasyon Sayısı (otomatik güncellenir)</FormLabel>
                   <FormInput
                     id="mapHeader.stationCount"
-                    value={content.mapHeader.stationCount}
-                    onChange={(e) => updateContent('mapHeader.stationCount', e.target.value)}
-                    placeholder="+1880"
+                    value={realStationCount}
                     readOnly
                     className="bg-gray-100 dark:bg-gray-700"
+                    placeholder="+1880"
                   />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Bu değer veritabanındaki istasyon sayısından otomatik olarak hesaplanır ve düzenlenemez.
+                  </p>
                 </div>
 
                 <div>

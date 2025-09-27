@@ -105,12 +105,24 @@ export interface StationWithDistance {
 }
 
 class StationsService {
+  private getSelectedBrandFilter(): string[] | undefined {
+    const selectedBrand = localStorage.getItem('selectedBrand');
+    if (selectedBrand) {
+      return [selectedBrand];
+    }
+    return undefined;
+  }
+
   async getStations(request: StationSearchRequest = {}): Promise<ApiResponse<Station[]>> {
     const queryParams = new URLSearchParams();
-    
+
+    // Apply project selection filter
+    const brandFilter = this.getSelectedBrandFilter();
+    const brandVisibility = request.brandVisibility || brandFilter;
+
     if (request.search) queryParams.append('search', request.search);
     if (request.status) queryParams.append('status', request.status);
-    if (request.brandVisibility) request.brandVisibility.forEach(brand => queryParams.append('brandVisibility', brand));
+    if (brandVisibility) brandVisibility.forEach(brand => queryParams.append('brandVisibility', brand));
     if (request.latitude !== undefined) queryParams.append('latitude', request.latitude.toString());
     if (request.longitude !== undefined) queryParams.append('longitude', request.longitude.toString());
     if (request.radiusKm !== undefined) queryParams.append('radiusKm', request.radiusKm.toString());
@@ -121,7 +133,7 @@ class StationsService {
 
     const queryString = queryParams.toString();
     const endpoint = `/api/admin/v1/stations${queryString ? `?${queryString}` : ''}`;
-    
+
     return api.get<Station[]>(endpoint);
   }
 
@@ -130,7 +142,14 @@ class StationsService {
   }
 
   async createStation(request: CreateStationRequest): Promise<ApiResponse<Station>> {
-    return api.post<Station>('/api/admin/v1/stations', request);
+    // Apply project selection to new stations
+    const brandFilter = this.getSelectedBrandFilter();
+    const stationRequest = {
+      ...request,
+      brandVisibility: request.brandVisibility || brandFilter || []
+    };
+
+    return api.post<Station>('/api/admin/v1/stations', stationRequest);
   }
 
   async updateStation(id: string, request: UpdateStationRequest): Promise<ApiResponse<Station>> {
@@ -149,19 +168,45 @@ class StationsService {
   }
 
   async getNearbyStations(latitude: number, longitude: number, radiusKm: number = 10): Promise<ApiResponse<Station[]>> {
-    return api.get<Station[]>(`/api/admin/v1/stations/nearby?latitude=${latitude}&longitude=${longitude}&radiusKm=${radiusKm}`);
+    const brandFilter = this.getSelectedBrandFilter();
+    const params = new URLSearchParams({
+      latitude: latitude.toString(),
+      longitude: longitude.toString(),
+      radiusKm: radiusKm.toString()
+    });
+
+    if (brandFilter) {
+      brandFilter.forEach(brand => params.append('brandVisibility', brand));
+    }
+
+    return api.get<Station[]>(`/api/admin/v1/stations?${params.toString()}`);
   }
 
   async getStationStatusSummary(): Promise<ApiResponse<Record<string, number>>> {
     return api.get<Record<string, number>>('/api/admin/v1/stations/status-summary');
   }
 
-  async getStationsByBrand(brand: string): Promise<ApiResponse<Station[]>> {
-    return api.get<Station[]>(`/api/admin/v1/stations/brand/${brand}`);
+  async getStationsByBrand(brand?: string): Promise<ApiResponse<Station[]>> {
+    const targetBrand = brand || this.getSelectedBrandFilter()?.[0];
+    if (!targetBrand) {
+      return this.getStations();
+    }
+    return this.getStations({ brandVisibility: [targetBrand] });
   }
 
   async getStationsWithDistance(latitude: number, longitude: number, maxDistanceKm: number = 50): Promise<ApiResponse<StationWithDistance[]>> {
-    return api.get<StationWithDistance[]>(`/api/admin/v1/location/stations/with-distance?latitude=${latitude}&longitude=${longitude}&maxDistanceKm=${maxDistanceKm}`);
+    const brandFilter = this.getSelectedBrandFilter();
+    const params = new URLSearchParams({
+      latitude: latitude.toString(),
+      longitude: longitude.toString(),
+      radiusKm: maxDistanceKm.toString()
+    });
+
+    if (brandFilter) {
+      brandFilter.forEach(brand => params.append('brandVisibility', brand));
+    }
+
+    return api.get<StationWithDistance[]>(`/api/admin/v1/stations?${params.toString()}`);
   }
 }
 

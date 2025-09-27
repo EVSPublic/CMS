@@ -20,6 +20,8 @@ public class AdminPanelContext : IdentityDbContext<User, IdentityRole<int>, int>
     public DbSet<MediaItem> MediaItems { get; set; }
     public DbSet<MediaFolder> MediaFolders { get; set; }
     public DbSet<MediaItemFolder> MediaItemFolders { get; set; }
+    public DbSet<Station> Stations { get; set; }
+    public DbSet<Charger> Chargers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -209,6 +211,25 @@ public class AdminPanelContext : IdentityDbContext<User, IdentityRole<int>, int>
             entity.HasOne(e => e.MediaFolder)
                 .WithMany(e => e.MediaItemFolders)
                 .HasForeignKey(e => e.MediaFolderId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure Station entity
+        builder.Entity<Station>(entity =>
+        {
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+        });
+
+        // Configure Charger entity
+        builder.Entity<Charger>(entity =>
+        {
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+
+            entity.HasOne(e => e.Station)
+                .WithMany(e => e.Chargers)
+                .HasForeignKey(e => e.StationId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

@@ -286,10 +286,19 @@ public class ContentController : ControllerBase
                 return NotFound(new { error = new { code = "BRAND_NOT_FOUND", message = "Brand not found" } });
             }
 
+            // Calculate actual station count from database based on brand visibility
+            var brandName = brand.Name.ToLower();
+            var actualStationCount = await _context.Stations
+                .Where(s => s.BrandVisibility.Contains($"\"{brandName}\""))
+                .CountAsync();
+
+            // If no stations found, fall back to brand's default count
+            var finalCount = actualStationCount > 0 ? actualStationCount : brand.ChargingStationCount;
+
             var statistics = new
             {
-                chargingStationCount = brand.ChargingStationCount,
-                formattedCount = $"{brand.ChargingStationCount}+"
+                chargingStationCount = finalCount,
+                formattedCount = $"{finalCount}+"
             };
 
             return Ok(statistics);
@@ -305,7 +314,14 @@ public class ContentController : ControllerBase
     {
         // Get brand to fetch the charging station count
         var brand = await _context.Brands.FindAsync(brandId);
-        var chargingStationCount = brand?.ChargingStationCount ?? 1880;
+
+        // Calculate actual station count from database based on brand visibility
+        var actualStationCount = await _context.Stations
+            .Where(s => s.BrandVisibility.Contains($"\"{brandName.ToLower()}\""))
+            .CountAsync();
+
+        // If no stations found, fall back to brand's default count
+        var chargingStationCount = actualStationCount > 0 ? actualStationCount : (brand?.ChargingStationCount ?? 1880);
 
         return pageType switch
         {
