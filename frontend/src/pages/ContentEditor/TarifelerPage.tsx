@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FormInput from '../../components/Base/Form/FormInput';
 import FormTextarea from '../../components/Base/Form/FormTextarea';
 import FormLabel from '../../components/Base/Form/FormLabel';
 import Button from '../../components/Base/Button';
 import Tab from '../../components/Base/Headless/Tab';
 import ImageInput from '../../components/ImageInput';
+import { contentService, TarifelerPageContent } from '../../services/content';
 
 interface TariffCard {
   isCampaign: boolean;
@@ -13,24 +14,6 @@ interface TariffCard {
   oldPrice: string;
   currentPrice: string;
   validityText: string;
-}
-
-interface TarifelerPageContent {
-  meta: {
-    title: string;
-    description: string;
-    keywords: string;
-  };
-  hero: {
-    image: string;
-  };
-  pageHeader: {
-    title: string;
-    description: string;
-  };
-  tariffs: {
-    cards: Array<TariffCard>;
-  };
 }
 
 const initialContent: TarifelerPageContent = {
@@ -101,20 +84,85 @@ const initialContent: TarifelerPageContent = {
 };
 
 const TarifelerPageEditor: React.FC = () => {
-  const [content, setContent] = useState<TarifelerPageContent>(initialContent);
+  const [content, setContent] = useState<TarifelerPageContent | null>(initialContent);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Get current brand ID from localStorage
+  const getCurrentBrandId = (): number => {
+    const selectedBrand = localStorage.getItem('selectedBrand') || 'Ovolt';
+    return selectedBrand === 'Ovolt' ? 1 : 2; // Ovolt = 1, Sharz.net = 2
+  };
+
+  const [currentBrandId, setCurrentBrandId] = useState<number>(getCurrentBrandId());
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+
+  // Load content on component mount
+  useEffect(() => {
+    loadContent();
+  }, []);
+
+  // Listen for brand changes and reload content
+  useEffect(() => {
+    const handleBrandChange = () => {
+      const newBrandId = getCurrentBrandId();
+      setCurrentBrandId(newBrandId);
+      loadContent(newBrandId); // Reload content for new brand with specific ID
+    };
+
+    window.addEventListener('brandChanged', handleBrandChange);
+    return () => window.removeEventListener('brandChanged', handleBrandChange);
+  }, []);
+
+  const loadContent = async (brandId?: number) => {
+    const actualBrandId = brandId || currentBrandId;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await contentService.getTarifelerPageContent(actualBrandId);
+
+      let finalContent = initialContent;
+
+      if (response.ok && response.data) {
+        finalContent = {
+          ...initialContent,
+          ...response.data,
+          tariffs: {
+            cards: response.data.tariffs && response.data.tariffs.cards && response.data.tariffs.cards.length > 0
+              ? response.data.tariffs.cards
+              : initialContent.tariffs.cards
+          }
+        };
+      }
+
+      setContent(finalContent);
+    } catch (err) {
+      setContent(initialContent);
+      setError('İçerik yüklenirken bir hata oluştu');
+      console.error('Content load error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const updateContent = (section: keyof TarifelerPageContent, field: string, value: any) => {
-    setContent(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: value
-      }
-    }));
+    setContent(prev => {
+      if (!prev) return initialContent;
+      return {
+        ...prev,
+        [section]: {
+          ...prev[section],
+          [field]: value
+        }
+      };
+    });
   };
 
   const updateTariffCard = (index: number, field: keyof TariffCard, value: string | boolean) => {
-    const newCards = [...content.tariffs.cards];
+    const currentCards = content?.tariffs?.cards || initialContent.tariffs.cards;
+    const newCards = [...currentCards];
     if (field === 'isCampaign') {
       newCards[index] = {
         ...newCards[index],
@@ -124,28 +172,31 @@ const TarifelerPageEditor: React.FC = () => {
     } else {
       newCards[index] = { ...newCards[index], [field]: value as string };
     }
-    setContent(prev => ({
-      ...prev,
-      tariffs: { ...prev.tariffs, cards: newCards }
-    }));
+    setContent(prev => {
+      if (!prev) return initialContent;
+      return {
+        ...prev,
+        tariffs: { ...prev.tariffs, cards: newCards }
+      };
+    });
   };
 
   const validateContent = (): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
 
-    if (!content.meta.title.trim()) {
+    if (!content?.meta?.title?.trim()) {
       errors.push('Sayfa başlığı boş olamaz');
     }
 
-    if (!content.pageHeader.title.trim()) {
+    if (!content?.pageHeader?.title?.trim()) {
       errors.push('Sayfa ana başlığı boş olamaz');
     }
 
-    content.tariffs.cards.forEach((card, index) => {
-      if (!card.title.trim()) {
+    content?.tariffs?.cards?.forEach((card, index) => {
+      if (!card?.title?.trim()) {
         errors.push(`Tarife ${index + 1} başlığı boş olamaz`);
       }
-      if (!card.currentPrice.trim()) {
+      if (!card?.currentPrice?.trim()) {
         errors.push(`Tarife ${index + 1} güncel fiyatı boş olamaz`);
       }
     });
@@ -164,15 +215,40 @@ const TarifelerPageEditor: React.FC = () => {
       return;
     }
 
+    setSaving(true);
+    setError(null);
+
     try {
-      console.log('Saving content:', content);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      alert('İçerik başarıyla kaydedildi!');
+      if (!content) {
+        throw new Error('İçerik bulunamadı');
+      }
+
+      const response = await contentService.saveTarifelerPageContent(currentBrandId, content);
+
+      if (response.ok) {
+        setLastSavedAt(new Date());
+        alert('İçerik başarıyla kaydedildi!');
+      } else {
+        throw new Error(response.error?.message || 'Kaydetme başarısız');
+      }
     } catch (error) {
       console.error('Save error:', error);
+      setError('İçerik kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.');
       alert('İçerik kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.');
+    } finally {
+      setSaving(false);
     }
   };
+
+  if (loading || !content) {
+    return (
+      <div className="p-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg text-gray-600 dark:text-gray-400">İçerik yükleniyor...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -207,7 +283,7 @@ const TarifelerPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Sayfa Başlığı</FormLabel>
                     <FormInput
-                      value={content.meta.title}
+                      value={content?.meta?.title || ''}
                       onChange={(e) => updateContent('meta', 'title', e.target.value)}
                       placeholder="Sayfa başlığını girin"
                     />
@@ -215,7 +291,7 @@ const TarifelerPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Açıklama</FormLabel>
                     <FormTextarea
-                      value={content.meta.description}
+                      value={content?.meta?.description || ''}
                       onChange={(e) => updateContent('meta', 'description', e.target.value)}
                       placeholder="Sayfa açıklamasını girin"
                       rows={3}
@@ -224,7 +300,7 @@ const TarifelerPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Anahtar Kelimeler</FormLabel>
                     <FormTextarea
-                      value={content.meta.keywords}
+                      value={content?.meta?.keywords || ''}
                       onChange={(e) => updateContent('meta', 'keywords', e.target.value)}
                       placeholder="Anahtar kelimeleri virgülle ayırarak girin"
                       rows={2}
@@ -233,7 +309,7 @@ const TarifelerPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Ana Başlık</FormLabel>
                     <FormInput
-                      value={content.pageHeader.title}
+                      value={content?.pageHeader?.title || ''}
                       onChange={(e) => updateContent('pageHeader', 'title', e.target.value)}
                       placeholder="Tarifeler"
                     />
@@ -241,7 +317,7 @@ const TarifelerPageEditor: React.FC = () => {
                   <div>
                     <FormLabel>Sayfa Açıklaması</FormLabel>
                     <FormTextarea
-                      value={content.pageHeader.description}
+                      value={content?.pageHeader?.description || ''}
                       onChange={(e) => updateContent('pageHeader', 'description', e.target.value)}
                       rows={3}
                       placeholder="Ovolt, elektrikli aracınız için yüksek kaliteli, güvenilir ve erişilebilir şarj çözümleri sunar."
@@ -258,7 +334,7 @@ const TarifelerPageEditor: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <ImageInput
-                      value={content.hero.image}
+                      value={content?.hero?.image || ''}
                       onChange={(url) => updateContent('hero', 'image', url)}
                       label="Hero Görseli"
                       placeholder="Hero görseli seçin..."
@@ -270,7 +346,7 @@ const TarifelerPageEditor: React.FC = () => {
 
             <Tab.Panel>
               <div className="space-y-6">
-                {content.tariffs.cards.map((card, index) => (
+                {(content?.tariffs?.cards || []).map((card, index) => (
                   <div key={index} className="bg-white dark:bg-gray-800 shadow p-6">
                     <h3 className="text-lg font-semibold mb-4">Tarife {index + 1}</h3>
                     <div className="space-y-4">
@@ -278,7 +354,7 @@ const TarifelerPageEditor: React.FC = () => {
                         <input
                           type="checkbox"
                           id={`campaign-${index}`}
-                          checked={card.isCampaign}
+                          checked={card?.isCampaign || false}
                           onChange={(e) => updateTariffCard(index, 'isCampaign', e.target.checked)}
                           className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                         />
@@ -287,9 +363,9 @@ const TarifelerPageEditor: React.FC = () => {
                       <div>
                         <FormLabel>Rozet Metni</FormLabel>
                         <FormInput
-                          value={card.badge}
+                          value={card?.badge || ''}
                           onChange={(e) => updateTariffCard(index, 'badge', e.target.value)}
-                          placeholder={card.isCampaign ? "Kampanyalı Tarife" : "Normal Tarife"}
+                          placeholder={card?.isCampaign ? "Kampanyalı Tarife" : "Normal Tarife"}
                           readOnly
                           className="bg-gray-100 dark:bg-gray-700"
                         />
@@ -297,34 +373,34 @@ const TarifelerPageEditor: React.FC = () => {
                       <div>
                         <FormLabel>Başlık</FormLabel>
                         <FormInput
-                          value={card.title}
+                          value={card?.title || ''}
                           onChange={(e) => updateTariffCard(index, 'title', e.target.value)}
                           placeholder="AC Soket Tarifesi"
                         />
                       </div>
-                      {card.isCampaign && (
+                      {card?.isCampaign && (
                         <div>
                           <FormLabel>Eski Fiyat</FormLabel>
                           <FormInput
-                            value={card.oldPrice}
+                            value={card?.oldPrice || ''}
                             onChange={(e) => updateTariffCard(index, 'oldPrice', e.target.value)}
                             placeholder="₺10.99"
                           />
                         </div>
                       )}
                       <div>
-                        <FormLabel>{card.isCampaign ? 'Güncel Fiyat' : 'Fiyat'}</FormLabel>
+                        <FormLabel>{card?.isCampaign ? 'Güncel Fiyat' : 'Fiyat'}</FormLabel>
                         <FormInput
-                          value={card.currentPrice}
+                          value={card?.currentPrice || ''}
                           onChange={(e) => updateTariffCard(index, 'currentPrice', e.target.value)}
                           placeholder="₺8.99"
                         />
                       </div>
-                      {card.isCampaign && (
+                      {card?.isCampaign && (
                         <div>
                           <FormLabel>Geçerlilik Metni</FormLabel>
                           <FormTextarea
-                            value={card.validityText}
+                            value={card?.validityText || ''}
                             onChange={(e) => updateTariffCard(index, 'validityText', e.target.value)}
                             rows={2}
                             placeholder="30-31 ağustos tarihleri arasında geçerlidir"
@@ -339,9 +415,24 @@ const TarifelerPageEditor: React.FC = () => {
           </Tab.Panels>
         </Tab.Group>
 
-        <div className="flex justify-end mt-6">
-          <Button variant="primary" onClick={handleSave}>
-            Değişiklikleri Kaydet
+        {error && (
+          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+
+        <div className="flex justify-between items-center mt-6">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            {lastSavedAt && (
+              <>Son kaydedilme: {lastSavedAt.toLocaleString('tr-TR')}</>
+            )}
+          </div>
+          <Button
+            variant="primary"
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
           </Button>
         </div>
       </div>

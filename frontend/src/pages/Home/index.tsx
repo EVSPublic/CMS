@@ -8,6 +8,20 @@ function Home() {
   const [error, setError] = useState<string | null>(null);
   const isInitialLoad = useRef(true);
 
+  // Get project name from localStorage
+  const getProjectName = () => {
+    const selectedBrand = localStorage.getItem('selectedBrand');
+
+    if (selectedBrand) {
+      // Capitalize first letter and add Admin Panel
+      const brandName = selectedBrand.charAt(0).toUpperCase() + selectedBrand.slice(1);
+      return `${brandName} Admin Panel`;
+    }
+
+    // Fallback to default
+    return 'Admin Panel';
+  };
+
   useEffect(() => {
     loadDashboardData();
     const interval = setInterval(loadDashboardData, 10000); // 10 seconds
@@ -49,7 +63,7 @@ function Home() {
               </div>
               <div>
                 <div className="text-base text-slate-500 dark:text-slate-400">Welcome to</div>
-                <div className="text-lg font-semibold text-slate-600 dark:text-slate-300">Admin Panel</div>
+                <div className="text-lg font-semibold text-slate-600 dark:text-slate-300">{getProjectName()}</div>
               </div>
             </div>
           </div>

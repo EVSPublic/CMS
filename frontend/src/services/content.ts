@@ -117,6 +117,32 @@ export interface AboutPageContent {
   };
 }
 
+// Tarifeler page content structure matching backend
+export interface TarifelerPageContent {
+  meta: {
+    title: string;
+    description: string;
+    keywords: string;
+  };
+  hero: {
+    image: string;
+  };
+  pageHeader: {
+    title: string;
+    description: string;
+  };
+  tariffs: {
+    cards: Array<{
+      isCampaign: boolean;
+      badge: string;
+      title: string;
+      oldPrice: string;
+      currentPrice: string;
+      validityText: string;
+    }>;
+  };
+}
+
 // Index page content structure matching backend
 export interface IndexPageContent {
   meta: {
@@ -379,6 +405,50 @@ class ContentService {
     return this.saveContentPage(
       brandId,
       'CorporateSolutions',
+      content,
+      content.meta.title,
+      content.meta.description,
+      content.meta.keywords
+    );
+  }
+
+  /**
+   * Get typed tarifeler page content
+   */
+  async getTarifelerPageContent(brandId: number): Promise<ApiResponse<TarifelerPageContent>> {
+    const response = await this.getContentPage(brandId, 'Tariffs');
+    if (response.ok && response.data) {
+      // Extract content from the ContentPageDto structure and merge meta fields
+      const content = response.data.content as TarifelerPageContent;
+
+      // Merge meta fields from DTO into content structure
+      if (content.meta) {
+        content.meta.title = response.data.metaTitle || content.meta.title || '';
+        content.meta.description = response.data.metaDescription || content.meta.description || '';
+        content.meta.keywords = response.data.metaKeywords || content.meta.keywords || '';
+      }
+
+      return {
+        ok: true,
+        data: content
+      };
+    }
+    return {
+      ok: false,
+      error: response.error || { code: 'LOAD_ERROR', message: 'Failed to load content' }
+    };
+  }
+
+  /**
+   * Save typed tarifeler page content
+   */
+  async saveTarifelerPageContent(
+    brandId: number,
+    content: TarifelerPageContent
+  ): Promise<ApiResponse<ContentPageDto>> {
+    return this.saveContentPage(
+      brandId,
+      'Tariffs',
       content,
       content.meta.title,
       content.meta.description,
