@@ -71,22 +71,23 @@ const IndexPageEditor: React.FC = () => {
     const handleBrandChange = () => {
       const newBrandId = getCurrentBrandId();
       setCurrentBrandId(newBrandId);
-      loadContent(); // Reload content for new brand
+      loadContent(newBrandId); // Reload content for new brand with specific ID
     };
 
     window.addEventListener('brandChanged', handleBrandChange);
     return () => window.removeEventListener('brandChanged', handleBrandChange);
   }, []);
 
-  const loadContent = async () => {
+  const loadContent = async (brandId?: number) => {
+    const actualBrandId = brandId || currentBrandId;
     setLoading(true);
     setError(null);
 
     try {
       // Load both content and statistics in parallel
       const [contentResponse, statsResponse] = await Promise.all([
-        contentService.getIndexPageContent(currentBrandId),
-        contentService.getBrandStatistics(currentBrandId)
+        contentService.getIndexPageContent(actualBrandId),
+        contentService.getBrandStatistics(actualBrandId)
       ]);
 
       let finalContent = initialContent;

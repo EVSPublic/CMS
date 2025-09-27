@@ -65,19 +65,20 @@ const AboutPageEditor: React.FC = () => {
     const handleBrandChange = () => {
       const newBrandId = getCurrentBrandId();
       setCurrentBrandId(newBrandId);
-      loadContent(); // Reload content for new brand
+      loadContent(newBrandId); // Reload content for new brand with specific ID
     };
 
     window.addEventListener('brandChanged', handleBrandChange);
     return () => window.removeEventListener('brandChanged', handleBrandChange);
   }, []);
 
-  const loadContent = async () => {
+  const loadContent = async (brandId?: number) => {
+    const actualBrandId = brandId || currentBrandId;
     setLoading(true);
     setError(null);
 
     try {
-      const response = await contentService.getAboutPageContent(currentBrandId);
+      const response = await contentService.getAboutPageContent(actualBrandId);
 
       if (response.ok && response.data) {
         setContent(response.data);
