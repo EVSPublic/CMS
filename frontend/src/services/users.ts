@@ -43,7 +43,6 @@ export interface UpdateUserRequest {
 export interface UserSearchRequest {
   page?: number;
   pageSize?: number;
-  brandId?: number;
 }
 
 export interface SetUserPasswordRequest {
@@ -60,16 +59,23 @@ export interface UserStats {
   usersLoggedInLast30Days: number;
 }
 
+export interface UsersResponse {
+  users: User[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 class UsersService {
-  async getUsers(searchRequest: UserSearchRequest = {}): Promise<ApiResponse<any>> {
+  async getUsers(searchRequest: UserSearchRequest = {}): Promise<ApiResponse<UsersResponse>> {
     const params = new URLSearchParams();
 
     if (searchRequest.page) params.append('page', searchRequest.page.toString());
     if (searchRequest.pageSize) params.append('pageSize', searchRequest.pageSize.toString());
-    if (searchRequest.brandId) params.append('brandId', searchRequest.brandId.toString());
 
     const endpoint = `/api/v1/users${params.toString() ? `?${params.toString()}` : ''}`;
-    return api.get<any>(endpoint);
+    return api.get<UsersResponse>(endpoint);
   }
 
   async getUserById(id: string): Promise<ApiResponse<User>> {

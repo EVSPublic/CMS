@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FormInput from '../../components/Base/Form/FormInput';
 import FormLabel from '../../components/Base/Form/FormLabel';
 import Button from '../../components/Base/Button';
+import Lucide from '../../components/Base/Lucide';
 import { Users, Plus, Edit, Trash2, Mail, Shield, Calendar } from 'lucide-react';
+import { usersService, User as ApiUser } from '../../services/users';
 
 interface User {
   id: string;
@@ -17,21 +19,12 @@ interface User {
 interface UserForm {
   name: string;
   email: string;
+  password: string;
   role: 'admin' | 'editor' | 'viewer';
   status: 'active' | 'inactive';
 }
 
-const initialUsers: User[] = [
-  {
-    id: '1',
-    name: 'Admin User',
-    email: 'admin@ovolt.com',
-    role: 'admin',
-    status: 'active',
-    createdAt: '2024-01-15',
-    lastLogin: '2024-12-20'
-  }
-];
+const initialUsers: User[] = [];
 
 const UserManagementPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>(initialUsers);
@@ -41,18 +34,56 @@ const UserManagementPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [userForm, setUserForm] = useState<UserForm>({
     name: '',
     email: '',
+    password: '',
     role: 'viewer',
     status: 'active'
   });
+
+  // Load users on component mount
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await usersService.getUsers({ page: 1, pageSize: 100 }); // Load all users
+
+      if (response.ok && response.data) {
+        const apiUsers = response.data.users;
+        const convertedUsers: User[] = apiUsers.map(u => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role.toLowerCase() as 'admin' | 'editor' | 'viewer',
+          status: u.status.toLowerCase() === 'active' ? 'active' : 'inactive',
+          createdAt: new Date(u.createdAt).toISOString().split('T')[0],
+          lastLogin: u.lastLogin ? new Date(u.lastLogin).toISOString().split('T')[0] : undefined
+        }));
+
+        setUsers(convertedUsers);
+      }
+    } catch (err) {
+      setError('Kullanıcılar yüklenirken bir hata oluştu');
+      console.error('Users load error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const resetForm = () => {
     setUserForm({
       name: '',
       email: '',
+      password: '',
       role: 'viewer',
       status: 'active'
     });
@@ -65,6 +96,7 @@ const UserManagementPage: React.FC = () => {
       setUserForm({
         name: user.name,
         email: user.email,
+        password: '', // Don't pre-fill password for editing
         role: user.role,
         status: user.status
       });
@@ -85,29 +117,46 @@ const UserManagementPage: React.FC = () => {
       return;
     }
 
+    if (!editingUser && !userForm.password.trim()) {
+      alert('Lütfen şifre alanını doldurun.');
+      return;
+    }
+
     setIsSaving(true);
     try {
       if (editingUser) {
         // Update existing user
-        setUsers(prev => prev.map(user =>
-          user.id === editingUser.id
-            ? { ...user, ...userForm }
-            : user
-        ));
-      } else {
-        // Add new user
-        const newUser: User = {
-          id: Date.now().toString(),
-          ...userForm,
-          createdAt: new Date().toISOString().split('T')[0]
-        };
-        setUsers(prev => [...prev, newUser]);
-      }
+        const response = await usersService.updateUser(editingUser.id, {
+          name: userForm.name,
+          email: userForm.email,
+          role: userForm.role.charAt(0).toUpperCase() + userForm.role.slice(1), // Capitalize first letter
+          status: userForm.status.charAt(0).toUpperCase() + userForm.status.slice(1)
+        });
 
-      // TODO: Implement API call
-      console.log('Saving user:', userForm);
-      closeModal();
-      alert(editingUser ? 'Kullanıcı güncellendi!' : 'Kullanıcı eklendi!');
+        if (response.ok) {
+          await loadUsers(); // Reload to get updated list
+          closeModal();
+          alert('Kullanıcı güncellendi!');
+        } else {
+          alert('Kullanıcı güncellenirken bir hata oluştu: ' + (response.error?.message || 'Bilinmeyen hata'));
+        }
+      } else {
+        // Create new user
+        const response = await usersService.createUser({
+          name: userForm.name,
+          email: userForm.email,
+          password: userForm.password,
+          role: userForm.role.charAt(0).toUpperCase() + userForm.role.slice(1) // Capitalize first letter
+        });
+
+        if (response.ok) {
+          await loadUsers(); // Reload to get updated list
+          closeModal();
+          alert('Kullanıcı eklendi!');
+        } else {
+          alert('Kullanıcı eklenirken bir hata oluştu: ' + (response.error?.message || 'Bilinmeyen hata'));
+        }
+      }
     } catch (error) {
       console.error('Save error:', error);
       alert('Kaydetme sırasında bir hata oluştu!');
@@ -117,15 +166,20 @@ const UserManagementPage: React.FC = () => {
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) {
+    const user = users.find(u => u.id === userId);
+    if (!confirm(`"${user?.name}" kullanıcısını silmek istediğinizden emin misiniz?`)) {
       return;
     }
 
     try {
-      setUsers(prev => prev.filter(user => user.id !== userId));
-      // TODO: Implement API call
-      console.log('Deleting user:', userId);
-      alert('Kullanıcı silindi!');
+      const response = await usersService.deleteUser(userId);
+
+      if (response.ok) {
+        await loadUsers(); // Reload to get updated list
+        alert('Kullanıcı silindi!');
+      } else {
+        alert('Kullanıcı silinirken bir hata oluştu: ' + (response.error?.message || 'Bilinmeyen hata'));
+      }
     } catch (error) {
       console.error('Delete error:', error);
       alert('Silme sırasında bir hata oluştu!');
@@ -158,6 +212,19 @@ const UserManagementPage: React.FC = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Lucide icon="Loader2" className="mx-auto h-12 w-12 text-gray-400 animate-spin mb-3" />
+            <p className="text-gray-500 dark:text-gray-400">Kullanıcılar yükleniyor...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -170,6 +237,11 @@ const UserManagementPage: React.FC = () => {
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
               Sistem kullanıcılarını yönetin ve yetkilendirin
             </p>
+            {error && (
+              <div className="mt-2 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                {error}
+              </div>
+            )}
           </div>
           <Button
             variant="primary"
@@ -360,6 +432,19 @@ const UserManagementPage: React.FC = () => {
                     placeholder="E-posta adresini girin"
                   />
                 </div>
+
+                {!editingUser && (
+                  <div>
+                    <FormLabel htmlFor="userPassword">Şifre</FormLabel>
+                    <FormInput
+                      id="userPassword"
+                      type="password"
+                      value={userForm.password}
+                      onChange={(e) => setUserForm(prev => ({ ...prev, password: e.target.value }))}
+                      placeholder="Şifre girin (minimum 8 karakter)"
+                    />
+                  </div>
+                )}
 
                 <div>
                   <FormLabel htmlFor="userRole">Rol</FormLabel>
