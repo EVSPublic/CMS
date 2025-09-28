@@ -3,13 +3,15 @@ import FormInput from '../../components/Base/Form/FormInput';
 import FormLabel from '../../components/Base/Form/FormLabel';
 import Button from '../../components/Base/Button';
 import Ckeditor from '../../components/Base/Ckeditor/ClassicEditor';
+import Lucide from '../../components/Base/Lucide';
 import { FileText, Plus, Edit, Trash2, Eye, Calendar, Globe, Code, Type } from 'lucide-react';
 import hljs from 'highlight.js';
 import jsBeautify from 'js-beautify';
 import '@/assets/css/vendors/highlight.css';
+import { staticPagesService, StaticPage as ApiStaticPage } from '../../services/staticPages';
 
 interface StaticPage {
-  id: string;
+  id: number;
   title: string;
   slug: string;
   content: string;
@@ -25,26 +27,7 @@ interface PageForm {
   status: 'published' | 'draft';
 }
 
-const initialPages: StaticPage[] = [
-  {
-    id: '1',
-    title: 'Hakkımızda',
-    slug: 'hakkimizda',
-    content: '<h1>Hakkımızda</h1><p>Bu örnek bir sayfa içeriğidir.</p>',
-    status: 'published',
-    createdAt: '2024-01-15',
-    updatedAt: '2024-01-20'
-  },
-  {
-    id: '2',
-    title: 'Gizlilik Politikası',
-    slug: 'gizlilik-politikasi',
-    content: '<h1>Gizlilik Politikası</h1><p>Gizlilik politikası içeriği...</p>',
-    status: 'draft',
-    createdAt: '2024-01-10',
-    updatedAt: '2024-01-18'
-  }
-];
+const initialPages: StaticPage[] = [];
 
 const StaticPageCreator: React.FC = () => {
   const [pages, setPages] = useState<StaticPage[]>(initialPages);
@@ -61,6 +44,16 @@ const StaticPageCreator: React.FC = () => {
   const isFormattingRef = useRef(false);
   const [isFormatting, setIsFormatting] = useState(false);
   const [codeContent, setCodeContent] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Get current brand ID from localStorage
+  const getCurrentBrandId = (): number => {
+    const selectedBrand = localStorage.getItem('selectedBrand') || 'Ovolt';
+    return selectedBrand === 'Ovolt' ? 1 : 2; // Ovolt = 1, Sharz.net = 2
+  };
+
+  const [currentBrandId, setCurrentBrandId] = useState<number>(getCurrentBrandId());
 
   const [pageForm, setPageForm] = useState<PageForm>({
     title: '',
@@ -68,6 +61,53 @@ const StaticPageCreator: React.FC = () => {
     content: '',
     status: 'draft'
   });
+
+  // Load static pages on component mount
+  useEffect(() => {
+    loadStaticPages();
+  }, []);
+
+  // Listen for brand changes and reload static pages
+  useEffect(() => {
+    const handleBrandChange = () => {
+      const newBrandId = getCurrentBrandId();
+      setCurrentBrandId(newBrandId);
+      loadStaticPages(newBrandId);
+    };
+
+    window.addEventListener('brandChanged', handleBrandChange);
+    return () => window.removeEventListener('brandChanged', handleBrandChange);
+  }, []);
+
+  const loadStaticPages = async (brandId?: number) => {
+    const actualBrandId = brandId || currentBrandId;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await staticPagesService.getStaticPages(actualBrandId, 1, 100); // Load all pages
+
+      if (response.ok && response.data) {
+        const apiPages = response.data.staticPages;
+        const convertedPages: StaticPage[] = apiPages.map(p => ({
+          id: p.id,
+          title: p.title,
+          slug: p.slug,
+          content: p.content,
+          status: p.status.toLowerCase() === 'published' ? 'published' : 'draft',
+          createdAt: new Date(p.createdAt).toISOString().split('T')[0],
+          updatedAt: new Date(p.updatedAt).toISOString().split('T')[0]
+        }));
+
+        setPages(convertedPages);
+      }
+    } catch (err) {
+      setError('Statik sayfalar yüklenirken bir hata oluştu');
+      console.error('Static pages load error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Sync codeContent when pageForm.content changes (from visual editor)
   useEffect(() => {
@@ -194,30 +234,51 @@ const StaticPageCreator: React.FC = () => {
 
     setIsSaving(true);
     try {
-      const now = new Date().toISOString().split('T')[0];
-
       if (editingPage) {
         // Update existing page
-        setPages(prev => prev.map(page =>
-          page.id === editingPage.id
-            ? { ...page, ...pageForm, updatedAt: now }
-            : page
-        ));
-      } else {
-        // Add new page
-        const newPage: StaticPage = {
-          id: Date.now().toString(),
-          ...pageForm,
-          createdAt: now,
-          updatedAt: now
-        };
-        setPages(prev => [...prev, newPage]);
-      }
+        const response = await staticPagesService.updateStaticPage(editingPage.id, {
+          title: pageForm.title,
+          slug: pageForm.slug,
+          content: pageForm.content
+        });
 
-      // TODO: Implement API call
-      console.log('Saving page:', pageForm);
-      closeModal();
-      alert(editingPage ? 'Sayfa güncellendi!' : 'Sayfa oluşturuldu!');
+        if (response.ok) {
+          // Publish/unpublish if status changed
+          if (pageForm.status !== editingPage.status) {
+            await staticPagesService.publishStaticPage(editingPage.id, {
+              publish: pageForm.status === 'published'
+            });
+          }
+
+          await loadStaticPages(); // Reload to get updated list
+          closeModal();
+          alert('Sayfa güncellendi!');
+        } else {
+          alert('Sayfa güncellenirken bir hata oluştu: ' + (response.error?.message || 'Bilinmeyen hata'));
+        }
+      } else {
+        // Create new page
+        const response = await staticPagesService.createStaticPage({
+          title: pageForm.title,
+          slug: pageForm.slug,
+          content: pageForm.content
+        });
+
+        if (response.ok && response.data) {
+          // Publish if needed
+          if (pageForm.status === 'published') {
+            await staticPagesService.publishStaticPage(response.data.id, {
+              publish: true
+            });
+          }
+
+          await loadStaticPages(); // Reload to get updated list
+          closeModal();
+          alert('Sayfa oluşturuldu!');
+        } else {
+          alert('Sayfa oluşturulurken bir hata oluştu: ' + (response.error?.message || 'Bilinmeyen hata'));
+        }
+      }
     } catch (error) {
       console.error('Save error:', error);
       alert('Kaydetme sırasında bir hata oluştu!');
@@ -226,17 +287,21 @@ const StaticPageCreator: React.FC = () => {
     }
   };
 
-  const handleDeletePage = async (pageId: string) => {
+  const handleDeletePage = async (pageId: number) => {
     const page = pages.find(p => p.id === pageId);
     if (!confirm(`"${page?.title}" sayfasını silmek istediğinizden emin misiniz?`)) {
       return;
     }
 
     try {
-      setPages(prev => prev.filter(page => page.id !== pageId));
-      // TODO: Implement API call
-      console.log('Deleting page:', pageId);
-      alert('Sayfa silindi!');
+      const response = await staticPagesService.deleteStaticPage(pageId);
+
+      if (response.ok) {
+        await loadStaticPages(); // Reload to get updated list
+        alert('Sayfa silindi!');
+      } else {
+        alert('Sayfa silinirken bir hata oluştu: ' + (response.error?.message || 'Bilinmeyen hata'));
+      }
     } catch (error) {
       console.error('Delete error:', error);
       alert('Silme sırasında bir hata oluştu!');
@@ -259,6 +324,19 @@ const StaticPageCreator: React.FC = () => {
     }
   };
 
+  if (loading || !pages) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Lucide icon="Loader2" className="mx-auto h-12 w-12 text-gray-400 animate-spin mb-3" />
+            <p className="text-gray-500 dark:text-gray-400">Statik sayfalar yükleniyor...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -271,6 +349,11 @@ const StaticPageCreator: React.FC = () => {
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
               Statik sayfalar oluşturun ve yönetin
             </p>
+            {error && (
+              <div className="mt-2 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                {error}
+              </div>
+            )}
           </div>
           <Button
             variant="primary"
