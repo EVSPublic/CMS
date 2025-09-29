@@ -288,9 +288,10 @@ public class ContentController : ControllerBase
 
             // Calculate actual station count from database based on brand visibility
             var brandName = brand.Name.ToLower();
-            var actualStationCount = await _context.Stations
-                .Where(s => s.BrandVisibility.Contains($"\"{brandName}\""))
-                .CountAsync();
+            var actualStationCount = await _context.Database.SqlQueryRaw<int>(
+                "SELECT COUNT(*) as Value FROM Stations WHERE BrandVisibility LIKE {0}",
+                $"%{brandName}%"
+            ).FirstAsync();
 
             // If no stations found, fall back to brand's default count
             var finalCount = actualStationCount > 0 ? actualStationCount : brand.ChargingStationCount;
@@ -316,9 +317,10 @@ public class ContentController : ControllerBase
         var brand = await _context.Brands.FindAsync(brandId);
 
         // Calculate actual station count from database based on brand visibility
-        var actualStationCount = await _context.Stations
-            .Where(s => s.BrandVisibility.Contains($"\"{brandName.ToLower()}\""))
-            .CountAsync();
+        var actualStationCount = await _context.Database.SqlQueryRaw<int>(
+            "SELECT COUNT(*) as Value FROM Stations WHERE BrandVisibility LIKE {0}",
+            $"%{brandName.ToLower()}%"
+        ).FirstAsync();
 
         // If no stations found, fall back to brand's default count
         var chargingStationCount = actualStationCount > 0 ? actualStationCount : (brand?.ChargingStationCount ?? 1880);

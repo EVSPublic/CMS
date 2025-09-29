@@ -49,7 +49,7 @@ public class StationsController : ControllerBase
             {
                 foreach (var brand in searchDto.BrandVisibility)
                 {
-                    query = query.Where(s => s.BrandVisibility.Contains($"\"{brand}\""));
+                    query = query.Where(s => s.BrandVisibility.Contains(brand));
                 }
             }
 

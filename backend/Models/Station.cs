@@ -45,7 +45,7 @@ public class Station
     public string Amenities { get; set; } = "[]";
 
     // Brand visibility stored as JSON array
-    [Column(TypeName = "json")]
+    [Column(TypeName = "longtext")]
     public string BrandVisibility { get; set; } = "[]";
 
     public int? CreatedById { get; set; }
