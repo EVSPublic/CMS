@@ -59,6 +59,9 @@ const initialContent: TarifelerPageContent = {
   }
 };
 
+const OVOLT: { id: number; name: string } = { id: 1, name: 'Ovolt' };
+const SHARZNET: { id: number; name: string } = { id: 2, name: 'Sharz.net' };
+
 const TarifelerPageEditor: React.FC = () => {
   const [content, setContent] = useState<TarifelerPageContent | null>(initialContent);
   const [loading, setLoading] = useState(false);
@@ -67,8 +70,8 @@ const TarifelerPageEditor: React.FC = () => {
 
   // Get current brand ID from localStorage
   const getCurrentBrandId = (): number => {
-    const selectedBrand = localStorage.getItem('selectedBrand') || 'Ovolt';
-    return selectedBrand === 'Ovolt' ? 1 : 2; // Ovolt = 1, Sharz.net = 2
+    const selectedBrand = localStorage.getItem('selectedBrand') || OVOLT.name;
+    return selectedBrand === OVOLT.name ? OVOLT.id : SHARZNET.id; // Ovolt = 1, Sharz.net = 2
   };
 
   const [currentBrandId, setCurrentBrandId] = useState<number>(getCurrentBrandId());
