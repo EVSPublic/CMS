@@ -7,6 +7,7 @@ import Tab from '../../components/Base/Headless/Tab';
 import ImageInput from '../../components/ImageInput';
 import Lucide from '../../components/Base/Lucide';
 import { contentService, IndividualSolutionsPageContent } from '../../services/content';
+import { useScrollEffect } from '../../hooks/useScrollEffect';
 
 
 const initialContent: IndividualSolutionsPageContent = {
@@ -40,6 +41,7 @@ const initialContent: IndividualSolutionsPageContent = {
 
 const IndividualSolutionsPageEditor: React.FC = () => {
   const [content, setContent] = useState<IndividualSolutionsPageContent>(initialContent);
+  const isScrolled = useScrollEffect();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -202,10 +204,14 @@ const IndividualSolutionsPageEditor: React.FC = () => {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+            <h1 className={`text-2xl font-semibold transition-colors duration-300 ${
+              isScrolled ? 'text-gray-900 dark:text-white' : 'text-white dark:text-white'
+            }`}>
               Bireysel Çözümler Sayfası İçerik Editörü
             </h1>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            <p className={`mt-1 text-sm transition-colors duration-300 ${
+              isScrolled ? 'text-gray-600 dark:text-gray-400' : 'text-gray-200 dark:text-gray-300'
+            }`}>
               Bireysel çözümler sayfası içeriklerini düzenleyin
             </p>
           </div>

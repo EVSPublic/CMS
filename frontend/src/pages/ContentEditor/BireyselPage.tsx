@@ -1,13 +1,19 @@
 import React from 'react';
+import { useScrollEffect } from '../../hooks/useScrollEffect';
 
 const BireyselPageEditor: React.FC = () => {
+  const isScrolled = useScrollEffect();
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+        <h1 className={`text-2xl font-semibold transition-colors duration-300 ${
+          isScrolled ? 'text-gray-900 dark:text-white' : 'text-white dark:text-white'
+        }`}>
           Bireysel Çözümler İçerik Editörü
         </h1>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <p className={`mt-1 text-sm transition-colors duration-300 ${
+          isScrolled ? 'text-gray-600 dark:text-gray-400' : 'text-gray-200 dark:text-gray-300'
+        }`}>
           Bireysel çözümler sayfası içeriklerini düzenleyin
         </p>
       </div>

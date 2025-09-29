@@ -7,6 +7,7 @@ import Tab from '../../components/Base/Headless/Tab';
 import ImageInput from '../../components/ImageInput';
 import Lucide from '../../components/Base/Lucide';
 import { announcementsService, Announcement as ApiAnnouncement } from '../../services/announcements';
+import { useScrollEffect } from '../../hooks/useScrollEffect';
 
 interface Announcement {
   id: number;
@@ -44,6 +45,7 @@ const initialContent: AnnouncementsPageContent = {
 
 const AnnouncementsPageEditor: React.FC = () => {
   const [content, setContent] = useState<AnnouncementsPageContent>(initialContent);
+  const isScrolled = useScrollEffect();
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -288,10 +290,14 @@ const AnnouncementsPageEditor: React.FC = () => {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+        <h1 className={`text-2xl font-semibold transition-colors duration-300 ${
+          isScrolled ? 'text-gray-900 dark:text-white' : 'text-white dark:text-white'
+        }`}>
           Duyurular İçerik Editörü
         </h1>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <p className={`mt-1 text-sm transition-colors duration-300 ${
+          isScrolled ? 'text-gray-600 dark:text-gray-400' : 'text-gray-200 dark:text-gray-300'
+        }`}>
           Duyurular sayfası içeriklerini düzenleyin
         </p>
         {error && (
