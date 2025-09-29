@@ -54,30 +54,6 @@ const initialContent: TarifelerPageContent = {
         oldPrice: "₺13.99",
         currentPrice: "₺11.99",
         validityText: "30-31 ağustos tarihleri arasında geçerlidir"
-      },
-      {
-        isCampaign: false,
-        badge: "Normal Tarife",
-        title: "AC Soket Tarifesi",
-        oldPrice: "",
-        currentPrice: "₺8.99",
-        validityText: ""
-      },
-      {
-        isCampaign: false,
-        badge: "Normal Tarife",
-        title: "60 kW'a Kadar Tüm DC Soketler",
-        oldPrice: "",
-        currentPrice: "₺8.99",
-        validityText: ""
-      },
-      {
-        isCampaign: false,
-        badge: "Normal Tarife",
-        title: "Diğer Tüm DC Soketler",
-        oldPrice: "",
-        currentPrice: "₺8.99",
-        validityText: ""
       }
     ]
   }
