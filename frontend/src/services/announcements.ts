@@ -1,4 +1,5 @@
 import { api, ApiResponse } from './api';
+import { logService } from './logService';
 
 export interface Announcement {
   id: number;
@@ -86,7 +87,18 @@ class AnnouncementsService {
     brandId?: number
   ): Promise<ApiResponse<Announcement>> {
     const actualBrandId = brandId || this.getSelectedBrandId();
-    return api.post<Announcement>(`/api/v1/announcements/${actualBrandId}`, request);
+    const response = await api.post<Announcement>(`/api/v1/announcements/${actualBrandId}`, request);
+
+    if (response.ok && response.data) {
+      const brandName = actualBrandId === 1 ? 'Ovolt' : 'Sharz.net';
+      logService.log(
+        'announcement_create',
+        `Duyuru oluşturuldu: ${request.title} (${brandName})`,
+        { level: 'success', resourceType: 'announcement', resourceId: response.data.id.toString() }
+      );
+    }
+
+    return response;
   }
 
   async updateAnnouncement(
@@ -95,12 +107,34 @@ class AnnouncementsService {
     brandId?: number
   ): Promise<ApiResponse<Announcement>> {
     const actualBrandId = brandId || this.getSelectedBrandId();
-    return api.put<Announcement>(`/api/v1/announcements/${actualBrandId}/${id}`, request);
+    const response = await api.put<Announcement>(`/api/v1/announcements/${actualBrandId}/${id}`, request);
+
+    if (response.ok && response.data) {
+      const brandName = actualBrandId === 1 ? 'Ovolt' : 'Sharz.net';
+      logService.log(
+        'announcement_update',
+        `Duyuru güncellendi: ${request.title || response.data.title} (${brandName})`,
+        { level: 'success', resourceType: 'announcement', resourceId: id.toString() }
+      );
+    }
+
+    return response;
   }
 
   async deleteAnnouncement(id: number, brandId?: number): Promise<ApiResponse<any>> {
     const actualBrandId = brandId || this.getSelectedBrandId();
-    return api.delete(`/api/v1/announcements/${actualBrandId}/${id}`);
+    const response = await api.delete(`/api/v1/announcements/${actualBrandId}/${id}`);
+
+    if (response.ok) {
+      const brandName = actualBrandId === 1 ? 'Ovolt' : 'Sharz.net';
+      logService.log(
+        'announcement_delete',
+        `Duyuru silindi: ${id} (${brandName})`,
+        { level: 'warning', resourceType: 'announcement', resourceId: id.toString() }
+      );
+    }
+
+    return response;
   }
 
   async publishAnnouncement(
@@ -109,7 +143,19 @@ class AnnouncementsService {
     brandId?: number
   ): Promise<ApiResponse<any>> {
     const actualBrandId = brandId || this.getSelectedBrandId();
-    return api.post(`/api/v1/announcements/${actualBrandId}/${id}/publish`, request);
+    const response = await api.post(`/api/v1/announcements/${actualBrandId}/${id}/publish`, request);
+
+    if (response.ok) {
+      const brandName = actualBrandId === 1 ? 'Ovolt' : 'Sharz.net';
+      const action = request.publish ? 'yayınlandı' : 'yayından kaldırıldı';
+      logService.log(
+        'announcement_publish',
+        `Duyuru ${action}: ${id} (${brandName})`,
+        { level: 'success', resourceType: 'announcement', resourceId: id.toString() }
+      );
+    }
+
+    return response;
   }
 }
 

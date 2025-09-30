@@ -1,4 +1,5 @@
 import { api, ApiResponse } from './api';
+import { logService } from './logService';
 
 export interface Partner {
   id: number;
@@ -62,7 +63,18 @@ class PartnershipsService {
     brandId?: number
   ): Promise<ApiResponse<Partner>> {
     const actualBrandId = brandId || this.getSelectedBrandId();
-    return api.post<Partner>(`/api/v1/partnerships/${actualBrandId}`, request);
+    const response = await api.post<Partner>(`/api/v1/partnerships/${actualBrandId}`, request);
+
+    if (response.ok && response.data) {
+      const brandName = actualBrandId === 1 ? 'Ovolt' : 'Sharz.net';
+      logService.log(
+        'partner_create',
+        `Partner oluşturuldu: ${request.title} (${brandName})`,
+        { level: 'success', resourceType: 'partner', resourceId: response.data.id.toString() }
+      );
+    }
+
+    return response;
   }
 
   async updatePartner(
@@ -71,12 +83,34 @@ class PartnershipsService {
     brandId?: number
   ): Promise<ApiResponse<Partner>> {
     const actualBrandId = brandId || this.getSelectedBrandId();
-    return api.put<Partner>(`/api/v1/partnerships/${actualBrandId}/${id}`, request);
+    const response = await api.put<Partner>(`/api/v1/partnerships/${actualBrandId}/${id}`, request);
+
+    if (response.ok && response.data) {
+      const brandName = actualBrandId === 1 ? 'Ovolt' : 'Sharz.net';
+      logService.log(
+        'partner_update',
+        `Partner güncellendi: ${request.title || response.data.title} (${brandName})`,
+        { level: 'success', resourceType: 'partner', resourceId: id.toString() }
+      );
+    }
+
+    return response;
   }
 
   async deletePartner(id: number, brandId?: number): Promise<ApiResponse<any>> {
     const actualBrandId = brandId || this.getSelectedBrandId();
-    return api.delete(`/api/v1/partnerships/${actualBrandId}/${id}`);
+    const response = await api.delete(`/api/v1/partnerships/${actualBrandId}/${id}`);
+
+    if (response.ok) {
+      const brandName = actualBrandId === 1 ? 'Ovolt' : 'Sharz.net';
+      logService.log(
+        'partner_delete',
+        `Partner silindi: ${id} (${brandName})`,
+        { level: 'warning', resourceType: 'partner', resourceId: id.toString() }
+      );
+    }
+
+    return response;
   }
 
   async reorderPartners(
@@ -84,7 +118,18 @@ class PartnershipsService {
     brandId?: number
   ): Promise<ApiResponse<any>> {
     const actualBrandId = brandId || this.getSelectedBrandId();
-    return api.put(`/api/v1/partnerships/${actualBrandId}/reorder`, request);
+    const response = await api.put(`/api/v1/partnerships/${actualBrandId}/reorder`, request);
+
+    if (response.ok) {
+      const brandName = actualBrandId === 1 ? 'Ovolt' : 'Sharz.net';
+      logService.log(
+        'partner_reorder',
+        `Partner sıralaması değiştirildi (${brandName})`,
+        { level: 'info', resourceType: 'partner' }
+      );
+    }
+
+    return response;
   }
 
   async togglePartnerStatus(
@@ -93,7 +138,19 @@ class PartnershipsService {
     brandId?: number
   ): Promise<ApiResponse<any>> {
     const actualBrandId = brandId || this.getSelectedBrandId();
-    return api.put(`/api/v1/partnerships/${actualBrandId}/${id}/toggle-status`, request);
+    const response = await api.put(`/api/v1/partnerships/${actualBrandId}/${id}/toggle-status`, request);
+
+    if (response.ok) {
+      const brandName = actualBrandId === 1 ? 'Ovolt' : 'Sharz.net';
+      const status = request.active ? 'aktif' : 'pasif';
+      logService.log(
+        'partner_toggle_status',
+        `Partner durumu değiştirildi: ${id} - ${status} (${brandName})`,
+        { level: 'info', resourceType: 'partner', resourceId: id.toString() }
+      );
+    }
+
+    return response;
   }
 }
 

@@ -45,4 +45,17 @@ export type LogAction =
   | 'static_page_create'
   | 'static_page_update'
   | 'static_page_delete'
-  | 'static_page_publish';
+  | 'static_page_publish'
+  | 'announcement_create'
+  | 'announcement_update'
+  | 'announcement_delete'
+  | 'announcement_publish'
+  | 'partner_create'
+  | 'partner_update'
+  | 'partner_delete'
+  | 'partner_reorder'
+  | 'partner_toggle_status'
+  | 'station_create'
+  | 'station_update'
+  | 'station_delete'
+  | 'charger_status_update';

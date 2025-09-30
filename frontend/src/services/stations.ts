@@ -1,4 +1,5 @@
 import { api, ApiResponse } from './api';
+import { logService } from './logService';
 
 export interface Station {
   id: string;
@@ -149,22 +150,63 @@ class StationsService {
       brandVisibility: request.brandVisibility || brandFilter || []
     };
 
-    return api.post<Station>('/api/admin/v1/stations', stationRequest);
+    const response = await api.post<Station>('/api/admin/v1/stations', stationRequest);
+
+    if (response.ok && response.data) {
+      const brands = stationRequest.brandVisibility.join(', ') || 'All';
+      logService.log(
+        'station_create',
+        `İstasyon oluşturuldu: ${request.name} (${brands})`,
+        { level: 'success', resourceType: 'station', resourceId: response.data.id }
+      );
+    }
+
+    return response;
   }
 
   async updateStation(id: string, request: UpdateStationRequest): Promise<ApiResponse<Station>> {
-    return api.put<Station>(`/api/admin/v1/stations/${id}`, request);
+    const response = await api.put<Station>(`/api/admin/v1/stations/${id}`, request);
+
+    if (response.ok && response.data) {
+      logService.log(
+        'station_update',
+        `İstasyon güncellendi: ${request.name || response.data.name}`,
+        { level: 'success', resourceType: 'station', resourceId: id }
+      );
+    }
+
+    return response;
   }
 
   async deleteStation(id: string): Promise<ApiResponse<void>> {
-    return api.delete<void>(`/api/admin/v1/stations/${id}`);
+    const response = await api.delete<void>(`/api/admin/v1/stations/${id}`);
+
+    if (response.ok) {
+      logService.log(
+        'station_delete',
+        `İstasyon silindi: ${id}`,
+        { level: 'warning', resourceType: 'station', resourceId: id }
+      );
+    }
+
+    return response;
   }
 
   async updateChargerStatus(stationId: string, chargerId: string, request: Omit<UpdateChargerStatusRequest, 'chargerId'>): Promise<ApiResponse<Station>> {
-    return api.put<Station>(`/api/admin/v1/stations/${stationId}/chargers/${chargerId}/status`, {
+    const response = await api.put<Station>(`/api/admin/v1/stations/${stationId}/chargers/${chargerId}/status`, {
       chargerId,
       ...request
     });
+
+    if (response.ok) {
+      logService.log(
+        'charger_status_update',
+        `Şarj cihazı durumu güncellendi: ${chargerId} -> ${request.status}`,
+        { level: 'info', resourceType: 'charger', resourceId: chargerId, metadata: { stationId } }
+      );
+    }
+
+    return response;
   }
 
   async getNearbyStations(latitude: number, longitude: number, radiusKm: number = 10): Promise<ApiResponse<Station[]>> {
