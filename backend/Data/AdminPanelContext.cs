@@ -22,6 +22,7 @@ public class AdminPanelContext : IdentityDbContext<User, IdentityRole<int>, int>
     public DbSet<MediaItemFolder> MediaItemFolders { get; set; }
     public DbSet<Station> Stations { get; set; }
     public DbSet<Charger> Chargers { get; set; }
+    public DbSet<ActivityLog> ActivityLogs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -231,6 +232,26 @@ public class AdminPanelContext : IdentityDbContext<User, IdentityRole<int>, int>
                 .WithMany(e => e.Chargers)
                 .HasForeignKey(e => e.StationId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure ActivityLog entity
+        builder.Entity<ActivityLog>(entity =>
+        {
+            entity.Property(e => e.Timestamp).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Level).HasDefaultValue("info");
+            entity.HasIndex(e => e.Timestamp);
+            entity.HasIndex(e => e.Action);
+            entity.HasIndex(e => new { e.BrandId, e.Timestamp });
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Brand)
+                .WithMany()
+                .HasForeignKey(e => e.BrandId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Seed initial data

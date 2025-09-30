@@ -25,7 +25,7 @@ const LogsPage: React.FC = () => {
     loadLogs();
   }, [currentPage, filters]);
 
-  const loadLogs = () => {
+  const loadLogs = async () => {
     setLoading(true);
 
     const filterObj: any = {};
@@ -49,15 +49,19 @@ const LogsPage: React.FC = () => {
       }
     }
 
-    const result = logService.getLogs(currentPage, logsPerPage, filterObj);
+    const result = await logService.getLogs(currentPage, logsPerPage, filterObj);
     setLogsData(result);
     setLoading(false);
   };
 
-  const clearAllLogs = () => {
+  const clearAllLogs = async () => {
     if (confirm('Tüm logları silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
-      logService.clearLogs();
-      loadLogs();
+      try {
+        await logService.clearLogs();
+        await loadLogs();
+      } catch (error) {
+        alert('Logları silerken bir hata oluştu. Lütfen tekrar deneyin.');
+      }
     }
   };
 
