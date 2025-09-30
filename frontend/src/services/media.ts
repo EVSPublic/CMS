@@ -1,4 +1,5 @@
 import { api, ApiResponse } from './api';
+import { logService } from './logService';
 
 export interface MediaFolder {
   id: number;
@@ -130,11 +131,33 @@ class MediaService {
     id: string,
     request: UpdateMediaItemRequest
   ): Promise<ApiResponse<MediaItem>> {
-    return api.put<MediaItem>(`/api/v1/media/${brandId}/${id}`, request);
+    const response = await api.put<MediaItem>(`/api/v1/media/${brandId}/${id}`, request);
+
+    if (response.ok) {
+      const brandName = brandId === 1 ? 'Ovolt' : 'Sharz.net';
+      logService.logImageAction(
+        'media_update',
+        `Medya öğesi güncellendi: ${request.fileName || id} (${brandName})`,
+        id
+      );
+    }
+
+    return response;
   }
 
   async deleteMediaItem(brandId: number, id: string): Promise<ApiResponse<any>> {
-    return api.delete(`/api/v1/media/${brandId}/${id}`);
+    const response = await api.delete(`/api/v1/media/${brandId}/${id}`);
+
+    if (response.ok) {
+      const brandName = brandId === 1 ? 'Ovolt' : 'Sharz.net';
+      logService.logImageAction(
+        'media_delete',
+        `Medya öğesi silindi: ${id} (${brandName})`,
+        id
+      );
+    }
+
+    return response;
   }
 
   async publishMediaItem(
@@ -169,6 +192,13 @@ class MediaService {
       const data = await response.json();
 
       if (response.ok) {
+        const brandName = brandId === 1 ? 'Ovolt' : 'Sharz.net';
+        logService.logImageAction(
+          'media_upload',
+          `Medya yüklendi: ${file.name} (${brandName})`,
+          data.id
+        );
+
         return {
           ok: true,
           data: data as MediaItem
@@ -203,7 +233,18 @@ class MediaService {
     brandId: number,
     request: CreateMediaFolderRequest
   ): Promise<ApiResponse<MediaFolder>> {
-    return api.post<MediaFolder>(`/api/v1/media/${brandId}/folders`, request);
+    const response = await api.post<MediaFolder>(`/api/v1/media/${brandId}/folders`, request);
+
+    if (response.ok) {
+      const brandName = brandId === 1 ? 'Ovolt' : 'Sharz.net';
+      logService.log(
+        'folder_create',
+        `Medya klasörü oluşturuldu: ${request.name} (${brandName})`,
+        { level: 'success', resourceType: 'media_folder' }
+      );
+    }
+
+    return response;
   }
 
   async updateMediaFolder(
@@ -211,11 +252,33 @@ class MediaService {
     folderId: number,
     request: UpdateMediaFolderRequest
   ): Promise<ApiResponse<MediaFolder>> {
-    return api.put<MediaFolder>(`/api/v1/media/${brandId}/folders/${folderId}`, request);
+    const response = await api.put<MediaFolder>(`/api/v1/media/${brandId}/folders/${folderId}`, request);
+
+    if (response.ok) {
+      const brandName = brandId === 1 ? 'Ovolt' : 'Sharz.net';
+      logService.log(
+        'folder_update',
+        `Medya klasörü güncellendi: ${request.name || folderId} (${brandName})`,
+        { level: 'success', resourceType: 'media_folder' }
+      );
+    }
+
+    return response;
   }
 
   async deleteMediaFolder(brandId: number, folderId: number): Promise<ApiResponse<any>> {
-    return api.delete(`/api/v1/media/${brandId}/folders/${folderId}`);
+    const response = await api.delete(`/api/v1/media/${brandId}/folders/${folderId}`);
+
+    if (response.ok) {
+      const brandName = brandId === 1 ? 'Ovolt' : 'Sharz.net';
+      logService.log(
+        'folder_delete',
+        `Medya klasörü silindi: ${folderId} (${brandName})`,
+        { level: 'warning', resourceType: 'media_folder' }
+      );
+    }
+
+    return response;
   }
 
   async updateMediaItemFolders(

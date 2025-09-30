@@ -35,4 +35,14 @@ export type LogAction =
   | 'user_delete'
   | 'page_view'
   | 'export_data'
-  | 'settings_change';
+  | 'settings_change'
+  | 'media_upload'
+  | 'media_update'
+  | 'media_delete'
+  | 'folder_create'
+  | 'folder_update'
+  | 'folder_delete'
+  | 'static_page_create'
+  | 'static_page_update'
+  | 'static_page_delete'
+  | 'static_page_publish';

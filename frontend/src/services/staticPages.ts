@@ -1,4 +1,5 @@
 import { api, ApiResponse } from './api';
+import { logService } from './logService';
 
 export interface StaticPage {
   id: number;
@@ -83,7 +84,18 @@ class StaticPagesService {
     brandId?: number
   ): Promise<ApiResponse<StaticPage>> {
     const actualBrandId = brandId || this.getSelectedBrandId();
-    return api.post<StaticPage>(`/api/v1/static-pages/${actualBrandId}`, request);
+    const response = await api.post<StaticPage>(`/api/v1/static-pages/${actualBrandId}`, request);
+
+    if (response.ok && response.data) {
+      const brandName = actualBrandId === 1 ? 'Ovolt' : 'Sharz.net';
+      logService.log(
+        'static_page_create',
+        `Statik sayfa oluşturuldu: ${request.title} (${brandName})`,
+        { level: 'success', resourceType: 'static_page', resourceId: response.data.id.toString() }
+      );
+    }
+
+    return response;
   }
 
   async updateStaticPage(
@@ -92,12 +104,34 @@ class StaticPagesService {
     brandId?: number
   ): Promise<ApiResponse<StaticPage>> {
     const actualBrandId = brandId || this.getSelectedBrandId();
-    return api.put<StaticPage>(`/api/v1/static-pages/${actualBrandId}/${id}`, request);
+    const response = await api.put<StaticPage>(`/api/v1/static-pages/${actualBrandId}/${id}`, request);
+
+    if (response.ok && response.data) {
+      const brandName = actualBrandId === 1 ? 'Ovolt' : 'Sharz.net';
+      logService.log(
+        'static_page_update',
+        `Statik sayfa güncellendi: ${request.title || response.data.title} (${brandName})`,
+        { level: 'success', resourceType: 'static_page', resourceId: id.toString() }
+      );
+    }
+
+    return response;
   }
 
   async deleteStaticPage(id: number, brandId?: number): Promise<ApiResponse<any>> {
     const actualBrandId = brandId || this.getSelectedBrandId();
-    return api.delete(`/api/v1/static-pages/${actualBrandId}/${id}`);
+    const response = await api.delete(`/api/v1/static-pages/${actualBrandId}/${id}`);
+
+    if (response.ok) {
+      const brandName = actualBrandId === 1 ? 'Ovolt' : 'Sharz.net';
+      logService.log(
+        'static_page_delete',
+        `Statik sayfa silindi: ${id} (${brandName})`,
+        { level: 'warning', resourceType: 'static_page', resourceId: id.toString() }
+      );
+    }
+
+    return response;
   }
 
   async publishStaticPage(
@@ -106,7 +140,19 @@ class StaticPagesService {
     brandId?: number
   ): Promise<ApiResponse<any>> {
     const actualBrandId = brandId || this.getSelectedBrandId();
-    return api.post(`/api/v1/static-pages/${actualBrandId}/${id}/publish`, request);
+    const response = await api.post(`/api/v1/static-pages/${actualBrandId}/${id}/publish`, request);
+
+    if (response.ok) {
+      const brandName = actualBrandId === 1 ? 'Ovolt' : 'Sharz.net';
+      const action = request.publish ? 'yayınlandı' : 'yayından kaldırıldı';
+      logService.log(
+        'static_page_publish',
+        `Statik sayfa ${action}: ${id} (${brandName})`,
+        { level: 'success', resourceType: 'static_page', resourceId: id.toString() }
+      );
+    }
+
+    return response;
   }
 }
 

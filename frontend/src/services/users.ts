@@ -1,4 +1,5 @@
 import { api, ApiResponse, PaginationMeta } from './api';
+import { logService } from './logService';
 
 export interface User {
   id: string;
@@ -83,15 +84,45 @@ class UsersService {
   }
 
   async createUser(request: CreateUserRequest): Promise<ApiResponse<User>> {
-    return api.post<User>('/api/v1/users', request);
+    const response = await api.post<User>('/api/v1/users', request);
+
+    if (response.ok && response.data) {
+      logService.logUserAction(
+        'user_create',
+        `Kullanıcı oluşturuldu: ${request.email} (${request.role})`,
+        'success'
+      );
+    }
+
+    return response;
   }
 
   async updateUser(id: string, request: UpdateUserRequest): Promise<ApiResponse<User>> {
-    return api.put<User>(`/api/v1/users/${id}`, request);
+    const response = await api.put<User>(`/api/v1/users/${id}`, request);
+
+    if (response.ok && response.data) {
+      logService.logUserAction(
+        'user_update',
+        `Kullanıcı güncellendi: ${request.email || response.data.email} (${request.role || response.data.role})`,
+        'success'
+      );
+    }
+
+    return response;
   }
 
   async deleteUser(id: string): Promise<ApiResponse<any>> {
-    return api.delete(`/api/v1/users/${id}`);
+    const response = await api.delete(`/api/v1/users/${id}`);
+
+    if (response.ok) {
+      logService.logUserAction(
+        'user_delete',
+        `Kullanıcı silindi: ${id}`,
+        'warning'
+      );
+    }
+
+    return response;
   }
 
 }
