@@ -16,6 +16,7 @@ import users from "@/fakers/users";
 import clsx from "clsx";
 import SimpleBar from "simplebar";
 import { Menu } from "@/components/Base/Headless";
+import { logService } from "@/services/logService";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -60,8 +61,16 @@ function Main() {
   });
 
   const handleBrandChange = (brand: string) => {
+    const previousBrand = selectedBrand;
     setSelectedBrand(brand);
     localStorage.setItem('selectedBrand', brand);
+
+    // Log brand switch
+    logService.logUserAction(
+      'brand_switch',
+      `Marka değiştirildi: ${previousBrand} → ${brand}`,
+      'info'
+    );
 
     // Dispatch custom event to notify content managers
     window.dispatchEvent(new CustomEvent('brandChanged', { detail: { brand } }));

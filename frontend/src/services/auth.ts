@@ -1,4 +1,5 @@
 import { api, type ApiResponse } from './api';
+import { logService } from './logService';
 
 export interface LoginRequest {
   email: string;
@@ -56,6 +57,13 @@ class AuthService {
       this.setTokens(backendData.accessToken, backendData.refreshToken);
       this.setUser(backendData.user);
 
+      // Log successful login
+      logService.logUserAction(
+        'user_login',
+        `Kullanıcı ${backendData.user.email} sisteme giriş yaptı`,
+        'success'
+      );
+
       // Transform backend response to expected format
       return {
         ok: true,
@@ -75,6 +83,8 @@ class AuthService {
 
   async logout(): Promise<void> {
     const refreshToken = this.getRefreshToken();
+    const user = this.getUser();
+
     console.log('Logging out, refresh token:', refreshToken);
     if (refreshToken) {
       try {
@@ -83,7 +93,16 @@ class AuthService {
         console.error('Error during logout:', error);
       }
     }
-    
+
+    // Log logout before clearing data
+    if (user) {
+      logService.logUserAction(
+        'user_logout',
+        `Kullanıcı ${user.email} sistemden çıkış yaptı`,
+        'info'
+      );
+    }
+
     this.clearAuthData();
   }
 

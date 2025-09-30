@@ -1,0 +1,38 @@
+export interface LogEntry {
+  id: string;
+  timestamp: Date;
+  action: string;
+  details: string;
+  userId: string;
+  userName: string;
+  resourceType?: string;
+  resourceId?: string;
+  brandId?: number;
+  brandName?: string;
+  level: 'info' | 'warning' | 'error' | 'success';
+  metadata?: Record<string, any>;
+}
+
+export interface LogsResponse {
+  logs: LogEntry[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export type LogAction =
+  | 'user_login'
+  | 'user_logout'
+  | 'content_save'
+  | 'content_publish'
+  | 'content_unpublish'
+  | 'image_upload'
+  | 'image_delete'
+  | 'brand_switch'
+  | 'user_create'
+  | 'user_update'
+  | 'user_delete'
+  | 'page_view'
+  | 'export_data'
+  | 'settings_change';

@@ -15,6 +15,7 @@ import AnnouncementsPageEditor from "../pages/ContentEditor/AnnouncementsPage";
 import PartnershipPageEditor from "../pages/ContentEditor/PartnershipPage";
 import UserManagementPage from "../pages/UserManagement";
 import StaticPageCreator from "../pages/StaticPageCreator";
+import LogsPage from "../pages/Logs";
 
 function Router() {
   const routes = [
@@ -77,6 +78,10 @@ function Router() {
         {
           path: "/static-pages",
           element: <StaticPageCreator />,
+        },
+        {
+          path: "/logs",
+          element: <LogsPage />,
         }
       ],
     },

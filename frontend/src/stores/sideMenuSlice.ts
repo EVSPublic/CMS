@@ -98,6 +98,11 @@ const initialState: SideMenuState = {
       title: "Kullanıcı Yönetimi",
       pathname: "/users",
     },
+    {
+      icon: "Activity",
+      title: "Loglar",
+      pathname: "/logs",
+    },
   ],
 };
 

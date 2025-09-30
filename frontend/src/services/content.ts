@@ -1,4 +1,5 @@
 import { api, ApiResponse } from './api';
+import { logService } from './logService';
 
 // TypeScript interfaces matching the backend DTOs
 export interface ContentPageDto {
@@ -269,7 +270,18 @@ class ContentService {
     pageType: PageType,
     request: UpdateContentPageDto
   ): Promise<ApiResponse<ContentPageDto>> {
-    return api.put<ContentPageDto>(`/api/v1/content/${brandId}/${pageType}`, request);
+    const response = await api.put<ContentPageDto>(`/api/v1/content/${brandId}/${pageType}`, request);
+
+    if (response.ok) {
+      const brandName = brandId === 1 ? 'Ovolt' : 'Sharz.net';
+      logService.logContentAction(
+        'content_save',
+        `${pageType} sayfası içeriği güncellendi (${brandName})`,
+        pageType
+      );
+    }
+
+    return response;
   }
 
   /**
@@ -280,7 +292,21 @@ class ContentService {
     pageType: PageType,
     publish: boolean
   ): Promise<ApiResponse<{ message: string }>> {
-    return api.post<{ message: string }>(`/api/v1/content/${brandId}/${pageType}/publish`, { publish });
+    const response = await api.post<{ message: string }>(`/api/v1/content/${brandId}/${pageType}/publish`, { publish });
+
+    if (response.ok) {
+      const brandName = brandId === 1 ? 'Ovolt' : 'Sharz.net';
+      const action = publish ? 'content_publish' : 'content_unpublish';
+      const actionText = publish ? 'yayınlandı' : 'yayından kaldırıldı';
+
+      logService.logContentAction(
+        action,
+        `${pageType} sayfası ${actionText} (${brandName})`,
+        pageType
+      );
+    }
+
+    return response;
   }
 
   /**

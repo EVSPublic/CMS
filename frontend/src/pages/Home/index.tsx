@@ -1,6 +1,7 @@
 import Lucide from "@/components/Base/Lucide";
 import { useState, useEffect, useRef } from "react";
 import { dashboardService, DashboardStats } from "@/services/dashboard";
+import LogsWidget from "@/components/LogsWidget";
 
 function Home() {
   const [dashboardData, setDashboardData] = useState<DashboardStats | null>(null);
@@ -157,35 +158,7 @@ function Home() {
         </div>
 
         <div className="col-span-12 lg:col-span-4">
-          <div className="box p-5">
-            <div className="flex items-center border-b border-slate-200/60 dark:border-darkmode-400 pb-5 mb-5">
-              <div className="w-10 h-10 flex items-center justify-center bg-warning/10 dark:bg-warning/20 text-warning rounded-full mr-3">
-                <Lucide icon="History" className="w-5 h-5" />
-              </div>
-              <div className="text-lg font-semibold">Recent Activity</div>
-            </div>
-            {loading ? (
-                <div className="flex items-center justify-center py-4">
-                    <Lucide icon="Loader2" className="w-5 h-5 animate-spin text-slate-500" />
-                </div>
-            ) : (
-                <div className="space-y-4">
-                    {dashboardData?.recentActivity?.map((activity, index) => (
-                        <div key={index} className="flex items-center">
-                            <div className="w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-darkmode-400 rounded-full mr-3">
-                                <Lucide icon="User" className="w-4 h-4" />
-                            </div>
-                            <div>
-                                <div className="text-slate-600 dark:text-slate-300 text-sm">{activity.action}</div>
-                                <div className="text-xs text-slate-500">
-                                  {activity.user} at {new Date(activity.timestamp).toLocaleTimeString()}
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-          </div>
+          <LogsWidget />
         </div>
 
       </div>
