@@ -62,6 +62,21 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Add controllers
 builder.Services.AddControllers();
+
+// Configure form options to allow larger file uploads (for videos)
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 524288000; // 500 MB
+    options.ValueLengthLimit = 524288000;
+    options.MemoryBufferThreshold = 524288000;
+});
+
+// Configure Kestrel server limits for large uploads
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Limits.MaxRequestBodySize = 524288000; // 500 MB
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -170,6 +185,12 @@ app.MapGet("/media/{brandId}/{filename}", (string brandId, string filename, IWeb
             ".gif" => "image/gif",
             ".webp" => "image/webp",
             ".svg" => "image/svg+xml",
+            ".mp4" => "video/mp4",
+            ".webm" => "video/webm",
+            ".ogg" => "video/ogg",
+            ".mov" => "video/quicktime",
+            ".avi" => "video/x-msvideo",
+            ".mkv" => "video/x-matroska",
             _ => "application/octet-stream"
         };
         return Results.File(filePath, contentType);
@@ -203,12 +224,18 @@ app.MapGet("/thumbnails/{brandId}/{filename}", (string brandId, string filename,
     {
         var extension = Path.GetExtension(filename).ToLowerInvariant();
 
-        // For non-image files, return as-is
+        // For non-image files (videos, etc.), return as-is
         if (extension is not (".jpg" or ".jpeg" or ".png" or ".gif" or ".webp"))
         {
             var contentType = extension switch
             {
                 ".svg" => "image/svg+xml",
+                ".mp4" => "video/mp4",
+                ".webm" => "video/webm",
+                ".ogg" => "video/ogg",
+                ".mov" => "video/quicktime",
+                ".avi" => "video/x-msvideo",
+                ".mkv" => "video/x-matroska",
                 _ => "application/octet-stream"
             };
             return Results.File(originalPath, contentType);
