@@ -25,6 +25,10 @@ const MediaGallery: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [previewItem, setPreviewItem] = useState<MediaItem | null>(null);
   const [editingMetadata, setEditingMetadata] = useState<{alt: string; selectedFolders: number[]} | null>(null);
+  const [showCreateFolder, setShowCreateFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [newFolderDescription, setNewFolderDescription] = useState('');
+  const [creatingFolder, setCreatingFolder] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -90,7 +94,7 @@ const MediaGallery: React.FC = () => {
 
     setUploading(true);
     const uploadPromises = Array.from(files).map(async (file) => {
-      if (file.type.startsWith('image/')) {
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
         try {
           const response = await mediaService.uploadFile(currentBrandId, file);
           if (response.ok && response.data) {
@@ -103,6 +107,8 @@ const MediaGallery: React.FC = () => {
           console.error('Upload error:', error);
           alert(`Failed to upload ${file.name}`);
         }
+      } else {
+        alert(`Skipped ${file.name}: Only images and videos are supported`);
       }
       return null;
     });
@@ -271,6 +277,56 @@ const MediaGallery: React.FC = () => {
     }
   };
 
+  const handleCreateFolder = async () => {
+    if (!newFolderName.trim() || creatingFolder) return;
+
+    setCreatingFolder(true);
+    try {
+      const response = await mediaService.createMediaFolder(currentBrandId, {
+        name: newFolderName.trim(),
+        description: newFolderDescription.trim() || undefined
+      });
+
+      if (response.ok && response.data) {
+        setFolders(prev => [...prev, response.data!]);
+        setNewFolderName('');
+        setNewFolderDescription('');
+        setShowCreateFolder(false);
+        alert('Folder created successfully');
+      } else {
+        alert('Failed to create folder: ' + (response.error?.message || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Create folder error:', error);
+      alert('Failed to create folder');
+    } finally {
+      setCreatingFolder(false);
+    }
+  };
+
+  const handleDeleteFolder = async (folderId: number, folderName: string) => {
+    if (!confirm(`Are you sure you want to delete the folder "${folderName}"?`)) {
+      return;
+    }
+
+    try {
+      const response = await mediaService.deleteMediaFolder(currentBrandId, folderId);
+
+      if (response.ok) {
+        setFolders(prev => prev.filter(f => f.id !== folderId));
+        if (selectedFolder === folderId) {
+          setSelectedFolder('all');
+        }
+        alert('Folder deleted successfully');
+      } else {
+        alert('Failed to delete folder: ' + (response.error?.message || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Delete folder error:', error);
+      alert('Failed to delete folder');
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -286,7 +342,56 @@ const MediaGallery: React.FC = () => {
         {/* Sidebar */}
         <div className="col-span-3">
           <div className="bg-white dark:bg-gray-800 shadow p-4 mb-4">
-            <h3 className="font-semibold mb-3">Folders</h3>
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-semibold">Folders</h3>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setShowCreateFolder(!showCreateFolder)}
+              >
+                <Lucide icon="Plus" className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {showCreateFolder && (
+              <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                <FormInput
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  placeholder="Folder name"
+                  className="mb-2"
+                />
+                <FormInput
+                  value={newFolderDescription}
+                  onChange={(e) => setNewFolderDescription(e.target.value)}
+                  placeholder="Description (optional)"
+                  className="mb-2"
+                />
+                <div className="flex space-x-2">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleCreateFolder}
+                    disabled={creatingFolder || !newFolderName.trim()}
+                    className="flex-1"
+                  >
+                    {creatingFolder ? 'Creating...' : 'Create'}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setShowCreateFolder(false);
+                      setNewFolderName('');
+                      setNewFolderDescription('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-1">
               {/* All Images folder */}
               <button
@@ -305,20 +410,34 @@ const MediaGallery: React.FC = () => {
 
               {/* Dynamic folders from API */}
               {folders.map(folder => (
-                <button
+                <div
                   key={folder.id}
-                  onClick={() => setSelectedFolder(folder.id)}
-                  className={`w-full text-left px-3 py-2 text-sm font-medium transition-colors ${
+                  className={`group flex items-center justify-between px-3 py-2 text-sm font-medium transition-colors ${
                     selectedFolder === folder.id
                       ? 'bg-primary text-white'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
-                  <div className="flex justify-between items-center">
+                  <button
+                    onClick={() => setSelectedFolder(folder.id)}
+                    className="flex-1 text-left flex justify-between items-center"
+                  >
                     <span>{folder.name}</span>
                     <span className="text-xs opacity-75">({folder.itemCount})</span>
-                  </div>
-                </button>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteFolder(folder.id, folder.name);
+                    }}
+                    className={`ml-2 opacity-0 group-hover:opacity-100 transition-opacity ${
+                      selectedFolder === folder.id ? 'text-white hover:text-red-200' : 'text-red-500 hover:text-red-700'
+                    }`}
+                    title="Delete folder"
+                  >
+                    <Lucide icon="Trash2" className="w-4 h-4" />
+                  </button>
+                </div>
               ))}
             </div>
           </div>
@@ -337,7 +456,7 @@ const MediaGallery: React.FC = () => {
             <div className="text-center">
               <Lucide icon="Upload" className="mx-auto h-12 w-12 text-gray-400 mb-3" />
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                Drag & drop images here or click to upload
+                Drag & drop images/videos here or click to upload
               </p>
               <Button
                 variant="primary"
@@ -351,7 +470,7 @@ const MediaGallery: React.FC = () => {
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept="image/*"
+                accept="image/*,video/*"
                 onChange={(e) => handleFileUpload(e.target.files)}
                 className="hidden"
               />
@@ -444,12 +563,26 @@ const MediaGallery: React.FC = () => {
                         }`}
                         onClick={() => toggleItemSelection(item.id)}
                       >
-                        <div className="aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
-                          <img
-                            src={item.thumbnail}
-                            alt={item.alt || item.filename}
-                            className="w-full h-full object-cover"
-                          />
+                        <div className="aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800 relative">
+                          {item.type.startsWith('video/') ? (
+                            <>
+                              <video
+                                src={item.url}
+                                className="w-full h-full object-cover"
+                                muted
+                                playsInline
+                              />
+                              <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 text-xs rounded">
+                                <Lucide icon="Video" className="w-3 h-3" />
+                              </div>
+                            </>
+                          ) : (
+                            <img
+                              src={item.thumbnail}
+                              alt={item.alt || item.filename}
+                              className="w-full h-full object-cover"
+                            />
+                          )}
                         </div>
 
                         <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -489,11 +622,20 @@ const MediaGallery: React.FC = () => {
                           className="rounded"
                         />
                         <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                          <img
-                            src={item.thumbnail}
-                            alt={item.alt || item.filename}
-                            className="w-full h-full object-cover"
-                          />
+                          {item.type.startsWith('video/') ? (
+                            <video
+                              src={item.url}
+                              className="w-full h-full object-cover"
+                              muted
+                              playsInline
+                            />
+                          ) : (
+                            <img
+                              src={item.thumbnail}
+                              alt={item.alt || item.filename}
+                              className="w-full h-full object-cover"
+                            />
+                          )}
                         </div>
                         <div className="flex-1">
                           <p className="font-medium text-gray-900 dark:text-white">{item.filename}</p>
@@ -524,7 +666,9 @@ const MediaGallery: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 max-w-4xl max-h-[90vh] overflow-auto m-4">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Image Details</h3>
+                <h3 className="text-lg font-semibold">
+                  {previewItem.type.startsWith('video/') ? 'Video Details' : 'Image Details'}
+                </h3>
                 <Button
                   variant="secondary"
                   onClick={closePreviewModal}
@@ -535,11 +679,19 @@ const MediaGallery: React.FC = () => {
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
-                  <img
-                    src={previewItem.url}
-                    alt={previewItem.alt || previewItem.filename}
-                    className="w-full h-auto"
-                  />
+                  {previewItem.type.startsWith('video/') ? (
+                    <video
+                      src={previewItem.url}
+                      controls
+                      className="w-full h-auto"
+                    />
+                  ) : (
+                    <img
+                      src={previewItem.url}
+                      alt={previewItem.alt || previewItem.filename}
+                      className="w-full h-auto"
+                    />
+                  )}
                 </div>
 
                 <div className="space-y-4">

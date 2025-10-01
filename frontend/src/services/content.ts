@@ -153,6 +153,7 @@ export interface IndexPageContent {
   };
   hero: {
     title: string;
+    subtitle?: string;
     mediaType: 'video' | 'image';
     mediaUrl: string;
     count: string;

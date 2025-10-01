@@ -17,6 +17,7 @@ const initialContent: IndexPageContent = {
   },
   hero: {
     title: "Her Yolculukta\nYanınızda",
+    subtitle: "Electric Vehicle Charging Solutions",
     mediaType: 'video',
     mediaUrl: "assets/video/hero-video.mp4",
     count: "1880+",
@@ -306,6 +307,15 @@ const IndexPageEditor: React.FC = () => {
                       value={content?.hero?.title || ''}
                       onChange={(e) => updateContent('hero', 'title', e.target.value)}
                       placeholder="Ana başlığı girin"
+                      rows={2}
+                    />
+                  </div>
+                  <div>
+                    <FormLabel>Alt Başlık</FormLabel>
+                    <FormTextarea
+                      value={content?.hero?.subtitle || ''}
+                      onChange={(e) => updateContent('hero', 'subtitle', e.target.value)}
+                      placeholder="Alt başlığı girin"
                       rows={2}
                     />
                   </div>
