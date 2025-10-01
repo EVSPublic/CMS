@@ -69,13 +69,28 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Admin Panel API",
         Version = "v1",
-        Description = "Admin panel backend with authentication and multi-brand support"
+        Description = "Admin panel backend with authentication and multi-brand support. " +
+                      "This API provides comprehensive endpoints for managing brands, users, content, " +
+                      "media, announcements, static pages, partnerships, charging stations, and activity logs.",
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+        {
+            Name = "Admin Panel Team",
+            Email = "info@adminpanel.com"
+        }
     });
+
+    // Include XML comments for better Swagger documentation
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
 
     // Add JWT authentication to Swagger
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme",
+        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below. Example: 'Bearer eyJhbGc...'",
         Name = "Authorization",
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
         Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
@@ -96,6 +111,9 @@ builder.Services.AddSwaggerGen(c =>
             new string[] {}
         }
     });
+
+    // Enable annotations
+    c.EnableAnnotations();
 });
 
 // Add CORS for development
@@ -125,6 +143,7 @@ if (app.Environment.IsDevelopment())
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Admin Panel API V1");
         c.RoutePrefix = "swagger";
+        c.DocumentTitle = "Admin Panel API Documentation";
     });
 }
 
