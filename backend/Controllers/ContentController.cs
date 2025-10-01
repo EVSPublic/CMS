@@ -24,6 +24,7 @@ public class ContentController : ControllerBase
     }
 
     [HttpGet("{brandId}/{pageType}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetContentPage(int brandId, string pageType)
     {
         try
@@ -32,15 +33,6 @@ public class ContentController : ControllerBase
             if (!Enum.TryParse<PageType>(pageType, true, out var pageTypeEnum))
             {
                 return BadRequest(new { error = new { code = "INVALID_PAGE_TYPE", message = "Invalid page type specified" } });
-            }
-
-            // Get current user (all users can manage all brands/projects)
-            var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            var currentUser = await _context.Users.FindAsync(currentUserId);
-
-            if (currentUser == null)
-            {
-                return Unauthorized();
             }
 
             var contentPageEntity = await _context.ContentPages
@@ -53,12 +45,20 @@ public class ContentController : ControllerBase
             ContentPageDto? contentPage = null;
             if (contentPageEntity != null)
             {
+                var contentJson = JsonSerializer.Deserialize<JsonElement>(contentPageEntity.Content);
+
+                // Add mediaType to hero if missing (for Index page)
+                if (pageTypeEnum == PageType.Index && contentJson.ValueKind == JsonValueKind.Object)
+                {
+                    contentJson = EnsureMediaTypeInHero(contentJson);
+                }
+
                 contentPage = new ContentPageDto
                 {
                     Id = contentPageEntity.Id,
                     BrandId = contentPageEntity.BrandId,
                     PageType = contentPageEntity.PageType.ToString(),
-                    Content = JsonSerializer.Deserialize<JsonElement>(contentPageEntity.Content),
+                    Content = contentJson,
                     MetaTitle = contentPageEntity.MetaTitle,
                     MetaDescription = contentPageEntity.MetaDescription,
                     MetaKeywords = contentPageEntity.MetaKeywords,
@@ -71,52 +71,38 @@ public class ContentController : ControllerBase
                     CreatorName = contentPageEntity.Creator?.Name,
                     UpdaterName = contentPageEntity.Updater?.Name
                 };
+
+                return Ok(contentPage);
             }
 
-            if (contentPage == null)
+            // If no content page exists, return default content without saving to database
+            var brand = await _context.Brands.FindAsync(brandId);
+            if (brand == null)
             {
-                // Get brand info for default content
-                var brand = await _context.Brands.FindAsync(brandId);
-                var defaultContent = await GetDefaultContentForPageType(pageTypeEnum, brand?.Name ?? "", brandId);
-
-                // Create a default content page if it doesn't exist
-                var newContentPage = new ContentPage
-                {
-                    BrandId = brandId,
-                    PageType = pageTypeEnum,
-                    Content = JsonSerializer.Serialize(defaultContent),
-                    Status = ContentStatus.Draft,
-                    CreatedBy = currentUserId,
-                    UpdatedBy = currentUserId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-
-                _context.ContentPages.Add(newContentPage);
-                await _context.SaveChangesAsync();
-
-                // Return the newly created page
-                return Ok(new ContentPageDto
-                {
-                    Id = newContentPage.Id,
-                    BrandId = newContentPage.BrandId,
-                    PageType = newContentPage.PageType.ToString(),
-                    Content = defaultContent,
-                    MetaTitle = newContentPage.MetaTitle,
-                    MetaDescription = newContentPage.MetaDescription,
-                    MetaKeywords = newContentPage.MetaKeywords,
-                    Status = newContentPage.Status.ToString(),
-                    CreatedBy = newContentPage.CreatedBy,
-                    UpdatedBy = newContentPage.UpdatedBy,
-                    CreatedAt = newContentPage.CreatedAt,
-                    UpdatedAt = newContentPage.UpdatedAt,
-                    BrandName = brand?.Name ?? "",
-                    CreatorName = currentUser.Name,
-                    UpdaterName = currentUser.Name
-                });
+                return NotFound(new { error = new { code = "BRAND_NOT_FOUND", message = "Brand not found" } });
             }
 
-            return Ok(contentPage);
+            var defaultContent = await GetDefaultContentForPageType(pageTypeEnum, brand.Name, brandId);
+
+            // Return default content as a DTO without persisting
+            return Ok(new ContentPageDto
+            {
+                Id = 0,
+                BrandId = brandId,
+                PageType = pageTypeEnum.ToString(),
+                Content = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(defaultContent)),
+                MetaTitle = null,
+                MetaDescription = null,
+                MetaKeywords = null,
+                Status = "Draft",
+                CreatedBy = 0,
+                UpdatedBy = 0,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                BrandName = brand.Name,
+                CreatorName = null,
+                UpdaterName = null
+            });
         }
         catch (Exception ex)
         {
@@ -265,20 +251,11 @@ public class ContentController : ControllerBase
     }
 
     [HttpGet("{brandId}/statistics")]
-    [Authorize]
+    [AllowAnonymous]
     public async Task<IActionResult> GetBrandStatistics(int brandId)
     {
         try
         {
-            // Get current user (all users can access statistics)
-            var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            var currentUser = await _context.Users.FindAsync(currentUserId);
-
-            if (currentUser == null)
-            {
-                return Unauthorized();
-            }
-
             var brand = await _context.Brands.FindAsync(brandId);
 
             if (brand == null)
@@ -298,8 +275,7 @@ public class ContentController : ControllerBase
 
             var statistics = new
             {
-                chargingStationCount = finalCount,
-                formattedCount = $"{finalCount}+"
+                chargingStationCount = finalCount
             };
 
             return Ok(statistics);
@@ -340,7 +316,7 @@ public class ContentController : ControllerBase
                     Title = "Her Yolculukta\nYanınızda",
                     MediaType = "video",
                     MediaUrl = "assets/video/hero-video.mp4",
-                    Count = $"{chargingStationCount}+",
+                    Count = chargingStationCount,
                     CountText = "Şarj İstasyonu ile Kesintisiz Enerji"
                 },
                 Services = new ServicesDto
@@ -460,5 +436,86 @@ public class ContentController : ControllerBase
             },
             _ => new { message = "Default content not implemented for this page type" }
         };
+    }
+
+    private JsonElement EnsureMediaTypeInHero(JsonElement contentJson)
+    {
+        try
+        {
+            // Deserialize to dictionary for manipulation
+            var contentDict = JsonSerializer.Deserialize<Dictionary<string, object>>(contentJson.GetRawText());
+
+            if (contentDict != null && contentDict.ContainsKey("hero"))
+            {
+                var heroJson = JsonSerializer.Serialize(contentDict["hero"]);
+                var heroDict = JsonSerializer.Deserialize<Dictionary<string, object>>(heroJson);
+
+                if (heroDict != null)
+                {
+                    bool modified = false;
+
+                    // Add mediaType if missing
+                    if (!heroDict.ContainsKey("mediaType"))
+                    {
+                        // Determine mediaType based on mediaUrl extension
+                        string mediaType = "image"; // default
+
+                        if (heroDict.ContainsKey("mediaUrl"))
+                        {
+                            var mediaUrl = heroDict["mediaUrl"]?.ToString() ?? "";
+                            var extension = Path.GetExtension(mediaUrl).ToLowerInvariant();
+
+                            if (extension == ".mp4" || extension == ".webm" || extension == ".ogg" || extension == ".mov")
+                            {
+                                mediaType = "video";
+                            }
+                        }
+
+                        heroDict["mediaType"] = mediaType;
+                        modified = true;
+                    }
+
+                    // Convert count to int if it's a string with '+'
+                    if (heroDict.ContainsKey("count"))
+                    {
+                        var countValue = heroDict["count"];
+                        if (countValue is JsonElement countElement && countElement.ValueKind == JsonValueKind.String)
+                        {
+                            var countStr = countElement.GetString() ?? "0";
+                            // Remove '+' and parse to int
+                            countStr = countStr.Replace("+", "");
+                            if (int.TryParse(countStr, out int count))
+                            {
+                                heroDict["count"] = count;
+                                modified = true;
+                            }
+                        }
+                        else if (countValue is string countString)
+                        {
+                            var countStr = countString.Replace("+", "");
+                            if (int.TryParse(countStr, out int count))
+                            {
+                                heroDict["count"] = count;
+                                modified = true;
+                            }
+                        }
+                    }
+
+                    if (modified)
+                    {
+                        contentDict["hero"] = heroDict;
+                        // Serialize back to JsonElement
+                        return JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(contentDict));
+                    }
+                }
+            }
+
+            return contentJson;
+        }
+        catch
+        {
+            // If any error occurs, return original content
+            return contentJson;
+        }
     }
 }
