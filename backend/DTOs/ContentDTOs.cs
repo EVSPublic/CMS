@@ -44,6 +44,7 @@ public class MetaDto
 public class HeroDto
 {
     public string Title { get; set; } = string.Empty;
+    public string? Subtitle { get; set; }
     public string MediaType { get; set; } = "video"; // 'video' | 'image'
     public string MediaUrl { get; set; } = string.Empty;
     public int Count { get; set; } = 0;

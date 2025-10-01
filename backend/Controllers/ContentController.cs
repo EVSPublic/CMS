@@ -47,10 +47,10 @@ public class ContentController : ControllerBase
             {
                 var contentJson = JsonSerializer.Deserialize<JsonElement>(contentPageEntity.Content);
 
-                // Add mediaType to hero if missing (for Index page)
+                // Add mediaType and count to hero if missing (for Index page)
                 if (pageTypeEnum == PageType.Index && contentJson.ValueKind == JsonValueKind.Object)
                 {
-                    contentJson = EnsureMediaTypeInHero(contentJson);
+                    contentJson = await EnsureMediaTypeAndCountInHero(contentJson, brandId);
                 }
 
                 contentPage = new ContentPageDto
@@ -314,6 +314,7 @@ public class ContentController : ControllerBase
                 Hero = new HeroDto
                 {
                     Title = "Her Yolculukta\nYanınızda",
+                    Subtitle = "Electric Vehicle Charging Solutions",
                     MediaType = "video",
                     MediaUrl = "assets/video/hero-video.mp4",
                     Count = chargingStationCount,
@@ -438,7 +439,7 @@ public class ContentController : ControllerBase
         };
     }
 
-    private JsonElement EnsureMediaTypeInHero(JsonElement contentJson)
+    private async Task<JsonElement> EnsureMediaTypeAndCountInHero(JsonElement contentJson, int brandId)
     {
         try
         {
@@ -475,7 +476,7 @@ public class ContentController : ControllerBase
                         modified = true;
                     }
 
-                    // Convert count to int if it's a string with '+'
+                    // Add or convert count to int
                     if (heroDict.ContainsKey("count"))
                     {
                         var countValue = heroDict["count"];
@@ -498,6 +499,23 @@ public class ContentController : ControllerBase
                                 heroDict["count"] = count;
                                 modified = true;
                             }
+                        }
+                    }
+                    else
+                    {
+                        // If count is missing, fetch it from database
+                        var brand = await _context.Brands.FindAsync(brandId);
+                        if (brand != null)
+                        {
+                            var brandName = brand.Name.ToLower();
+                            var actualStationCount = await _context.Database.SqlQueryRaw<int>(
+                                "SELECT COUNT(*) as Value FROM Stations WHERE BrandVisibility LIKE {0}",
+                                $"%{brandName}%"
+                            ).FirstAsync();
+
+                            var finalCount = actualStationCount > 0 ? actualStationCount : brand.ChargingStationCount;
+                            heroDict["count"] = finalCount;
+                            modified = true;
                         }
                     }
 
