@@ -275,7 +275,8 @@ public class ContentController : ControllerBase
 
             var statistics = new
             {
-                chargingStationCount = finalCount
+                chargingStationCount = finalCount,
+                formattedCount = $"{finalCount}+"
             };
 
             return Ok(statistics);
