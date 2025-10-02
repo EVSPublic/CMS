@@ -30,6 +30,8 @@ const PartnershipPageEditor: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [slideInterval, setSlideInterval] = useState<number>(3000);
+  const [slideDuration, setSlideDuration] = useState<number>(500);
 
   // Get current brand ID from localStorage
   const getCurrentBrandId = (): number => {
@@ -39,9 +41,10 @@ const PartnershipPageEditor: React.FC = () => {
 
   const [currentBrandId, setCurrentBrandId] = useState<number>(getCurrentBrandId());
 
-  // Load partners on component mount
+  // Load partners and slide settings on component mount
   useEffect(() => {
     loadPartners();
+    loadSlideSettings();
   }, []);
 
   // Listen for brand changes and reload partners
@@ -50,6 +53,7 @@ const PartnershipPageEditor: React.FC = () => {
       const newBrandId = getCurrentBrandId();
       setCurrentBrandId(newBrandId);
       loadPartners(newBrandId);
+      loadSlideSettings(newBrandId);
     };
 
     window.addEventListener('brandChanged', handleBrandChange);
@@ -85,6 +89,19 @@ const PartnershipPageEditor: React.FC = () => {
       console.error('Partners load error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSlideSettings = async (brandId?: number) => {
+    const actualBrandId = brandId || currentBrandId;
+    try {
+      const response = await partnershipsService.getSlideSettings(actualBrandId);
+      if (response.ok && response.data) {
+        setSlideInterval(response.data.slideInterval);
+        setSlideDuration(response.data.slideDuration);
+      }
+    } catch (err) {
+      console.error('Slide settings load error:', err);
     }
   };
 
@@ -221,8 +238,14 @@ const PartnershipPageEditor: React.FC = () => {
       const savePromises = content.partners.map(partner => savePartner(partner));
       await Promise.all(savePromises);
 
+      // Save slide settings
+      await partnershipsService.updateSlideSettings({
+        slideInterval,
+        slideDuration
+      });
+
       await loadPartners(); // Reload to get updated data
-      alert('Tüm partnerler başarıyla kaydedildi!');
+      alert('Tüm partnerler ve ayarlar başarıyla kaydedildi!');
     } catch (error) {
       console.error('Save error:', error);
       alert('Kaydetme sırasında bir hata oluştu: ' + (error instanceof Error ? error.message : 'Bilinmeyen hata'));
@@ -275,6 +298,44 @@ const PartnershipPageEditor: React.FC = () => {
                   >
                     Yeni Partner Ekle
                   </Button>
+                </div>
+
+                {/* Slide Settings */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                  <div>
+                    <FormLabel htmlFor="slideInterval">
+                      Slayt Aralığı (ms)
+                    </FormLabel>
+                    <FormInput
+                      id="slideInterval"
+                      type="number"
+                      value={slideInterval}
+                      onChange={(e) => setSlideInterval(Number(e.target.value))}
+                      min="1000"
+                      step="100"
+                      placeholder="3000"
+                    />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Her slayt arasındaki bekleme süresi (milisaniye)
+                    </p>
+                  </div>
+                  <div>
+                    <FormLabel htmlFor="slideDuration">
+                      Slayt Geçiş Süresi (ms)
+                    </FormLabel>
+                    <FormInput
+                      id="slideDuration"
+                      type="number"
+                      value={slideDuration}
+                      onChange={(e) => setSlideDuration(Number(e.target.value))}
+                      min="100"
+                      step="50"
+                      placeholder="500"
+                    />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Slayt geçiş animasyon süresi (milisaniye)
+                    </p>
+                  </div>
                 </div>
 
                 {content.partners.length === 0 ? (

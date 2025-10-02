@@ -23,6 +23,7 @@ public class PartnershipsController : ControllerBase
     }
 
     [HttpGet("{brandId}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetPartners(int brandId)
     {
         try
@@ -63,6 +64,7 @@ public class PartnershipsController : ControllerBase
     }
 
     [HttpGet("{brandId}/{id}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetPartner(int brandId, int id)
     {
         try
@@ -347,6 +349,55 @@ public class PartnershipsController : ControllerBase
         {
             _logger.LogError(ex, "Error toggling partner status {Id} for brand {BrandId}", id, brandId);
             return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while toggling partner status" } });
+        }
+    }
+
+    [HttpGet("{brandId}/slide-settings")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetSlideSettings(int brandId)
+    {
+        try
+        {
+            var brand = await _context.Brands.FindAsync(brandId);
+
+            if (brand == null)
+                return NotFound(new { error = new { code = "BRAND_NOT_FOUND", message = "Brand not found" } });
+
+            return Ok(new PartnershipSettingsDto
+            {
+                SlideInterval = brand.PartnershipSlideInterval,
+                SlideDuration = brand.PartnershipSlideDuration
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting slide settings for brand {BrandId}", brandId);
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while getting slide settings" } });
+        }
+    }
+
+    [HttpPut("{brandId}/slide-settings")]
+    public async Task<IActionResult> UpdateSlideSettings(int brandId, [FromBody] UpdatePartnershipSettingsDto request)
+    {
+        try
+        {
+            var brand = await _context.Brands.FindAsync(brandId);
+
+            if (brand == null)
+                return NotFound(new { error = new { code = "BRAND_NOT_FOUND", message = "Brand not found" } });
+
+            brand.PartnershipSlideInterval = request.SlideInterval;
+            brand.PartnershipSlideDuration = request.SlideDuration;
+            brand.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Slide settings updated successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating slide settings for brand {BrandId}", brandId);
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while updating slide settings" } });
         }
     }
 }

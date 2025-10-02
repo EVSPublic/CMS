@@ -55,6 +55,7 @@ export type LogAction =
   | 'partner_delete'
   | 'partner_reorder'
   | 'partner_toggle_status'
+  | 'partnership_slide_settings_update'
   | 'station_create'
   | 'station_update'
   | 'station_delete'

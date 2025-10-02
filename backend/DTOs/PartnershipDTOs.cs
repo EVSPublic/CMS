@@ -56,3 +56,14 @@ public class TogglePartnerStatusDto
     [Required]
     public bool Active { get; set; } = true;
 }
+public class PartnershipSettingsDto
+{
+    public int SlideInterval { get; set; }
+    public int SlideDuration { get; set; }
+}
+
+public class UpdatePartnershipSettingsDto
+{
+    public int SlideInterval { get; set; }
+    public int SlideDuration { get; set; }
+}

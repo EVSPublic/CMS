@@ -23,6 +23,10 @@ public class Brand
 
     public int ChargingStationCount { get; set; } = 1880;
 
+    // Partnership slider settings (in milliseconds)
+    public int PartnershipSlideInterval { get; set; } = 3000; // 3 seconds
+    public int PartnershipSlideDuration { get; set; } = 500;  // 0.5 seconds
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

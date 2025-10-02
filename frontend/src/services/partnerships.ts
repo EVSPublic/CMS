@@ -42,6 +42,16 @@ export interface PartnersResponse {
   partners: Partner[];
 }
 
+export interface SlideSettings {
+  slideInterval: number;
+  slideDuration: number;
+}
+
+export interface UpdateSlideSettingsRequest {
+  slideInterval: number;
+  slideDuration: number;
+}
+
 class PartnershipsService {
   private getSelectedBrandId(): number {
     const selectedBrand = localStorage.getItem('selectedBrand') || 'Ovolt';
@@ -147,6 +157,30 @@ class PartnershipsService {
         'partner_toggle_status',
         `Partner durumu değiştirildi: ${id} - ${status} (${brandName})`,
         { level: 'info', resourceType: 'partner', resourceId: id.toString() }
+      );
+    }
+
+    return response;
+  }
+
+  async getSlideSettings(brandId?: number): Promise<ApiResponse<SlideSettings>> {
+    const actualBrandId = brandId || this.getSelectedBrandId();
+    return api.get<SlideSettings>(`/api/v1/partnerships/${actualBrandId}/slide-settings`);
+  }
+
+  async updateSlideSettings(
+    request: UpdateSlideSettingsRequest,
+    brandId?: number
+  ): Promise<ApiResponse<any>> {
+    const actualBrandId = brandId || this.getSelectedBrandId();
+    const response = await api.put(`/api/v1/partnerships/${actualBrandId}/slide-settings`, request);
+
+    if (response.ok) {
+      const brandName = actualBrandId === 1 ? 'Ovolt' : 'Sharz.net';
+      logService.log(
+        'partnership_slide_settings_update',
+        `Partner slide ayarları güncellendi (${brandName})`,
+        { level: 'success', resourceType: 'slide-settings' }
       );
     }
 
