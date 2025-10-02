@@ -23,6 +23,7 @@ public class AnnouncementsController : ControllerBase
     }
 
     [HttpGet("{brandId}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAnnouncements(int brandId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? search = null, [FromQuery] string? type = null, [FromQuery] string? status = null)
     {
         try
@@ -79,6 +80,7 @@ public class AnnouncementsController : ControllerBase
     }
 
     [HttpGet("{brandId}/{id}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAnnouncement(int brandId, int id)
     {
         try
