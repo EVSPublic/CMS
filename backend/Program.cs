@@ -10,11 +10,17 @@ using AdminPanel.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add database context
+// Add database context with connection resilience
 builder.Services.AddDbContext<AdminPanelContext>(options =>
     options.UseMySql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
-        new MySqlServerVersion(new Version(8, 0, 21))
+        new MySqlServerVersion(new Version(8, 0, 21)),
+        mySqlOptions => {
+            mySqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 3,
+                maxRetryDelay: TimeSpan.FromSeconds(3),
+                errorNumbersToAdd: null);
+        }
     ));
 
 // Add Identity
@@ -59,6 +65,9 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<AdminPanel.Services.SystemUsage>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+
+// Add background services
+builder.Services.AddHostedService<DatabaseKeepAliveService>();
 
 // Add controllers
 builder.Services.AddControllers();
