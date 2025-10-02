@@ -513,15 +513,34 @@ class ContentService {
   async getTarifelerPageContent(brandId: number): Promise<ApiResponse<TarifelerPageContent>> {
     const response = await this.getContentPage(brandId, 'Tariffs');
     if (response.ok && response.data) {
-      // Extract content from the ContentPageDto structure and merge meta fields
-      const content = response.data.content as TarifelerPageContent;
+      // Extract content from the ContentPageDto structure
+      const rawContent = response.data.content as any;
 
-      // Merge meta fields from DTO into content structure
-      if (content.meta) {
-        content.meta.title = response.data.metaTitle || content.meta.title || '';
-        content.meta.description = response.data.metaDescription || content.meta.description || '';
-        content.meta.keywords = response.data.metaKeywords || content.meta.keywords || '';
-      }
+      // Map backend PascalCase to frontend camelCase
+      const content: TarifelerPageContent = {
+        meta: {
+          title: response.data.metaTitle || rawContent.Meta?.Title || rawContent.meta?.title || '',
+          description: response.data.metaDescription || rawContent.Meta?.Description || rawContent.meta?.description || '',
+          keywords: response.data.metaKeywords || rawContent.Meta?.Keywords || rawContent.meta?.keywords || ''
+        },
+        hero: {
+          image: rawContent.Hero?.Image || rawContent.hero?.image || ''
+        },
+        pageHeader: {
+          title: rawContent.PageHeader?.Title || rawContent.pageHeader?.title || '',
+          description: rawContent.PageHeader?.Description || rawContent.pageHeader?.description || ''
+        },
+        tariffs: {
+          cards: (rawContent.Tariffs?.Cards || rawContent.tariffs?.cards || []).map((card: any) => ({
+            isCampaign: card.IsCampaign ?? card.isCampaign ?? false,
+            badge: card.Badge || card.badge || '',
+            title: card.Title || card.title || '',
+            oldPrice: card.OldPrice || card.oldPrice || '',
+            currentPrice: card.CurrentPrice || card.currentPrice || '',
+            validityText: card.ValidityText || card.validityText || ''
+          }))
+        }
+      };
 
       return {
         ok: true,
