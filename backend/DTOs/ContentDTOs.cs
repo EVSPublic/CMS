@@ -192,6 +192,48 @@ public class SocialMediaDto
     public string Icon { get; set; } = string.Empty;
 }
 
+// Tariffs page content structure
+public class TarifelerPageContentDto
+{
+    public TarifelerMetaDto Meta { get; set; } = new();
+    public TarifelerHeroDto Hero { get; set; } = new();
+    public TarifelerPageHeaderDto PageHeader { get; set; } = new();
+    public TarifelerTariffsDto Tariffs { get; set; } = new();
+}
+
+public class TarifelerMetaDto
+{
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string Keywords { get; set; } = string.Empty;
+}
+
+public class TarifelerHeroDto
+{
+    public string Image { get; set; } = string.Empty;
+}
+
+public class TarifelerPageHeaderDto
+{
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+}
+
+public class TarifelerTariffsDto
+{
+    public List<TariffCardDto> Cards { get; set; } = new();
+}
+
+public class TariffCardDto
+{
+    public bool IsCampaign { get; set; }
+    public string Badge { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string OldPrice { get; set; } = string.Empty;
+    public string CurrentPrice { get; set; } = string.Empty;
+    public string ValidityText { get; set; } = string.Empty;
+}
+
 public class UpdateContentPageDto
 {
     [Required]

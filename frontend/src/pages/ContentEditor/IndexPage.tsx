@@ -381,14 +381,6 @@ const IndexPageEditor: React.FC = () => {
                       rows={4}
                     />
                   </div>
-                  <div>
-                    <FormLabel>Alt Başlık</FormLabel>
-                    <FormInput
-                      value={content?.services?.subtitle || ''}
-                      onChange={(e) => updateContent('services', 'subtitle', e.target.value)}
-                      placeholder="Hizmet Noktaları"
-                    />
-                  </div>
                 </div>
               </div>
             </Tab.Panel>

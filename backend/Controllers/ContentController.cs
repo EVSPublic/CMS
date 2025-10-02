@@ -436,6 +436,57 @@ public class ContentController : ControllerBase
                     new() { Name = "Instagram", Url = "#", Icon = "instagram" }
                 }
             },
+            PageType.Tariffs => new TarifelerPageContentDto
+            {
+                Meta = new TarifelerMetaDto
+                {
+                    Title = $"Tarifeler - {brandName}",
+                    Description = "Elektrikli araç şarj tarifelerimiz hakkında detaylı bilgi edinin.",
+                    Keywords = "şarj tarifeleri, elektrikli araç, şarj ücretleri"
+                },
+                Hero = new TarifelerHeroDto
+                {
+                    Image = ""
+                },
+                PageHeader = new TarifelerPageHeaderDto
+                {
+                    Title = "Tarifeler",
+                    Description = "Geniş halka açık şarj istasyonu ağı ile elektrikli aracınız için rekabetçi ve şeffaf tarife seçenekleri."
+                },
+                Tariffs = new TarifelerTariffsDto
+                {
+                    Cards = new List<TariffCardDto>
+                    {
+                        new()
+                        {
+                            IsCampaign = false,
+                            Badge = "Standart",
+                            Title = "AC Şarj",
+                            OldPrice = "",
+                            CurrentPrice = "8,50 TL",
+                            ValidityText = "kW/h"
+                        },
+                        new()
+                        {
+                            IsCampaign = true,
+                            Badge = "Kampanya",
+                            Title = "DC Hızlı Şarj",
+                            OldPrice = "15,00 TL",
+                            CurrentPrice = "12,00 TL",
+                            ValidityText = "kW/h"
+                        },
+                        new()
+                        {
+                            IsCampaign = false,
+                            Badge = "Premium",
+                            Title = "DC Ultra Hızlı Şarj",
+                            OldPrice = "",
+                            CurrentPrice = "18,00 TL",
+                            ValidityText = "kW/h"
+                        }
+                    }
+                }
+            },
             _ => new { message = "Default content not implemented for this page type" }
         };
     }
