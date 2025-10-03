@@ -232,6 +232,9 @@ const StaticPageCreator: React.FC = () => {
       return;
     }
 
+    // Use codeContent if in code mode, otherwise use pageForm.content
+    const contentToSave = editorMode === 'code' ? codeContent : pageForm.content;
+
     setIsSaving(true);
     try {
       if (editingPage) {
@@ -239,7 +242,7 @@ const StaticPageCreator: React.FC = () => {
         const response = await staticPagesService.updateStaticPage(editingPage.id, {
           title: pageForm.title,
           slug: pageForm.slug,
-          content: pageForm.content
+          content: contentToSave
         });
 
         if (response.ok) {
@@ -261,7 +264,7 @@ const StaticPageCreator: React.FC = () => {
         const response = await staticPagesService.createStaticPage({
           title: pageForm.title,
           slug: pageForm.slug,
-          content: pageForm.content
+          content: contentToSave
         });
 
         if (response.ok && response.data) {
@@ -595,6 +598,13 @@ const StaticPageCreator: React.FC = () => {
                     </div>
                   </div>
 
+                  {editorMode === 'visual' && (
+                    <div className="mb-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-xs text-yellow-800 dark:text-yellow-200">
+                      ⚠️ Görsel editör &lt;style&gt; ve &lt;script&gt; gibi bazı HTML etiketlerini filtreler.
+                      Ham HTML yazmak için <strong>"Kod"</strong> modunu kullanın.
+                    </div>
+                  )}
+
                   <div className="relative">
                     {/* Visual Editor */}
                     <div
@@ -614,7 +624,7 @@ const StaticPageCreator: React.FC = () => {
                               'alignment', '|',
                               'numberedList', 'bulletedList', '|',
                               'outdent', 'indent', '|',
-                              'link', 'blockQuote', 'insertTable', '|',
+                              'link', 'blockQuote', 'insertTable', 'htmlEmbed', '|',
                               'undo', 'redo', '|',
                               'sourceEditing'
                             ]
@@ -629,6 +639,17 @@ const StaticPageCreator: React.FC = () => {
                           },
                           fontSize: {
                             options: ['tiny', 'small', 'default', 'big', 'huge']
+                          },
+                          htmlSupport: {
+                            allow: [
+                              {
+                                name: /.*/,
+                                attributes: true,
+                                classes: true,
+                                styles: true
+                              }
+                            ],
+                            disallow: []
                           }
                         }}
                         className="min-h-96"
