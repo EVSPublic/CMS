@@ -442,14 +442,6 @@ const CorporateSolutionsPageEditor: React.FC = () => {
                     <h3 className="text-lg font-semibold mb-4">Kart {index + 1}</h3>
                     <div className="space-y-4">
                       <div>
-                        <ImageInput
-                          value={card?.image || ''}
-                          onChange={(url) => updateManagementCard(index, 'image', url)}
-                          label={`Kart ${index + 1} Görseli`}
-                          placeholder={`Kart ${index + 1} görseli seçin...`}
-                        />
-                      </div>
-                      <div>
                         <FormLabel>Başlık</FormLabel>
                         <FormInput
                           value={card?.title || ''}
