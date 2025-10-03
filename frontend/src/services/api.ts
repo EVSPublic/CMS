@@ -21,19 +21,105 @@ export interface ApiResponse<T> {
 
 class ApiService {
   private baseUrl: string;
-  
+  private tokenRefreshTimeout: number | null = null;
+  private isRefreshing = false;
+
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
+    this.scheduleTokenRefresh();
+
+    // Listen for storage events to sync token refresh across tabs
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'access_token' && e.newValue) {
+        this.scheduleTokenRefresh();
+      }
+    });
+  }
+
+  private scheduleTokenRefresh() {
+    // Clear existing timeout
+    if (this.tokenRefreshTimeout) {
+      clearTimeout(this.tokenRefreshTimeout);
+      this.tokenRefreshTimeout = null;
+    }
+
+    // Schedule refresh 5 minutes before expiry (55 minutes for a 1-hour token)
+    const refreshTime = 55 * 60 * 1000; // 55 minutes in milliseconds
+    this.tokenRefreshTimeout = window.setTimeout(() => {
+      this.refreshTokenIfNeeded();
+    }, refreshTime);
+  }
+
+  private async refreshTokenIfNeeded() {
+    if (this.isRefreshing) return;
+
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    this.isRefreshing = true;
+
+    try {
+      const refreshResponse = await fetch(`${this.baseUrl}/api/v1/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (refreshResponse.ok) {
+        const refreshData = await refreshResponse.json();
+        if (refreshData.ok && refreshData.accessToken) {
+          localStorage.setItem('access_token', refreshData.accessToken);
+          localStorage.setItem('user', JSON.stringify(refreshData.user));
+          console.log('Token refreshed successfully');
+
+          // Schedule next refresh
+          this.scheduleTokenRefresh();
+        }
+      } else {
+        console.error('Token refresh failed, logging out');
+        this.clearAuth();
+      }
+    } catch (error) {
+      console.error('Token refresh error:', error);
+    } finally {
+      this.isRefreshing = false;
+    }
+  }
+
+  private clearAuth() {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
+
+    if (this.tokenRefreshTimeout) {
+      clearTimeout(this.tokenRefreshTimeout);
+      this.tokenRefreshTimeout = null;
+    }
+
+    // Dispatch a custom event to notify the auth hook
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'access_token',
+      oldValue: localStorage.getItem('access_token'),
+      newValue: null,
+      storageArea: localStorage
+    }));
   }
 
   private async makeRequest<T>(
-    endpoint: string, 
+    endpoint: string,
     options: RequestInit = {},
     isRetry: boolean = false
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+
     try {
+      // Refresh token on activity (reschedule the refresh timer)
+      if (!endpoint.includes('/auth/refresh')) {
+        this.scheduleTokenRefresh();
+      }
+
       // Get token from localStorage
       const token = localStorage.getItem('access_token');
       
@@ -48,42 +134,34 @@ class ApiService {
 
       // Handle 401 Unauthorized - try to refresh token
       if (response.status === 401 && !isRetry && !endpoint.includes('/auth/')) {
-        const refreshToken = localStorage.getItem('refresh_token');
-        if (refreshToken) {
-          try {
-            const refreshResponse = await fetch(`${this.baseUrl}/api/v1/auth/refresh`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ refreshToken }),
-            });
-
-            if (refreshResponse.ok) {
-              const refreshData = await refreshResponse.json();
-              if (refreshData.ok && refreshData.data) {
-                localStorage.setItem('access_token', refreshData.data.accessToken);
-                localStorage.setItem('refresh_token', refreshData.data.refreshToken);
-                
-                // Retry the original request with new token
-                return this.makeRequest<T>(endpoint, options, true);
-              }
+        try {
+          const refreshResponse = await fetch(`${this.baseUrl}/api/v1/auth/refresh`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
             }
-          } catch (refreshError) {
-            console.error('Token refresh failed:', refreshError);
-          }
-        }
-        
-        // If refresh fails, clear auth data and trigger storage event for same-tab detection
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user');
+          });
 
-        // Dispatch a custom event to notify the auth hook in the same tab
-        window.dispatchEvent(new StorageEvent('storage', {
-          key: 'access_token',
-          oldValue: token,
-          newValue: null,
-          storageArea: localStorage
-        }));
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json();
+            if (refreshData.ok && refreshData.accessToken) {
+              localStorage.setItem('access_token', refreshData.accessToken);
+              localStorage.setItem('user', JSON.stringify(refreshData.user));
+
+              // Reschedule token refresh
+              this.scheduleTokenRefresh();
+
+              // Retry the original request with new token
+              return this.makeRequest<T>(endpoint, options, true);
+            }
+          }
+        } catch (refreshError) {
+          console.error('Token refresh failed:', refreshError);
+        }
+
+        // If refresh fails, clear auth data
+        this.clearAuth();
       }
 
       const data = await response.json();

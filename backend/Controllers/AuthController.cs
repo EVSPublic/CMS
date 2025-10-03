@@ -232,10 +232,84 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("refresh")]
-    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto request)
+    [Authorize]
+    public async Task<IActionResult> RefreshToken()
     {
-        // For now, return unauthorized as refresh tokens are not fully implemented
-        // TODO: Implement proper refresh token logic
-        return Unauthorized(new { error = new { code = "REFRESH_TOKEN_INVALID", message = "Refresh token is invalid" } });
+        try
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { error = new { code = "INVALID_TOKEN", message = "Invalid token" } });
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return Unauthorized(new { error = new { code = "USER_NOT_FOUND", message = "User not found" } });
+            }
+
+            if (user.Status != UserStatus.Active)
+            {
+                return Unauthorized(new { error = new { code = "ACCOUNT_INACTIVE", message = "Account is inactive" } });
+            }
+
+            // Generate new token
+            var newToken = _jwtService.GenerateToken(user);
+
+            // Get user's brand access and permissions
+            var brandAccess = new List<string>();
+            var permissions = new Dictionary<string, List<string>>();
+
+            if (user.Role == UserRole.Admin)
+            {
+                var allBrands = await _context.Brands.Select(b => b.Name).ToListAsync();
+                brandAccess = allBrands;
+                foreach (var brand in allBrands)
+                {
+                    permissions[brand] = new List<string> { "read", "write", "delete" };
+                }
+            }
+            else if (user.BrandId.HasValue)
+            {
+                var brand = await _context.Brands.FirstOrDefaultAsync(b => b.Id == user.BrandId.Value);
+                if (brand != null)
+                {
+                    brandAccess.Add(brand.Name);
+                    var userPermissions = user.Role == UserRole.Editor
+                        ? new List<string> { "read", "write" }
+                        : new List<string> { "read" };
+                    permissions[brand.Name] = userPermissions;
+                }
+            }
+
+            var response = new LoginResponseDto
+            {
+                Ok = true,
+                AccessToken = newToken,
+                RefreshToken = "",
+                ExpiresIn = 3600,
+                User = new UserDto
+                {
+                    Id = user.Id.ToString(),
+                    Name = user.Name,
+                    Email = user.Email ?? string.Empty,
+                    Role = user.Role.ToString(),
+                    Status = user.Status.ToString(),
+                    BrandAccess = brandAccess,
+                    Permissions = permissions,
+                    LastLogin = user.LastLogin,
+                    CreatedAt = user.CreatedAt
+                },
+                Permissions = permissions
+            };
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during token refresh");
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while refreshing token" } });
+        }
     }
 }
