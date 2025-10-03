@@ -139,7 +139,8 @@ export interface TarifelerPageContent {
       title: string;
       oldPrice: string;
       currentPrice: string;
-      validityText: string;
+      unit: string;
+      campaignExpireDate: string;
     }>;
   };
 }
@@ -537,7 +538,8 @@ class ContentService {
             title: card.Title || card.title || '',
             oldPrice: card.OldPrice || card.oldPrice || '',
             currentPrice: card.CurrentPrice || card.currentPrice || '',
-            validityText: card.ValidityText || card.validityText || ''
+            unit: card.Unit || card.unit || 'kWh',
+            campaignExpireDate: card.CampaignExpireDate || card.campaignExpireDate || card.ValidityText || card.validityText || '30-31 ağustos tarihleri arasında geçerlidir'
           }))
         }
       };

@@ -464,7 +464,8 @@ public class ContentController : ControllerBase
                             Title = "AC Şarj",
                             OldPrice = "",
                             CurrentPrice = "8,50 TL",
-                            ValidityText = "kW/h"
+                            Unit = "kWh",
+                            CampaignExpireDate = ""
                         },
                         new()
                         {
@@ -473,7 +474,8 @@ public class ContentController : ControllerBase
                             Title = "DC Hızlı Şarj",
                             OldPrice = "15,00 TL",
                             CurrentPrice = "12,00 TL",
-                            ValidityText = "kW/h"
+                            Unit = "kWh",
+                            CampaignExpireDate = "30-31 ağustos tarihleri arasında geçerlidir"
                         },
                         new()
                         {
@@ -482,7 +484,8 @@ public class ContentController : ControllerBase
                             Title = "DC Ultra Hızlı Şarj",
                             OldPrice = "",
                             CurrentPrice = "18,00 TL",
-                            ValidityText = "kW/h"
+                            Unit = "kWh",
+                            CampaignExpireDate = ""
                         }
                     }
                 }

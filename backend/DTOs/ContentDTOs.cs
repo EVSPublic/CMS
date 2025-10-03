@@ -231,7 +231,8 @@ public class TariffCardDto
     public string Title { get; set; } = string.Empty;
     public string OldPrice { get; set; } = string.Empty;
     public string CurrentPrice { get; set; } = string.Empty;
-    public string ValidityText { get; set; } = string.Empty;
+    public string Unit { get; set; } = "kWh";
+    public string CampaignExpireDate { get; set; } = "30-31 ağustos tarihleri arasında geçerlidir";
 }
 
 public class UpdateContentPageDto

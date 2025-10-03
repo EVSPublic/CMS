@@ -14,7 +14,8 @@ interface TariffCard {
   title: string;
   oldPrice: string;
   currentPrice: string;
-  validityText: string;
+  unit: string;
+  campaignExpireDate: string;
 }
 
 const initialContent: TarifelerPageContent = {
@@ -38,7 +39,8 @@ const initialContent: TarifelerPageContent = {
         title: "AC Soket Tarifesi",
         oldPrice: "₺10.99",
         currentPrice: "₺8.99",
-        validityText: "30-31 ağustos tarihleri arasında geçerlidir"
+        unit: "kWh",
+        campaignExpireDate: "30-31 ağustos tarihleri arasında geçerlidir"
       },
       {
         isCampaign: true,
@@ -46,7 +48,8 @@ const initialContent: TarifelerPageContent = {
         title: "60 kW'a Kadar Tüm DC Soketler",
         oldPrice: "₺11.99",
         currentPrice: "₺9.99",
-        validityText: "30-31 ağustos tarihleri arasında geçerlidir"
+        unit: "kWh",
+        campaignExpireDate: "30-31 ağustos tarihleri arasında geçerlidir"
       },
       {
         isCampaign: true,
@@ -54,7 +57,8 @@ const initialContent: TarifelerPageContent = {
         title: "Diğer Tüm DC Soketler",
         oldPrice: "₺13.99",
         currentPrice: "₺11.99",
-        validityText: "30-31 ağustos tarihleri arasında geçerlidir"
+        unit: "kWh",
+        campaignExpireDate: "30-31 ağustos tarihleri arasında geçerlidir"
       }
     ]
   }
@@ -381,12 +385,20 @@ const TarifelerPageEditor: React.FC = () => {
                           placeholder="₺8.99"
                         />
                       </div>
+                      <div>
+                        <FormLabel>Birim</FormLabel>
+                        <FormInput
+                          value={card?.unit || ''}
+                          onChange={(e) => updateTariffCard(index, 'unit', e.target.value)}
+                          placeholder="kWh"
+                        />
+                      </div>
                       {card?.isCampaign && (
                         <div>
-                          <FormLabel>Geçerlilik Metni</FormLabel>
+                          <FormLabel>Kampanya Bitiş Tarihi</FormLabel>
                           <FormTextarea
-                            value={card?.validityText || ''}
-                            onChange={(e) => updateTariffCard(index, 'validityText', e.target.value)}
+                            value={card?.campaignExpireDate || ''}
+                            onChange={(e) => updateTariffCard(index, 'campaignExpireDate', e.target.value)}
                             rows={2}
                             placeholder="30-31 ağustos tarihleri arasında geçerlidir"
                           />
