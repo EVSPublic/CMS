@@ -345,4 +345,69 @@ public class StaticPagesController : ControllerBase
             return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while publishing static page" } });
         }
     }
+
+    // Public endpoints for client consumption
+    [HttpGet("public/{brandId}/published")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPublishedPages(int brandId)
+    {
+        try
+        {
+            var pages = await _context.StaticPages
+                .Where(s => s.BrandId == brandId && s.Status == ContentStatus.Published)
+                .OrderBy(s => s.Title)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Title,
+                    s.Slug,
+                    s.MetaTitle,
+                    s.MetaDescription,
+                    s.UpdatedAt
+                })
+                .ToListAsync();
+
+            return Ok(new { pages });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving published pages for brand {BrandId}", brandId);
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while retrieving published pages" } });
+        }
+    }
+
+    [HttpGet("public/{brandId}/slug/{slug}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPageBySlug(int brandId, string slug)
+    {
+        try
+        {
+            var page = await _context.StaticPages
+                .Where(s => s.BrandId == brandId && s.Slug == slug && s.Status == ContentStatus.Published)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Title,
+                    s.Slug,
+                    s.Content,
+                    s.MetaTitle,
+                    s.MetaDescription,
+                    s.MetaKeywords,
+                    s.UpdatedAt
+                })
+                .FirstOrDefaultAsync();
+
+            if (page == null)
+            {
+                return NotFound(new { error = new { code = "PAGE_NOT_FOUND", message = "Page not found or not published" } });
+            }
+
+            return Ok(page);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving page by slug {Slug} for brand {BrandId}", slug, brandId);
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while retrieving the page" } });
+        }
+    }
 }
