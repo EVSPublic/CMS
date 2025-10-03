@@ -10,6 +10,44 @@ import jsBeautify from 'js-beautify';
 import '@/assets/css/vendors/highlight.css';
 import { staticPagesService, StaticPage as ApiStaticPage } from '../../services/staticPages';
 
+// Component to render HTML with script execution
+const HTMLPreview: React.FC<{ html: string }> = ({ html }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      // Set the HTML content
+      containerRef.current.innerHTML = html;
+
+      // Extract and execute script tags
+      const scripts = containerRef.current.querySelectorAll('script');
+      scripts.forEach((oldScript) => {
+        const newScript = document.createElement('script');
+
+        // Copy all attributes
+        Array.from(oldScript.attributes).forEach((attr) => {
+          newScript.setAttribute(attr.name, attr.value);
+        });
+
+        // Copy the script content
+        newScript.textContent = oldScript.textContent;
+
+        // Replace old script with new script to execute it
+        oldScript.parentNode?.replaceChild(newScript, oldScript);
+      });
+    }
+
+    // Cleanup function to remove any global side effects
+    return () => {
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
+    };
+  }, [html]);
+
+  return <div ref={containerRef} className="prose prose-sm max-w-none dark:prose-invert" />;
+};
+
 interface StaticPage {
   id: number;
   title: string;
@@ -778,10 +816,7 @@ const StaticPageCreator: React.FC = () => {
 
               {previewMode === 'visual' ? (
                 <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-gray-50 dark:bg-gray-900">
-                  <div
-                    className="prose prose-sm max-w-none dark:prose-invert"
-                    dangerouslySetInnerHTML={{ __html: previewPage.content }}
-                  />
+                  <HTMLPreview html={previewPage.content} />
                 </div>
               ) : (
                 <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
