@@ -68,8 +68,12 @@ builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<AdminPanel.Services.SystemUsage>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
+// Add HttpClient for external API calls
+builder.Services.AddHttpClient();
+
 // Add background services
 builder.Services.AddHostedService<DatabaseKeepAliveService>();
+builder.Services.AddHostedService<StationCountUpdateService>();
 
 // Add controllers
 builder.Services.AddControllers();
