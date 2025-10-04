@@ -253,3 +253,41 @@ public class PublishContentPageDto
     [Required]
     public bool Publish { get; set; } = true;
 }
+
+// StationMap page content structure
+public class StationMapPageContentDto
+{
+    public StationMapMetaDto Meta { get; set; } = new();
+    public StationMapPageHeroDto PageHero { get; set; } = new();
+    public StationMapHeaderDto Header { get; set; } = new();
+    public StationMapMapDto Map { get; set; } = new();
+}
+
+public class StationMapMetaDto
+{
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string Keywords { get; set; } = string.Empty;
+}
+
+public class StationMapPageHeroDto
+{
+    public string BackgroundImage { get; set; } = string.Empty;
+    public string LogoImage { get; set; } = string.Empty;
+    public string LogoAlt { get; set; } = string.Empty;
+}
+
+public class StationMapHeaderDto
+{
+    public string Title { get; set; } = string.Empty;
+    public int Count { get; set; }
+    public string CountText { get; set; } = string.Empty;
+    public string LogoImage { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+}
+
+public class StationMapMapDto
+{
+    public string IframeUrl { get; set; } = string.Empty;
+    public int Height { get; set; } = 600;
+}

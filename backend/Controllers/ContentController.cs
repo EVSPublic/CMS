@@ -84,16 +84,34 @@ public class ContentController : ControllerBase
 
             var defaultContent = await GetDefaultContentForPageType(pageTypeEnum, brand.Name, brandId);
 
+            // Extract meta fields from content if available
+            string? metaTitle = null;
+            string? metaDescription = null;
+            string? metaKeywords = null;
+
+            var defaultContentJson = JsonSerializer.Serialize(defaultContent);
+            var contentElement = JsonSerializer.Deserialize<JsonElement>(defaultContentJson);
+
+            if (contentElement.ValueKind == JsonValueKind.Object && contentElement.TryGetProperty("Meta", out var metaProperty))
+            {
+                if (metaProperty.TryGetProperty("Title", out var titleProp))
+                    metaTitle = titleProp.GetString();
+                if (metaProperty.TryGetProperty("Description", out var descProp))
+                    metaDescription = descProp.GetString();
+                if (metaProperty.TryGetProperty("Keywords", out var keywordsProp))
+                    metaKeywords = keywordsProp.GetString();
+            }
+
             // Return default content as a DTO without persisting
             return Ok(new ContentPageDto
             {
                 Id = 0,
                 BrandId = brandId,
                 PageType = pageTypeEnum.ToString(),
-                Content = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(defaultContent)),
-                MetaTitle = null,
-                MetaDescription = null,
-                MetaKeywords = null,
+                Content = contentElement,
+                MetaTitle = metaTitle,
+                MetaDescription = metaDescription,
+                MetaKeywords = metaKeywords,
                 Status = "Draft",
                 CreatedBy = 0,
                 UpdatedBy = 0,
@@ -488,6 +506,34 @@ public class ContentController : ControllerBase
                             CampaignExpireDate = ""
                         }
                     }
+                }
+            },
+            PageType.StationMap => new StationMapPageContentDto
+            {
+                Meta = new StationMapMetaDto
+                {
+                    Title = $"İstasyon Haritası - {brandName}",
+                    Description = "Elektrikli araç şarj istasyonlarımızın konumlarını harita üzerinde görüntüleyin.",
+                    Keywords = "şarj istasyonu, harita, konum, elektrikli araç"
+                },
+                PageHero = new StationMapPageHeroDto
+                {
+                    BackgroundImage = "assets/img/istasyon-haritasi-bg.jpg",
+                    LogoImage = "assets/img/page-hero-logo.svg",
+                    LogoAlt = $"{brandName} Logo"
+                },
+                Header = new StationMapHeaderDto
+                {
+                    Title = "İstasyon Haritası",
+                    Count = chargingStationCount,
+                    CountText = "Şarj İstasyonu",
+                    LogoImage = "assets/img/station-map.svg",
+                    Description = $"Opet istasyonları başta olmak üzere stratejik lokasyonlarda konumlanan {brandName} şarj istasyonlarıyla, elektrikli aracınız için hızlı, güvenilir ve kolay erişilebilir enerjiye dilediğiniz her an ulaşabilirsiniz."
+                },
+                Map = new StationMapMapDto
+                {
+                    IframeUrl = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3048.5!2d32.7968!3d39.8954!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMznCsDUzJzQzLjQiTiAzMsKwNDcnNDguNCJF!5e0!3m2!1str!2str!4v1640000000000!5m2!1str!2str",
+                    Height = 600
                 }
             },
             _ => new { message = "Default content not implemented for this page type" }

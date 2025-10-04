@@ -10,44 +10,50 @@ import { contentService } from '../../services/content';
 import { useScrollEffect } from '../../hooks/useScrollEffect';
 
 interface StationMapPageContent {
-  meta: {
-    title: string;
-    description: string;
-    keywords: string;
+  Meta: {
+    Title: string;
+    Description: string;
+    Keywords: string;
   };
-  hero: {
-    image: string;
+  PageHero: {
+    BackgroundImage: string;
+    LogoImage: string;
+    LogoAlt: string;
   };
-  pageHero: {
-    backgroundImage: string;
-    logoImage: string;
-    logoAlt: string;
+  Header: {
+    Title: string;
+    Count: number;
+    CountText: string;
+    LogoImage: string;
+    Description: string;
   };
-  mapHeader: {
-    title: string;
-    stationCount: string;
-    description: string;
+  Map: {
+    IframeUrl: string;
+    Height: number;
   };
 }
 
 const initialContent: StationMapPageContent = {
-  meta: {
-    title: "İstasyon Haritası - Ovolt",
-    description: "",
-    keywords: ""
+  Meta: {
+    Title: "İstasyon Haritası - Ovolt",
+    Description: "",
+    Keywords: ""
   },
-  hero: {
-    image: ""
+  PageHero: {
+    BackgroundImage: "assets/img/istasyon-haritasi-bg.jpg",
+    LogoImage: "assets/img/page-hero-logo.svg",
+    LogoAlt: "Ovolt Logo"
   },
-  pageHero: {
-    backgroundImage: "assets/img/istasyon-haritasi-bg.jpg",
-    logoImage: "assets/img/page-hero-logo.svg",
-    logoAlt: "Ovolt Logo"
+  Header: {
+    Title: "İstasyon Haritası",
+    Count: 1880,
+    CountText: "Şarj İstasyonu",
+    LogoImage: "assets/img/station-map.svg",
+    Description: "Opet istasyonları başta olmak üzere stratejik lokasyonlarda konumlanan Ovolt şarj istasyonlarıyla, elektrikli aracınız için hızlı, güvenilir ve kolay erişilebilir enerjiye dilediğiniz her an ulaşabilirsiniz."
   },
-  mapHeader: {
-    title: "İstasyon Haritası",
-    stationCount: "+1880",
-    description: "Opet istasyonları başta olmak üzere stratejik lokasyonlarda konumlanan Ovolt şarj istasyonlarıyla, elektrikli aracınız için hızlı, güvenilir ve kolay erişilebilir enerjiye dilediğiniz her an ulaşabilirsiniz."
+  Map: {
+    IframeUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3048.5!2d32.7968!3d39.8954!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMznCsDUzJzQzLjQiTiAzMsKwNDcnNDguNCJF!5e0!3m2!1str!2str!4v1640000000000!5m2!1str!2str",
+    Height: 600
   }
 };
 
@@ -90,26 +96,33 @@ const IstasyonHaritasiPageEditor: React.FC = () => {
     setError(null);
 
     try {
-      // Load statistics to get real station count
-      const statsResponse = await contentService.getBrandStatistics(actualBrandId);
+      // Load content from API
+      const response = await contentService.getContentPage(actualBrandId, 'StationMap');
 
-      let finalContent = initialContent;
+      if (response.ok && response.data) {
+        const apiContent = response.data.content;
 
-      // Update the station count with real database value
-      if (statsResponse.ok && statsResponse.data) {
-        setRealStationCount(statsResponse.data.formattedCount);
+        // Load statistics to get real station count
+        const statsResponse = await contentService.getBrandStatistics(actualBrandId);
 
-        // Also update the content count to match the database
-        finalContent = {
-          ...finalContent,
-          mapHeader: {
-            ...finalContent.mapHeader,
-            stationCount: statsResponse.data.formattedCount
-          }
-        };
+        if (statsResponse.ok && statsResponse.data) {
+          setRealStationCount(statsResponse.data.formattedCount);
+
+          // Update content with API data and real station count
+          setContent({
+            ...apiContent,
+            Header: {
+              ...apiContent.Header,
+              Count: parseInt(statsResponse.data.formattedCount.replace('+', ''))
+            }
+          });
+        } else {
+          setContent(apiContent);
+        }
+      } else {
+        setContent(initialContent);
+        setError('İçerik yüklenirken bir hata oluştu');
       }
-
-      setContent(finalContent);
     } catch (err) {
       setContent(initialContent);
       setError('İçerik yüklenirken bir hata oluştu');
@@ -177,19 +190,15 @@ const IstasyonHaritasiPageEditor: React.FC = () => {
   const validateContent = () => {
     const errors: string[] = [];
 
-    if (!content.meta.title.trim()) {
+    if (!content.Meta.Title.trim()) {
       errors.push('Sayfa başlığı boş olamaz');
     }
 
-    if (!content.mapHeader.title.trim()) {
+    if (!content.Header.Title.trim()) {
       errors.push('Harita başlığı boş olamaz');
     }
 
-    if (!content.mapHeader.stationCount.trim()) {
-      errors.push('İstasyon sayısı boş olamaz');
-    }
-
-    if (!content.mapHeader.description.trim()) {
+    if (!content.Header.Description.trim()) {
       errors.push('Harita açıklaması boş olamaz');
     }
 
@@ -209,9 +218,19 @@ const IstasyonHaritasiPageEditor: React.FC = () => {
 
     setIsSaving(true);
     try {
-      // Note: Station count is read-only and automatically synced from database
-      console.log('Saving content:', content);
-      alert('İçerik başarıyla kaydedildi!\n\nNot: İstasyon sayısı veritabanından otomatik olarak güncellenmektedir.');
+      const response = await contentService.updateContentPage(currentBrandId, 'StationMap', {
+        content: content,
+        metaTitle: content.Meta.Title,
+        metaDescription: content.Meta.Description,
+        metaKeywords: content.Meta.Keywords
+      });
+
+      if (response.ok) {
+        alert('İçerik başarıyla kaydedildi!\n\nNot: İstasyon sayısı veritabanından otomatik olarak güncellenmektedir.');
+        loadContent(); // Reload to get updated data
+      } else {
+        alert('Kaydetme sırasında bir hata oluştu!');
+      }
     } catch (error) {
       console.error('Save error:', error);
       alert('Kaydetme sırasında bir hata oluştu!');
@@ -272,32 +291,32 @@ const IstasyonHaritasiPageEditor: React.FC = () => {
             <Tab.Panel className="p-6">
               <div className="grid grid-cols-1 gap-6">
                 <div>
-                  <FormLabel htmlFor="meta.title">Sayfa Başlığı</FormLabel>
+                  <FormLabel htmlFor="Meta.Title">Sayfa Başlığı</FormLabel>
                   <FormInput
-                    id="meta.title"
-                    value={content.meta.title}
-                    onChange={(e) => updateContent('meta.title', e.target.value)}
+                    id="Meta.Title"
+                    value={content.Meta.Title}
+                    onChange={(e) => updateContent('Meta.Title', e.target.value)}
                     placeholder="İstasyon Haritası - Ovolt"
                   />
                 </div>
 
                 <div>
-                  <FormLabel htmlFor="meta.description">Açıklama</FormLabel>
+                  <FormLabel htmlFor="Meta.Description">Açıklama</FormLabel>
                   <FormTextarea
-                    id="meta.description"
-                    value={content.meta.description}
-                    onChange={(e) => updateContent('meta.description', e.target.value)}
+                    id="Meta.Description"
+                    value={content.Meta.Description}
+                    onChange={(e) => updateContent('Meta.Description', e.target.value)}
                     placeholder="Sayfa açıklamasını girin"
                     rows={3}
                   />
                 </div>
 
                 <div>
-                  <FormLabel htmlFor="meta.keywords">Anahtar Kelimeler</FormLabel>
+                  <FormLabel htmlFor="Meta.Keywords">Anahtar Kelimeler</FormLabel>
                   <FormTextarea
-                    id="meta.keywords"
-                    value={content.meta.keywords}
-                    onChange={(e) => updateContent('meta.keywords', e.target.value)}
+                    id="Meta.Keywords"
+                    value={content.Meta.Keywords}
+                    onChange={(e) => updateContent('Meta.Keywords', e.target.value)}
                     placeholder="Anahtar kelimeleri virgülle ayırarak girin"
                     rows={2}
                   />
@@ -312,8 +331,8 @@ const IstasyonHaritasiPageEditor: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <ImageInput
-                      value={content.hero.image}
-                      onChange={(url) => updateContent('hero.image', url)}
+                      value={content.PageHero.BackgroundImage}
+                      onChange={(url) => updateContent('PageHero.BackgroundImage', url)}
                       label="Hero Görseli"
                       placeholder="Hero görseli seçin..."
                     />
@@ -326,19 +345,19 @@ const IstasyonHaritasiPageEditor: React.FC = () => {
             <Tab.Panel className="p-6">
               <div className="space-y-6">
                 <div>
-                  <FormLabel htmlFor="mapHeader.title">Ana Başlık</FormLabel>
+                  <FormLabel htmlFor="Header.Title">Ana Başlık</FormLabel>
                   <FormInput
-                    id="mapHeader.title"
-                    value={content.mapHeader.title}
-                    onChange={(e) => updateContent('mapHeader.title', e.target.value)}
+                    id="Header.Title"
+                    value={content.Header.Title}
+                    onChange={(e) => updateContent('Header.Title', e.target.value)}
                     placeholder="İstasyon Haritası"
                   />
                 </div>
 
                 <div>
-                  <FormLabel htmlFor="mapHeader.stationCount">İstasyon Sayısı (otomatik güncellenir)</FormLabel>
+                  <FormLabel htmlFor="Header.Count">İstasyon Sayısı (otomatik güncellenir)</FormLabel>
                   <FormInput
-                    id="mapHeader.stationCount"
+                    id="Header.Count"
                     value={realStationCount}
                     readOnly
                     className="bg-gray-100 dark:bg-gray-700"
@@ -350,11 +369,11 @@ const IstasyonHaritasiPageEditor: React.FC = () => {
                 </div>
 
                 <div>
-                  <FormLabel htmlFor="mapHeader.description">Açıklama</FormLabel>
+                  <FormLabel htmlFor="Header.Description">Açıklama</FormLabel>
                   <FormTextarea
-                    id="mapHeader.description"
-                    value={content.mapHeader.description}
-                    onChange={(e) => updateContent('mapHeader.description', e.target.value)}
+                    id="Header.Description"
+                    value={content.Header.Description}
+                    onChange={(e) => updateContent('Header.Description', e.target.value)}
                     rows={4}
                     placeholder="Opet istasyonları başta olmak üzere stratejik lokasyonlarda konumlanan Ovolt şarj istasyonlarıyla, elektrikli aracınız için hızlı, güvenilir ve kolay erişilebilir enerjiye dilediğiniz her an ulaşabilirsiniz."
                   />
