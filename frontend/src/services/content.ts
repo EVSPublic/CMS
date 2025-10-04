@@ -240,6 +240,7 @@ export interface ContactPageContent {
       smtpPort: string;
       smtpUsername: string;
       smtpPassword: string;
+      smtpSecurityType: string;
       extraDetails: string;
     };
     submitButton: string;

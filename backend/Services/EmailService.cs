@@ -53,6 +53,9 @@ public class EmailService : IEmailService
             var smtpPortStr = emailConfig.GetProperty("smtpPort").GetString();
             var smtpUsername = emailConfig.GetProperty("smtpUsername").GetString();
             var smtpPassword = emailConfig.GetProperty("smtpPassword").GetString();
+            var smtpSecurityType = emailConfig.TryGetProperty("smtpSecurityType", out var secType)
+                ? secType.GetString()
+                : "StartTls"; // Default to StartTls for backward compatibility
 
             if (string.IsNullOrEmpty(smtpHost) || string.IsNullOrEmpty(smtpUsername) || string.IsNullOrEmpty(smtpPassword))
             {
@@ -64,6 +67,17 @@ public class EmailService : IEmailService
             {
                 smtpPort = 587; // Default SMTP port
             }
+
+            // Parse security type
+            var secureSocketOptions = smtpSecurityType switch
+            {
+                "None" => MailKit.Security.SecureSocketOptions.None,
+                "Auto" => MailKit.Security.SecureSocketOptions.Auto,
+                "SslOnConnect" => MailKit.Security.SecureSocketOptions.SslOnConnect,
+                "StartTls" => MailKit.Security.SecureSocketOptions.StartTls,
+                "StartTlsWhenAvailable" => MailKit.Security.SecureSocketOptions.StartTlsWhenAvailable,
+                _ => MailKit.Security.SecureSocketOptions.StartTls // Default
+            };
 
             // Get brand name for from address
             var brand = await _context.Brands.FindAsync(brandId);
@@ -91,7 +105,7 @@ public class EmailService : IEmailService
 
             // Send email
             using var smtp = new SmtpClient();
-            await smtp.ConnectAsync(smtpHost, smtpPort, MailKit.Security.SecureSocketOptions.StartTls);
+            await smtp.ConnectAsync(smtpHost, smtpPort, secureSocketOptions);
             await smtp.AuthenticateAsync(smtpUsername, smtpPassword);
             await smtp.SendAsync(email);
             await smtp.DisconnectAsync(true);

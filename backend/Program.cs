@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Threading.RateLimiting;
 using SkiaSharp;
 using AdminPanel.Data;
 using AdminPanel.Models;
@@ -151,6 +153,33 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Add Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    // Rate limit for email sending: 5 requests per minute per IP
+    options.AddFixedWindowLimiter("EmailRateLimit", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = 5;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiterOptions.QueueLimit = 0; // No queue, reject immediately
+    });
+
+    // Global rejection response
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.StatusCode = 429; // Too Many Requests
+        await context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            success = false,
+            message = "Too many requests. Please try again later.",
+            retryAfter = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter)
+                ? retryAfter.TotalSeconds
+                : 60
+        }, cancellationToken: token);
+    };
+});
+
 var app = builder.Build();
 
 // Seed database
@@ -174,6 +203,8 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AdminPanelCORS");
 
 app.UseStaticFiles(); // Enable serving static files from wwwroot
+
+app.UseRateLimiter(); // Enable rate limiting
 
 app.UseAuthentication();
 app.UseAuthorization();

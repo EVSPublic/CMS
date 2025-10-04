@@ -231,6 +231,7 @@ const initialContent: ContactPageContent = {
       smtpPort: "",
       smtpUsername: "",
       smtpPassword: "",
+      smtpSecurityType: "StartTls",
       extraDetails: ""
     },
     submitButton: "Gönder",
@@ -615,25 +616,16 @@ const IletisimPageEditor: React.FC = () => {
                   <div className="space-y-4">
                     <div>
                       <FormLabel htmlFor="office.title">Ofis Başlığı</FormLabel>
-                      <FormInput
+                      <FormTextarea
                         id="office.title"
                         value={content.contactInfo?.office?.title || ''}
                         onChange={(e) => updateContent('contactInfo.office.title', e.target.value)}
                         placeholder="Merkez Ofis"
+                        rows={3}
                       />
                     </div>
 
                     <div>
-                      <div className="flex justify-between items-center mb-4">
-                        <FormLabel>Adres Satırları</FormLabel>
-                        <Button
-                          variant="primary"
-                          onClick={addOfficeAddress}
-                        >
-                          Yeni Satır Ekle
-                        </Button>
-                      </div>
-
                       {(content.contactInfo?.office?.address || []).map((line, index) => (
                         <div key={index} className="flex gap-2 mb-2">
                           <FormInput
@@ -723,28 +715,6 @@ const IletisimPageEditor: React.FC = () => {
                         placeholder="İletişim Formu"
                       />
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <FormLabel htmlFor="tabs.individual">Bireysel Sekme</FormLabel>
-                        <FormInput
-                          id="tabs.individual"
-                          value={content.contactForm?.tabs?.individual || ''}
-                          onChange={(e) => updateContent('contactForm.tabs.individual', e.target.value)}
-                          placeholder="Bireysel"
-                        />
-                      </div>
-
-                      <div>
-                        <FormLabel htmlFor="tabs.corporate">Kurumsal Sekme</FormLabel>
-                        <FormInput
-                          id="tabs.corporate"
-                          value={content.contactForm?.tabs?.corporate || ''}
-                          onChange={(e) => updateContent('contactForm.tabs.corporate', e.target.value)}
-                          placeholder="Kurumsal"
-                        />
-                      </div>
-                    </div>
                   </div>
                 </div>
 
@@ -792,6 +762,27 @@ const IletisimPageEditor: React.FC = () => {
                         onChange={(e) => updateContent('contactForm.emailConfig.smtpPassword', e.target.value)}
                         placeholder="your-password"
                       />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <FormLabel htmlFor="emailConfig.smtpSecurityType">Güvenlik Türü (SSL/TLS)</FormLabel>
+                      <select
+                        id="emailConfig.smtpSecurityType"
+                        value={content.contactForm?.emailConfig?.smtpSecurityType || 'StartTls'}
+                        onChange={(e) => updateContent('contactForm.emailConfig.smtpSecurityType', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                      >
+                        <option value="None">None (Güvensiz - Port 25)</option>
+                        <option value="Auto">Auto (Otomatik)</option>
+                        <option value="SslOnConnect">SSL/TLS (Port 465)</option>
+                        <option value="StartTls">STARTTLS (Port 587 - Önerilen)</option>
+                        <option value="StartTlsWhenAvailable">STARTTLS (Opsiyonel)</option>
+                      </select>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        STARTTLS (Port 587): Gmail, Outlook için önerilir<br/>
+                        SSL/TLS (Port 465): Eski sunucular için<br/>
+                        None (Port 25): Sadece yerel/test sunucular için
+                      </p>
                     </div>
 
                     <div className="md:col-span-2">

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using AdminPanel.DTOs;
 using AdminPanel.Services;
 
@@ -20,6 +21,8 @@ public class EmailController : ControllerBase
     }
 
     [HttpPost("send")]
+    [AllowAnonymous]
+    [EnableRateLimiting("EmailRateLimit")]
     public async Task<IActionResult> SendEmail([FromBody] SendEmailDto request)
     {
         try
