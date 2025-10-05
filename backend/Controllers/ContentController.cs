@@ -53,6 +53,12 @@ public class ContentController : ControllerBase
                     contentJson = await EnsureMediaTypeAndCountInHero(contentJson, brandId);
                 }
 
+                // Update station count in Header for StationMap page
+                if (pageTypeEnum == PageType.StationMap && contentJson.ValueKind == JsonValueKind.Object)
+                {
+                    contentJson = await UpdateStationCountInHeader(contentJson, brandId);
+                }
+
                 contentPage = new ContentPageDto
                 {
                     Id = contentPageEntity.Id,
@@ -281,15 +287,8 @@ public class ContentController : ControllerBase
                 return NotFound(new { error = new { code = "BRAND_NOT_FOUND", message = "Brand not found" } });
             }
 
-            // Calculate actual station count from database based on brand visibility
-            var brandName = brand.Name.ToLower();
-            var actualStationCount = await _context.Database.SqlQueryRaw<int>(
-                "SELECT COUNT(*) as Value FROM Stations WHERE BrandVisibility LIKE {0}",
-                $"%{brandName}%"
-            ).FirstAsync();
-
-            // If no stations found, fall back to brand's default count
-            var finalCount = actualStationCount > 0 ? actualStationCount : brand.ChargingStationCount;
+            // Use the ChargingStationCount from the brand (updated every 30 minutes by background service)
+            var finalCount = brand.ChargingStationCount;
 
             var statistics = new
             {
@@ -308,17 +307,9 @@ public class ContentController : ControllerBase
 
     private async Task<object> GetDefaultContentForPageType(PageType pageType, string brandName, int brandId)
     {
-        // Get brand to fetch the charging station count
+        // Get brand to fetch the charging station count (updated every 30 minutes by background service)
         var brand = await _context.Brands.FindAsync(brandId);
-
-        // Calculate actual station count from database based on brand visibility
-        var actualStationCount = await _context.Database.SqlQueryRaw<int>(
-            "SELECT COUNT(*) as Value FROM Stations WHERE BrandVisibility LIKE {0}",
-            $"%{brandName.ToLower()}%"
-        ).FirstAsync();
-
-        // If no stations found, fall back to brand's default count
-        var chargingStationCount = actualStationCount > 0 ? actualStationCount : (brand?.ChargingStationCount ?? 1880);
+        var chargingStationCount = brand?.ChargingStationCount ?? 1880;
 
         return pageType switch
         {
@@ -577,52 +568,53 @@ public class ContentController : ControllerBase
                         modified = true;
                     }
 
-                    // Add or convert count to int
-                    if (heroDict.ContainsKey("count"))
+                    // Always fetch and update count from brand (updated every 30 minutes by background service)
+                    var brand = await _context.Brands.FindAsync(brandId);
+                    if (brand != null)
                     {
-                        var countValue = heroDict["count"];
-                        if (countValue is JsonElement countElement && countElement.ValueKind == JsonValueKind.String)
-                        {
-                            var countStr = countElement.GetString() ?? "0";
-                            // Remove '+' and parse to int
-                            countStr = countStr.Replace("+", "");
-                            if (int.TryParse(countStr, out int count))
-                            {
-                                heroDict["count"] = count;
-                                modified = true;
-                            }
-                        }
-                        else if (countValue is string countString)
-                        {
-                            var countStr = countString.Replace("+", "");
-                            if (int.TryParse(countStr, out int count))
-                            {
-                                heroDict["count"] = count;
-                                modified = true;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // If count is missing, fetch it from database
-                        var brand = await _context.Brands.FindAsync(brandId);
-                        if (brand != null)
-                        {
-                            var brandName = brand.Name.ToLower();
-                            var actualStationCount = await _context.Database.SqlQueryRaw<int>(
-                                "SELECT COUNT(*) as Value FROM Stations WHERE BrandVisibility LIKE {0}",
-                                $"%{brandName}%"
-                            ).FirstAsync();
-
-                            var finalCount = actualStationCount > 0 ? actualStationCount : brand.ChargingStationCount;
-                            heroDict["count"] = finalCount;
-                            modified = true;
-                        }
+                        heroDict["count"] = brand.ChargingStationCount;
+                        modified = true;
                     }
 
                     if (modified)
                     {
                         contentDict["hero"] = heroDict;
+                        // Serialize back to JsonElement
+                        return JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(contentDict));
+                    }
+                }
+            }
+
+            return contentJson;
+        }
+        catch
+        {
+            // If any error occurs, return original content
+            return contentJson;
+        }
+    }
+
+    private async Task<JsonElement> UpdateStationCountInHeader(JsonElement contentJson, int brandId)
+    {
+        try
+        {
+            // Deserialize to dictionary for manipulation
+            var contentDict = JsonSerializer.Deserialize<Dictionary<string, object>>(contentJson.GetRawText());
+
+            if (contentDict != null && contentDict.ContainsKey("Header"))
+            {
+                var headerJson = JsonSerializer.Serialize(contentDict["Header"]);
+                var headerDict = JsonSerializer.Deserialize<Dictionary<string, object>>(headerJson);
+
+                if (headerDict != null)
+                {
+                    // Get the latest station count from the brand (updated by background service)
+                    var brand = await _context.Brands.FindAsync(brandId);
+                    if (brand != null)
+                    {
+                        headerDict["Count"] = brand.ChargingStationCount;
+                        contentDict["Header"] = headerDict;
+
                         // Serialize back to JsonElement
                         return JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(contentDict));
                     }

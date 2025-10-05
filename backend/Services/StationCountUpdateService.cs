@@ -51,9 +51,12 @@ public class StationCountUpdateService : BackgroundService
 
     private async Task UpdateStationCounts(CancellationToken cancellationToken)
     {
+        var startTime = DateTime.UtcNow;
         try
         {
-            _logger.LogInformation("Fetching station list from external API...");
+            _logger.LogInformation("========================================");
+            _logger.LogInformation("[STATION UPDATE] Starting station count update at {Time} UTC", startTime);
+            _logger.LogInformation("[STATION UPDATE] Calling API: POST https://panel-api.ovolt.com.tr/ServicePoint/StationList");
 
             // Call the external API
             var httpClient = _httpClientFactory.CreateClient();
@@ -63,9 +66,11 @@ public class StationCountUpdateService : BackgroundService
                 cancellationToken
             );
 
+            _logger.LogInformation("[STATION UPDATE] API Response Status: {StatusCode}", response.StatusCode);
+
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("Failed to fetch station list. Status code: {StatusCode}", response.StatusCode);
+                _logger.LogWarning("[STATION UPDATE] ❌ Failed to fetch station list. Status code: {StatusCode}", response.StatusCode);
                 return;
             }
 
@@ -77,12 +82,12 @@ public class StationCountUpdateService : BackgroundService
 
             if (apiResponse?.Result?.Stations == null)
             {
-                _logger.LogWarning("API response does not contain station data");
+                _logger.LogWarning("[STATION UPDATE] ❌ API response does not contain station data");
                 return;
             }
 
             var totalStations = apiResponse.Result.Stations.Count;
-            _logger.LogInformation("Received {Count} stations from API", totalStations);
+            _logger.LogInformation("[STATION UPDATE] ✅ Received {Count} stations from API", totalStations);
 
             // Filter logic based on the external API:
             // Ovolt is visible when filter has bits for Ovolt (filters with odd numbered bits 1,2)
@@ -99,7 +104,7 @@ public class StationCountUpdateService : BackgroundService
             var ovoltCount = apiResponse.Result.Stations.Count(s => (s.Filter & 1) != 0); // Bit 0 set
             var sharzCount = apiResponse.Result.Stations.Count(s => (s.Filter & 2) != 0); // Bit 1 set
 
-            _logger.LogInformation("Station counts - Ovolt: {OvoltCount}, Sharz: {SharzCount}, Total: {Total}",
+            _logger.LogInformation("[STATION UPDATE] Calculated counts - Ovolt: {OvoltCount}, Sharz: {SharzCount}, Total: {Total}",
                 ovoltCount, sharzCount, totalStations);
 
             // Update the database
@@ -110,20 +115,35 @@ public class StationCountUpdateService : BackgroundService
             var ovoltBrand = await context.Brands.FindAsync(new object[] { 1 }, cancellationToken);
             if (ovoltBrand != null)
             {
+                var oldCount = ovoltBrand.ChargingStationCount;
                 ovoltBrand.ChargingStationCount = ovoltCount;
-                _logger.LogInformation("Updated Ovolt station count to {Count}", ovoltCount);
+                _logger.LogInformation("[STATION UPDATE] Ovolt Brand (ID=1): {OldCount} → {NewCount}", oldCount, ovoltCount);
+            }
+            else
+            {
+                _logger.LogWarning("[STATION UPDATE] ⚠️ Ovolt Brand (ID=1) not found in database!");
             }
 
             // Update Sharz brand (ID = 2)
             var sharzBrand = await context.Brands.FindAsync(new object[] { 2 }, cancellationToken);
             if (sharzBrand != null)
             {
+                var oldCount = sharzBrand.ChargingStationCount;
                 sharzBrand.ChargingStationCount = sharzCount;
-                _logger.LogInformation("Updated Sharz station count to {Count}", sharzCount);
+                _logger.LogInformation("[STATION UPDATE] Sharz Brand (ID=2): {OldCount} → {NewCount}", oldCount, sharzCount);
+            }
+            else
+            {
+                _logger.LogWarning("[STATION UPDATE] ⚠️ Sharz Brand (ID=2) not found in database!");
             }
 
             await context.SaveChangesAsync(cancellationToken);
-            _logger.LogInformation("Station counts updated successfully in database");
+
+            var endTime = DateTime.UtcNow;
+            var duration = (endTime - startTime).TotalSeconds;
+            _logger.LogInformation("[STATION UPDATE] ✅ Database updated successfully in {Duration:F2} seconds", duration);
+            _logger.LogInformation("[STATION UPDATE] Next update scheduled in 30 minutes");
+            _logger.LogInformation("========================================");
         }
         catch (Exception ex)
         {
