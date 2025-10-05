@@ -34,15 +34,21 @@ public class AnnouncementsController : ControllerBase
                 .Include(a => a.Updater)
                 .Where(a => a.BrandId == brandId);
 
+            // For anonymous users, only show published announcements
+            // For authenticated users (admin/editor), allow filtering by status
+            var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+            if (!isAuthenticated)
+            {
+                query = query.Where(a => a.Status == AnnouncementStatus.Published);
+            }
+            else if (!string.IsNullOrEmpty(status) && Enum.TryParse<AnnouncementStatus>(status, true, out var statusEnum))
+            {
+                query = query.Where(a => a.Status == statusEnum);
+            }
+
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(a => a.Title.Contains(search) || a.Content.Contains(search));
-            }
-
-
-            if (!string.IsNullOrEmpty(status) && Enum.TryParse<AnnouncementStatus>(status, true, out var statusEnum))
-            {
-                query = query.Where(a => a.Status == statusEnum);
             }
 
             var totalCount = await query.CountAsync();
@@ -85,12 +91,20 @@ public class AnnouncementsController : ControllerBase
     {
         try
         {
-            var announcementEntity = await _context.Announcements
+            var query = _context.Announcements
                 .Include(a => a.Brand)
                 .Include(a => a.Creator)
                 .Include(a => a.Updater)
-                .Where(a => a.Id == id && a.BrandId == brandId)
-                .FirstOrDefaultAsync();
+                .Where(a => a.Id == id && a.BrandId == brandId);
+
+            // For anonymous users, only show published announcements
+            var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+            if (!isAuthenticated)
+            {
+                query = query.Where(a => a.Status == AnnouncementStatus.Published);
+            }
+
+            var announcementEntity = await query.FirstOrDefaultAsync();
 
             if (announcementEntity == null)
             {
