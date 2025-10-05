@@ -4,6 +4,7 @@ using AdminPanel.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AdminPanel.Migrations
 {
     [DbContext(typeof(AdminPanelContext))]
-    partial class AdminPanelContextModelSnapshot : ModelSnapshot
+    [Migration("20251005212745_AddAnnouncementsPageType")]
+    partial class AddAnnouncementsPageType
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -160,9 +163,6 @@ namespace AdminPanel.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AnnouncementsPageContent")
-                        .HasColumnType("json");
-
                     b.Property<int>("ChargingStationCount")
                         .HasColumnType("int");
 
@@ -210,23 +210,23 @@ namespace AdminPanel.Migrations
                         {
                             Id = 1,
                             ChargingStationCount = 1880,
-                            CreatedAt = new DateTime(2025, 10, 5, 21, 43, 32, 18, DateTimeKind.Utc).AddTicks(7742),
+                            CreatedAt = new DateTime(2025, 10, 5, 21, 27, 44, 51, DateTimeKind.Utc).AddTicks(5641),
                             Domain = "ovolt.com",
                             Name = "Ovolt",
                             PartnershipSlideDuration = 500,
                             PartnershipSlideInterval = 3000,
-                            UpdatedAt = new DateTime(2025, 10, 5, 21, 43, 32, 18, DateTimeKind.Utc).AddTicks(7756)
+                            UpdatedAt = new DateTime(2025, 10, 5, 21, 27, 44, 51, DateTimeKind.Utc).AddTicks(5675)
                         },
                         new
                         {
                             Id = 2,
                             ChargingStationCount = 1880,
-                            CreatedAt = new DateTime(2025, 10, 5, 21, 43, 32, 19, DateTimeKind.Utc).AddTicks(114),
+                            CreatedAt = new DateTime(2025, 10, 5, 21, 27, 44, 51, DateTimeKind.Utc).AddTicks(7850),
                             Domain = "sharz.net",
                             Name = "Sharz.net",
                             PartnershipSlideDuration = 500,
                             PartnershipSlideInterval = 3000,
-                            UpdatedAt = new DateTime(2025, 10, 5, 21, 43, 32, 19, DateTimeKind.Utc).AddTicks(129)
+                            UpdatedAt = new DateTime(2025, 10, 5, 21, 27, 44, 51, DateTimeKind.Utc).AddTicks(7864)
                         });
                 });
 
@@ -438,73 +438,73 @@ namespace AdminPanel.Migrations
                         {
                             Id = 1,
                             BrandId = 1,
-                            CreatedAt = new DateTime(2025, 10, 5, 21, 43, 32, 20, DateTimeKind.Utc).AddTicks(1236),
+                            CreatedAt = new DateTime(2025, 10, 5, 21, 27, 44, 52, DateTimeKind.Utc).AddTicks(9230),
                             Description = "Brand logos and variations",
                             Name = "Logos",
-                            UpdatedAt = new DateTime(2025, 10, 5, 21, 43, 32, 20, DateTimeKind.Utc).AddTicks(1250)
+                            UpdatedAt = new DateTime(2025, 10, 5, 21, 27, 44, 52, DateTimeKind.Utc).AddTicks(9244)
                         },
                         new
                         {
                             Id = 2,
                             BrandId = 1,
-                            CreatedAt = new DateTime(2025, 10, 5, 21, 43, 32, 20, DateTimeKind.Utc).AddTicks(4078),
+                            CreatedAt = new DateTime(2025, 10, 5, 21, 27, 44, 53, DateTimeKind.Utc).AddTicks(2157),
                             Description = "Background images and textures",
                             Name = "Backgrounds",
-                            UpdatedAt = new DateTime(2025, 10, 5, 21, 43, 32, 20, DateTimeKind.Utc).AddTicks(4098)
+                            UpdatedAt = new DateTime(2025, 10, 5, 21, 27, 44, 53, DateTimeKind.Utc).AddTicks(2176)
                         },
                         new
                         {
                             Id = 3,
                             BrandId = 1,
-                            CreatedAt = new DateTime(2025, 10, 5, 21, 43, 32, 20, DateTimeKind.Utc).AddTicks(4112),
+                            CreatedAt = new DateTime(2025, 10, 5, 21, 27, 44, 53, DateTimeKind.Utc).AddTicks(2190),
                             Description = "Icons and small graphics",
                             Name = "Icons",
-                            UpdatedAt = new DateTime(2025, 10, 5, 21, 43, 32, 20, DateTimeKind.Utc).AddTicks(4127)
+                            UpdatedAt = new DateTime(2025, 10, 5, 21, 27, 44, 53, DateTimeKind.Utc).AddTicks(2204)
                         },
                         new
                         {
                             Id = 4,
                             BrandId = 1,
-                            CreatedAt = new DateTime(2025, 10, 5, 21, 43, 32, 20, DateTimeKind.Utc).AddTicks(4141),
+                            CreatedAt = new DateTime(2025, 10, 5, 21, 27, 44, 53, DateTimeKind.Utc).AddTicks(2219),
                             Description = "General content images",
                             Name = "Content Images",
-                            UpdatedAt = new DateTime(2025, 10, 5, 21, 43, 32, 20, DateTimeKind.Utc).AddTicks(4156)
+                            UpdatedAt = new DateTime(2025, 10, 5, 21, 27, 44, 53, DateTimeKind.Utc).AddTicks(2233)
                         },
                         new
                         {
                             Id = 5,
                             BrandId = 2,
-                            CreatedAt = new DateTime(2025, 10, 5, 21, 43, 32, 20, DateTimeKind.Utc).AddTicks(4175),
+                            CreatedAt = new DateTime(2025, 10, 5, 21, 27, 44, 53, DateTimeKind.Utc).AddTicks(2248),
                             Description = "Brand logos and variations",
                             Name = "Logos",
-                            UpdatedAt = new DateTime(2025, 10, 5, 21, 43, 32, 20, DateTimeKind.Utc).AddTicks(4190)
+                            UpdatedAt = new DateTime(2025, 10, 5, 21, 27, 44, 53, DateTimeKind.Utc).AddTicks(2262)
                         },
                         new
                         {
                             Id = 6,
                             BrandId = 2,
-                            CreatedAt = new DateTime(2025, 10, 5, 21, 43, 32, 20, DateTimeKind.Utc).AddTicks(4205),
+                            CreatedAt = new DateTime(2025, 10, 5, 21, 27, 44, 53, DateTimeKind.Utc).AddTicks(2282),
                             Description = "Background images and textures",
                             Name = "Backgrounds",
-                            UpdatedAt = new DateTime(2025, 10, 5, 21, 43, 32, 20, DateTimeKind.Utc).AddTicks(4218)
+                            UpdatedAt = new DateTime(2025, 10, 5, 21, 27, 44, 53, DateTimeKind.Utc).AddTicks(2297)
                         },
                         new
                         {
                             Id = 7,
                             BrandId = 2,
-                            CreatedAt = new DateTime(2025, 10, 5, 21, 43, 32, 20, DateTimeKind.Utc).AddTicks(4233),
+                            CreatedAt = new DateTime(2025, 10, 5, 21, 27, 44, 53, DateTimeKind.Utc).AddTicks(2311),
                             Description = "Icons and small graphics",
                             Name = "Icons",
-                            UpdatedAt = new DateTime(2025, 10, 5, 21, 43, 32, 20, DateTimeKind.Utc).AddTicks(4248)
+                            UpdatedAt = new DateTime(2025, 10, 5, 21, 27, 44, 53, DateTimeKind.Utc).AddTicks(2325)
                         },
                         new
                         {
                             Id = 8,
                             BrandId = 2,
-                            CreatedAt = new DateTime(2025, 10, 5, 21, 43, 32, 20, DateTimeKind.Utc).AddTicks(4262),
+                            CreatedAt = new DateTime(2025, 10, 5, 21, 27, 44, 53, DateTimeKind.Utc).AddTicks(2338),
                             Description = "General content images",
                             Name = "Content Images",
-                            UpdatedAt = new DateTime(2025, 10, 5, 21, 43, 32, 20, DateTimeKind.Utc).AddTicks(4276)
+                            UpdatedAt = new DateTime(2025, 10, 5, 21, 27, 44, 53, DateTimeKind.Utc).AddTicks(2353)
                         });
                 });
 

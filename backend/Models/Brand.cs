@@ -27,6 +27,10 @@ public class Brand
     public int PartnershipSlideInterval { get; set; } = 3000; // 3 seconds
     public int PartnershipSlideDuration { get; set; } = 500;  // 0.5 seconds
 
+    // Announcements page content (meta + hero)
+    [Column(TypeName = "json")]
+    public string? AnnouncementsPageContent { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

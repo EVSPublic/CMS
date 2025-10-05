@@ -157,6 +157,30 @@ class AnnouncementsService {
 
     return response;
   }
+
+  async getPageContent(brandId?: number): Promise<ApiResponse<{ content: any }>> {
+    const actualBrandId = brandId || this.getSelectedBrandId();
+    return api.get<{ content: any }>(`/api/v1/announcements/${actualBrandId}/page-content`);
+  }
+
+  async updatePageContent(
+    content: any,
+    brandId?: number
+  ): Promise<ApiResponse<any>> {
+    const actualBrandId = brandId || this.getSelectedBrandId();
+    const response = await api.put(`/api/v1/announcements/${actualBrandId}/page-content`, { content });
+
+    if (response.ok) {
+      const brandName = actualBrandId === 1 ? 'Ovolt' : 'Sharz.net';
+      logService.log(
+        'announcement_page_update',
+        `Duyurular sayfa içeriği güncellendi (${brandName})`,
+        { level: 'success', resourceType: 'announcement_page' }
+      );
+    }
+
+    return response;
+  }
 }
 
 export const announcementsService = new AnnouncementsService();

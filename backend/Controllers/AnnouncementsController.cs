@@ -76,7 +76,67 @@ public class AnnouncementsController : ControllerBase
                 })
                 .ToListAsync();
 
-            return Ok(new { announcements, totalCount, page, pageSize });
+            // Get announcements page content from Brands table
+            var brand = await _context.Brands.FindAsync(brandId);
+            object? pageContent = null;
+            string? metaTitle = null;
+            string? metaDescription = null;
+            string? metaKeywords = null;
+
+            if (brand?.AnnouncementsPageContent != null)
+            {
+                pageContent = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(brand.AnnouncementsPageContent);
+
+                // Try to extract meta fields
+                var contentElement = (System.Text.Json.JsonElement)pageContent;
+                if (contentElement.ValueKind == System.Text.Json.JsonValueKind.Object)
+                {
+                    if (contentElement.TryGetProperty("meta", out var metaProp) || contentElement.TryGetProperty("Meta", out metaProp))
+                    {
+                        if (metaProp.TryGetProperty("title", out var titleProp) || metaProp.TryGetProperty("Title", out titleProp))
+                            metaTitle = titleProp.GetString();
+                        if (metaProp.TryGetProperty("description", out var descProp) || metaProp.TryGetProperty("Description", out descProp))
+                            metaDescription = descProp.GetString();
+                        if (metaProp.TryGetProperty("keywords", out var keywordsProp) || metaProp.TryGetProperty("Keywords", out keywordsProp))
+                            metaKeywords = keywordsProp.GetString();
+                    }
+                }
+            }
+            else
+            {
+                // Default content
+                var brandName = brand?.Name ?? "Ovolt";
+                pageContent = new
+                {
+                    meta = new
+                    {
+                        title = $"Duyurular - {brandName}",
+                        description = "Elektrikli araç şarj hizmetlerimiz ile ilgili duyurular ve haberler.",
+                        keywords = "duyurular, haberler, şarj istasyonu"
+                    },
+                    hero = new
+                    {
+                        image = "",
+                        title = "Duyurular",
+                        description = "Güncel duyurularımızdan haberdar olun"
+                    }
+                };
+                metaTitle = $"Duyurular - {brandName}";
+                metaDescription = "Elektrikli araç şarj hizmetlerimiz ile ilgili duyurular ve haberler.";
+                metaKeywords = "duyurular, haberler, şarj istasyonu";
+            }
+
+            return Ok(new
+            {
+                announcements,
+                totalCount,
+                page,
+                pageSize,
+                pageContent,
+                metaTitle,
+                metaDescription,
+                metaKeywords
+            });
         }
         catch (Exception ex)
         {
@@ -325,6 +385,76 @@ public class AnnouncementsController : ControllerBase
         {
             _logger.LogError(ex, "Error deleting announcement {Id} for brand {BrandId}", id, brandId);
             return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while deleting announcement" } });
+        }
+    }
+
+    [HttpGet("{brandId}/page-content")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetAnnouncementsPageContent(int brandId)
+    {
+        try
+        {
+            var brand = await _context.Brands.FindAsync(brandId);
+            if (brand == null)
+            {
+                return NotFound(new { error = new { code = "BRAND_NOT_FOUND", message = "Brand not found" } });
+            }
+
+            if (brand.AnnouncementsPageContent != null)
+            {
+                var content = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(brand.AnnouncementsPageContent);
+                return Ok(new { content });
+            }
+
+            // Return default content
+            var defaultContent = new
+            {
+                meta = new
+                {
+                    title = $"Duyurular - {brand.Name}",
+                    description = "Elektrikli araç şarj hizmetlerimiz ile ilgili duyurular ve haberler.",
+                    keywords = "duyurular, haberler, şarj istasyonu"
+                },
+                hero = new
+                {
+                    image = "",
+                    title = "Duyurular",
+                    description = "Güncel duyurularımızdan haberdar olun"
+                }
+            };
+
+            return Ok(new { content = defaultContent });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting announcements page content for brand {BrandId}", brandId);
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while getting announcements page content" } });
+        }
+    }
+
+    [HttpPut("{brandId}/page-content")]
+    [Authorize(Roles = "Admin,Editor")]
+    public async Task<IActionResult> UpdateAnnouncementsPageContent(int brandId, [FromBody] UpdateAnnouncementsPageContentDto request)
+    {
+        try
+        {
+            var brand = await _context.Brands.FindAsync(brandId);
+            if (brand == null)
+            {
+                return NotFound(new { error = new { code = "BRAND_NOT_FOUND", message = "Brand not found" } });
+            }
+
+            brand.AnnouncementsPageContent = System.Text.Json.JsonSerializer.Serialize(request.Content);
+            brand.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Announcements page content updated successfully", content = request.Content });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating announcements page content for brand {BrandId}", brandId);
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR", message = "An error occurred while updating announcements page content" } });
         }
     }
 

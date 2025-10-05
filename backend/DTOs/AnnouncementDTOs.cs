@@ -59,3 +59,9 @@ public class PublishAnnouncementDto
     [Required]
     public bool Publish { get; set; } = true;
 }
+
+public class UpdateAnnouncementsPageContentDto
+{
+    [Required]
+    public object Content { get; set; } = new { };
+}

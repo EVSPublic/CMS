@@ -58,8 +58,9 @@ const AnnouncementsPageEditor: React.FC = () => {
 
   const [currentBrandId, setCurrentBrandId] = useState<number>(getCurrentBrandId());
 
-  // Load announcements on component mount
+  // Load announcements and page content on component mount
   useEffect(() => {
+    loadPageContent();
     loadAnnouncements();
   }, []);
 
@@ -68,12 +69,38 @@ const AnnouncementsPageEditor: React.FC = () => {
     const handleBrandChange = () => {
       const newBrandId = getCurrentBrandId();
       setCurrentBrandId(newBrandId);
+      loadPageContent(newBrandId);
       loadAnnouncements(newBrandId);
     };
 
     window.addEventListener('brandChanged', handleBrandChange);
     return () => window.removeEventListener('brandChanged', handleBrandChange);
   }, []);
+
+  const loadPageContent = async (brandId?: number) => {
+    const actualBrandId = brandId || currentBrandId;
+
+    try {
+      const response = await announcementsService.getPageContent(actualBrandId);
+
+      if (response.ok && response.data?.content) {
+        const pageData = response.data.content;
+        setContent(prev => ({
+          ...prev,
+          meta: {
+            title: pageData.meta?.title || prev.meta.title,
+            description: pageData.meta?.description || prev.meta.description,
+            keywords: pageData.meta?.keywords || prev.meta.keywords
+          },
+          hero: {
+            image: pageData.hero?.image || prev.hero.image
+          }
+        }));
+      }
+    } catch (err) {
+      console.error('Page content load error:', err);
+    }
+  };
 
   const loadAnnouncements = async (brandId?: number) => {
     const actualBrandId = brandId || currentBrandId;
@@ -260,12 +287,30 @@ const AnnouncementsPageEditor: React.FC = () => {
 
     setIsSaving(true);
     try {
+      // Save page content (meta + hero)
+      const pageContentData = {
+        meta: {
+          title: content.meta.title,
+          description: content.meta.description,
+          keywords: content.meta.keywords
+        },
+        hero: {
+          image: content.hero.image
+        }
+      };
+
+      const pageContentResponse = await announcementsService.updatePageContent(pageContentData, currentBrandId);
+
+      if (!pageContentResponse.ok) {
+        throw new Error('Sayfa içeriği kaydedilemedi');
+      }
+
       // Save all announcements
       const savePromises = content.announcements.map(announcement => saveAnnouncement(announcement));
       await Promise.all(savePromises);
 
       await loadAnnouncements(); // Reload to get updated data
-      alert('Tüm duyurular başarıyla kaydedildi!');
+      alert('Tüm değişiklikler başarıyla kaydedildi!');
     } catch (error) {
       console.error('Save error:', error);
       alert('Kaydetme sırasında bir hata oluştu: ' + (error instanceof Error ? error.message : 'Bilinmeyen hata'));
