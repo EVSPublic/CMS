@@ -13,6 +13,7 @@ import IletisimPageEditor from "../pages/ContentEditor/IletisimPage";
 import IstasyonHaritasiPageEditor from "../pages/ContentEditor/IstasyonHaritasiPage";
 import AnnouncementsPageEditor from "../pages/ContentEditor/AnnouncementsPage";
 import PartnershipPageEditor from "../pages/ContentEditor/PartnershipPage";
+import ApplicationsPage from "../pages/Applications";
 import UserManagementPage from "../pages/UserManagement";
 import StaticPageCreator from "../pages/StaticPageCreator";
 import LogsPage from "../pages/Logs";
@@ -70,6 +71,10 @@ function Router() {
         {
           path: "/partnership",
           element: <PartnershipPageEditor />,
+        },
+        {
+          path: "/applications",
+          element: <ApplicationsPage />,
         },
         {
           path: "/users",

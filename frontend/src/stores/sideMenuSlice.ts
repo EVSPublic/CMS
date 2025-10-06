@@ -92,6 +92,11 @@ const initialState: SideMenuState = {
       title: "Statik Sayfalar",
       pathname: "/static-pages",
     },
+    {
+      icon: "FileText",
+      title: "Mobil Uygulamalar",
+      pathname: "/applications",
+    },
     "SİSTEM YÖNETİMİ",
     {
       icon: "UserCog",

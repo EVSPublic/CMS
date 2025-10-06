@@ -31,6 +31,13 @@ public class Brand
     [Column(TypeName = "json")]
     public string? AnnouncementsPageContent { get; set; }
 
+    // Mobile app links
+    [MaxLength(500)]
+    public string? IosAppLink { get; set; }
+
+    [MaxLength(500)]
+    public string? AndroidAppLink { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
