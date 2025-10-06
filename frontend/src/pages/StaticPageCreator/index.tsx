@@ -9,6 +9,7 @@ import hljs from 'highlight.js';
 import jsBeautify from 'js-beautify';
 import '@/assets/css/vendors/highlight.css';
 import { staticPagesService, StaticPage as ApiStaticPage } from '../../services/staticPages';
+import { useScrollEffect } from '../../hooks/useScrollEffect';
 
 // Component to render HTML with script execution
 const HTMLPreview: React.FC<{ html: string }> = ({ html }) => {
@@ -68,6 +69,7 @@ interface PageForm {
 const initialPages: StaticPage[] = [];
 
 const StaticPageCreator: React.FC = () => {
+  const isScrolled = useScrollEffect();
   const [pages, setPages] = useState<StaticPage[]>(initialPages);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPage, setEditingPage] = useState<StaticPage | null>(null);
@@ -383,11 +385,15 @@ const StaticPageCreator: React.FC = () => {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <h1 className={`text-2xl font-semibold transition-colors duration-300 flex items-center gap-2 ${
+              isScrolled ? 'text-gray-900 dark:text-white' : 'text-white dark:text-white'
+            }`}>
               <FileText className="w-6 h-6" />
               Statik Sayfa Oluşturucu
             </h1>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            <p className={`mt-1 text-sm transition-colors duration-300 ${
+              isScrolled ? 'text-gray-600 dark:text-gray-400' : 'text-gray-200 dark:text-gray-300'
+            }`}>
               Statik sayfalar oluşturun ve yönetin
             </p>
             {error && (
