@@ -41,10 +41,10 @@ function Home() {
       if (response.ok && response.data) {
         setDashboardData(response.data);
       } else {
-        setError(response.error?.message || 'Failed to load dashboard data');
+        setError(response.error?.message || 'Dashboard verileri yüklenemedi');
       }
     } catch (err) {
-      setError('Failed to load dashboard data');
+      setError('Dashboard verileri yüklenemedi');
       console.error('Dashboard error:', err);
     } finally {
       if (isInitialLoad.current) {
@@ -63,7 +63,7 @@ function Home() {
                 <Lucide icon="Activity" className="w-6 h-6" />
               </div>
               <div>
-                <div className="text-base text-slate-500 dark:text-slate-400">Welcome to</div>
+                <div className="text-base text-slate-500 dark:text-slate-400">Hoş geldiniz</div>
                 <div className="text-lg font-semibold text-slate-600 dark:text-slate-300">{getProjectName()}</div>
               </div>
             </div>
@@ -76,12 +76,12 @@ function Home() {
               <div className="w-10 h-10 flex items-center justify-center bg-success/10 dark:bg-success/20 text-success rounded-full mr-3">
                 <Lucide icon="Database" className="w-5 h-5" />
               </div>
-              <div className="text-lg font-semibold">System Status</div>
+              <div className="text-lg font-semibold">Sistem Durumu</div>
             </div>
             {loading ? (
               <div className="flex items-center justify-center py-4">
                 <Lucide icon="Loader2" className="w-5 h-5 animate-spin text-slate-500" />
-                <span className="ml-2 text-slate-500">Loading...</span>
+                <span className="ml-2 text-slate-500">Yükleniyor...</span>
               </div>
             ) : error ? (
               <div className="flex items-center justify-center py-4 text-red-500">
@@ -91,29 +91,29 @@ function Home() {
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-600 dark:text-slate-300">API Status</span>
+                  <span className="text-slate-600 dark:text-slate-300">API Durumu</span>
                   <span className={`font-medium ${dashboardData?.systemHealth?.status === 'Healthy' ? 'text-success' : 'text-danger'}`}>
-                    {dashboardData?.systemHealth?.status || 'Unknown'}
+                    {dashboardData?.systemHealth?.status === 'Healthy' ? 'Sağlıklı' : dashboardData?.systemHealth?.status || 'Bilinmiyor'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-600 dark:text-slate-300">Version</span>
+                  <span className="text-slate-600 dark:text-slate-300">Versiyon</span>
                   <span className="text-slate-600 dark:text-slate-300 font-medium">
-                    {dashboardData?.systemHealth?.version || 'Unknown'}
+                    {dashboardData?.systemHealth?.version || 'Bilinmiyor'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-600 dark:text-slate-300">Environment</span>
+                  <span className="text-slate-600 dark:text-slate-300">Ortam</span>
                   <span className="text-slate-600 dark:text-slate-300 font-medium">
-                    {dashboardData?.systemHealth?.environment || 'Unknown'}
+                    {dashboardData?.systemHealth?.environment || 'Bilinmiyor'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-600 dark:text-slate-300">Last Check</span>
+                  <span className="text-slate-600 dark:text-slate-300">Son Kontrol</span>
                   <span className="text-slate-500 text-sm">
                     {dashboardData?.systemHealth?.timestamp ?
                       new Date(dashboardData.systemHealth.timestamp).toLocaleTimeString() :
-                      'Unknown'
+                      'Bilinmiyor'
                     }
                   </span>
                 </div>
@@ -128,7 +128,7 @@ function Home() {
                 <div className="w-10 h-10 flex items-center justify-center bg-primary/10 dark:bg-primary/20 text-primary rounded-full mr-3">
                     <Lucide icon="Server" className="w-5 h-5" />
                 </div>
-                <div className="text-lg font-semibold">Server Process Usage</div>
+                <div className="text-lg font-semibold">Sunucu Kaynak Kullanımı</div>
             </div>
             {loading ? (
               <div className="flex items-center justify-center py-4">
@@ -137,19 +137,19 @@ function Home() {
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                    <span className="text-slate-600 dark:text-slate-300">CPU Usage</span>
+                    <span className="text-slate-600 dark:text-slate-300">CPU Kullanımı</span>
                                         <span className="font-medium text-slate-600 dark:text-slate-300">{(dashboardData?.serverResourceUsage?.cpu || 0).toFixed(2)}%</span>
                 </div>
                 <div className="flex items-center justify-between">
-                    <span className="text-slate-600 dark:text-slate-300">Memory Usage</span>
+                    <span className="text-slate-600 dark:text-slate-300">Bellek Kullanımı</span>
                     <span className="font-medium text-slate-600 dark:text-slate-300">{dashboardData?.serverResourceUsage?.memory || 0} MB</span>
                 </div>
                 <div className="flex items-center justify-between">
-                    <span className="text-slate-600 dark:text-slate-300">Active Sessions</span>
+                    <span className="text-slate-600 dark:text-slate-300">Aktif Oturumlar</span>
                     <span className="font-medium text-slate-600 dark:text-slate-300">{dashboardData?.activeUserSessions || 0}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                    <span className="text-slate-600 dark:text-slate-300">Media Uploads</span>
+                    <span className="text-slate-600 dark:text-slate-300">Medya Yüklemeleri</span>
                     <span className="font-medium text-slate-600 dark:text-slate-300">{dashboardData?.mediaUploadsCount || 0}</span>
                 </div>
               </div>
