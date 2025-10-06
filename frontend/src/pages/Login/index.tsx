@@ -71,12 +71,12 @@ function Main() {
             </div>
             <div className="mt-10">
               <div className="text-2xl font-medium">Giriş Yap</div>
-              <div className="mt-2.5 text-slate-600 dark:text-slate-400">
+              {/* <div className="mt-2.5 text-slate-600 dark:text-slate-400">
                 Hesabınız yok mu?{" "}
                 <a className="font-medium text-primary" href="">
                   Kaydol
                 </a>
-              </div>
+              </div> */}
               <Alert
                 variant="outline-primary"
                 className="flex items-center px-4 py-3 my-7 bg-primary/5 border-primary/20 rounded-[0.6rem] leading-[1.7]"
