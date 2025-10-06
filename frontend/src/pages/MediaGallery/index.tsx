@@ -50,10 +50,10 @@ const MediaGallery: React.FC = () => {
         setMediaItems(response.data.mediaItems);
         setTotalCount(response.data.totalCount);
       } else {
-        setError(response.error?.message || 'Failed to load media items');
+        setError(response.error?.message || 'Medya öğeleri yüklenemedi');
       }
     } catch (err) {
-      setError('Failed to load media items');
+      setError('Medya öğeleri yüklenemedi');
       console.error('Media error:', err);
     } finally {
       setLoading(false);
@@ -82,9 +82,9 @@ const MediaGallery: React.FC = () => {
   });
 
   const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return '0 Bayt';
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ['Bayt', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
@@ -101,14 +101,14 @@ const MediaGallery: React.FC = () => {
             return response.data;
           } else {
             console.error('Upload failed:', response.error);
-            alert(`Failed to upload ${file.name}: ${response.error?.message}`);
+            alert(`${file.name} yüklenemedi: ${response.error?.message}`);
           }
         } catch (error) {
           console.error('Upload error:', error);
-          alert(`Failed to upload ${file.name}`);
+          alert(`${file.name} yüklenemedi`);
         }
       } else {
-        alert(`Skipped ${file.name}: Only images and videos are supported`);
+        alert(`${file.name} atlandı: Sadece resim ve videolar desteklenir`);
       }
       return null;
     });
@@ -120,7 +120,7 @@ const MediaGallery: React.FC = () => {
       if (validItems.length > 0) {
         setMediaItems(prev => [...validItems, ...prev]);
         setTotalCount(prev => prev + validItems.length);
-        alert(`Successfully uploaded ${validItems.length} file(s)`);
+        alert(`${validItems.length} dosya başarıyla yüklendi`);
       }
     } catch (error) {
       console.error('Batch upload error:', error);
@@ -156,7 +156,7 @@ const MediaGallery: React.FC = () => {
   const deleteSelectedItems = async () => {
     if (selectedItems.length === 0) return;
 
-    if (confirm(`Are you sure you want to delete ${selectedItems.length} item(s)?`)) {
+    if (confirm(`${selectedItems.length} öğeyi silmek istediğinizden emin misiniz?`)) {
       try {
         const deletePromises = selectedItems.map(async (itemId) => {
           const response = await mediaService.deleteMediaItem(currentBrandId, itemId);
@@ -174,13 +174,13 @@ const MediaGallery: React.FC = () => {
         setTotalCount(prev => prev - successCount);
 
         if (successCount === selectedItems.length) {
-          alert(`Successfully deleted ${successCount} item(s)`);
+          alert(`${successCount} öğe başarıyla silindi`);
         } else {
-          alert(`Deleted ${successCount} of ${selectedItems.length} item(s). Some deletions failed.`);
+          alert(`${selectedItems.length} öğenin ${successCount} tanesi silindi. Bazı silme işlemleri başarısız oldu.`);
         }
       } catch (error) {
         console.error('Delete error:', error);
-        alert('Failed to delete items');
+        alert('Öğeler silinemedi');
       }
     }
   };
@@ -237,17 +237,17 @@ const MediaGallery: React.FC = () => {
             }
           }
 
-          alert('Metadata updated successfully');
+          alert('Meta veriler başarıyla güncellendi');
         } else {
-          alert('Failed to update folders: ' + (foldersResponse.error?.message || 'Unknown error'));
+          alert('Klasörler güncellenemedi: ' + (foldersResponse.error?.message || 'Bilinmeyen hata'));
         }
       } else {
         console.error('Update failed:', response.error);
-        alert('Failed to update metadata: ' + response.error?.message);
+        alert('Meta veriler güncellenemedi: ' + response.error?.message);
       }
     } catch (error) {
       console.error('Update error:', error);
-      alert('Failed to update metadata');
+      alert('Meta veriler güncellenemedi');
     } finally {
       setIsSaving(false);
     }
@@ -269,11 +269,11 @@ const MediaGallery: React.FC = () => {
         ));
       } else {
         console.error('Update failed:', response.error);
-        alert('Failed to update item metadata');
+        alert('Öğe meta verileri güncellenemedi');
       }
     } catch (error) {
       console.error('Update error:', error);
-      alert('Failed to update item metadata');
+      alert('Öğe meta verileri güncellenemedi');
     }
   };
 
@@ -292,20 +292,20 @@ const MediaGallery: React.FC = () => {
         setNewFolderName('');
         setNewFolderDescription('');
         setShowCreateFolder(false);
-        alert('Folder created successfully');
+        alert('Klasör başarıyla oluşturuldu');
       } else {
-        alert('Failed to create folder: ' + (response.error?.message || 'Unknown error'));
+        alert('Klasör oluşturulamadı: ' + (response.error?.message || 'Bilinmeyen hata'));
       }
     } catch (error) {
       console.error('Create folder error:', error);
-      alert('Failed to create folder');
+      alert('Klasör oluşturulamadı');
     } finally {
       setCreatingFolder(false);
     }
   };
 
   const handleDeleteFolder = async (folderId: number, folderName: string) => {
-    if (!confirm(`Are you sure you want to delete the folder "${folderName}"?`)) {
+    if (!confirm(`"${folderName}" klasörünü silmek istediğinizden emin misiniz?`)) {
       return;
     }
 
@@ -317,13 +317,13 @@ const MediaGallery: React.FC = () => {
         if (selectedFolder === folderId) {
           setSelectedFolder('all');
         }
-        alert('Folder deleted successfully');
+        alert('Klasör başarıyla silindi');
       } else {
-        alert('Failed to delete folder: ' + (response.error?.message || 'Unknown error'));
+        alert('Klasör silinemedi: ' + (response.error?.message || 'Bilinmeyen hata'));
       }
     } catch (error) {
       console.error('Delete folder error:', error);
-      alert('Failed to delete folder');
+      alert('Klasör silinemedi');
     }
   };
 
@@ -334,7 +334,7 @@ const MediaGallery: React.FC = () => {
           Medya Galerisi
         </h1>
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-          Manage your website images and media files
+          Web sitenizin resim ve medya dosyalarını yönetin
         </p>
       </div>
 
@@ -343,7 +343,7 @@ const MediaGallery: React.FC = () => {
         <div className="col-span-3">
           <div className="bg-white dark:bg-gray-800 shadow p-4 mb-4">
             <div className="flex justify-between items-center mb-3">
-              <h3 className="font-semibold">Folders</h3>
+              <h3 className="font-semibold">Klasörler</h3>
               <Button
                 variant="primary"
                 size="sm"
@@ -358,13 +358,13 @@ const MediaGallery: React.FC = () => {
                 <FormInput
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
-                  placeholder="Folder name"
+                  placeholder="Klasör adı"
                   className="mb-2"
                 />
                 <FormInput
                   value={newFolderDescription}
                   onChange={(e) => setNewFolderDescription(e.target.value)}
-                  placeholder="Description (optional)"
+                  placeholder="Açıklama (opsiyonel)"
                   className="mb-2"
                 />
                 <div className="flex space-x-2">
@@ -375,7 +375,7 @@ const MediaGallery: React.FC = () => {
                     disabled={creatingFolder || !newFolderName.trim()}
                     className="flex-1"
                   >
-                    {creatingFolder ? 'Creating...' : 'Create'}
+                    {creatingFolder ? 'Oluşturuluyor...' : 'Oluştur'}
                   </Button>
                   <Button
                     variant="secondary"
@@ -386,7 +386,7 @@ const MediaGallery: React.FC = () => {
                       setNewFolderDescription('');
                     }}
                   >
-                    Cancel
+                    İptal
                   </Button>
                 </div>
               </div>
@@ -403,7 +403,7 @@ const MediaGallery: React.FC = () => {
                 }`}
               >
                 <div className="flex justify-between items-center">
-                  <span>All Images</span>
+                  <span>Tüm Resimler</span>
                   <span className="text-xs opacity-75">({mediaItems.length})</span>
                 </div>
               </button>
@@ -433,7 +433,7 @@ const MediaGallery: React.FC = () => {
                     className={`ml-2 opacity-0 group-hover:opacity-100 transition-opacity ${
                       selectedFolder === folder.id ? 'text-white hover:text-red-200' : 'text-red-500 hover:text-red-700'
                     }`}
-                    title="Delete folder"
+                    title="Klasörü sil"
                   >
                     <Lucide icon="Trash2" className="w-4 h-4" />
                   </button>
@@ -456,7 +456,7 @@ const MediaGallery: React.FC = () => {
             <div className="text-center">
               <Lucide icon="Upload" className="mx-auto h-12 w-12 text-gray-400 mb-3" />
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                Drag & drop images/videos here or click to upload
+                Resim/video sürükle bırak veya tıklayarak yükle
               </p>
               <Button
                 variant="primary"
@@ -464,7 +464,7 @@ const MediaGallery: React.FC = () => {
                 className="w-full"
                 disabled={uploading}
               >
-                {uploading ? 'Uploading...' : 'Select Files'}
+                {uploading ? 'Yükleniyor...' : 'Dosya Seç'}
               </Button>
               <input
                 ref={fileInputRef}
@@ -488,7 +488,7 @@ const MediaGallery: React.FC = () => {
                   <FormInput
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search images by name or tags..."
+                    placeholder="İsim veya etiketlere göre resim ara..."
                     className="w-full"
                   />
                 </div>
@@ -514,11 +514,11 @@ const MediaGallery: React.FC = () => {
               {selectedItems.length > 0 && (
                 <div className="flex items-center space-x-3">
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {selectedItems.length} selected
+                    {selectedItems.length} seçildi
                   </span>
                   <Button variant="danger" onClick={deleteSelectedItems} size="sm">
                     <Lucide icon="Trash2" className="w-4 h-4 mr-1" />
-                    Delete
+                    Sil
                   </Button>
                 </div>
               )}
@@ -530,21 +530,21 @@ const MediaGallery: React.FC = () => {
             {loading ? (
               <div className="text-center py-12">
                 <Lucide icon="Loader2" className="mx-auto h-12 w-12 text-gray-400 animate-spin mb-3" />
-                <p className="text-gray-500 dark:text-gray-400">Loading media items...</p>
+                <p className="text-gray-500 dark:text-gray-400">Medya öğeleri yükleniyor...</p>
               </div>
             ) : error ? (
               <div className="text-center py-12">
                 <Lucide icon="AlertCircle" className="mx-auto h-12 w-12 text-red-400 mb-3" />
                 <p className="text-red-500">{error}</p>
                 <Button variant="primary" onClick={loadMediaItems} className="mt-3">
-                  Retry
+                  Tekrar Dene
                 </Button>
               </div>
             ) : filteredItems.length === 0 ? (
               <div className="text-center py-12">
                 <Lucide icon="ImageIcon" className="mx-auto h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-gray-500 dark:text-gray-400">
-                  {searchQuery ? 'No images match your search' : 'No images uploaded yet'}
+                  {searchQuery ? 'Aramanızla eşleşen resim yok' : 'Henüz resim yüklenmedi'}
                 </p>
               </div>
             ) : (
@@ -667,7 +667,7 @@ const MediaGallery: React.FC = () => {
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold">
-                  {previewItem.type.startsWith('video/') ? 'Video Details' : 'Image Details'}
+                  {previewItem.type.startsWith('video/') ? 'Video Detayları' : 'Resim Detayları'}
                 </h3>
                 <Button
                   variant="secondary"
@@ -696,21 +696,21 @@ const MediaGallery: React.FC = () => {
 
                 <div className="space-y-4">
                   <div>
-                    <FormLabel>Filename</FormLabel>
+                    <FormLabel>Dosya Adı</FormLabel>
                     <FormInput value={previewItem.filename} readOnly />
                   </div>
 
                   <div>
-                    <FormLabel>Alt Text</FormLabel>
+                    <FormLabel>Alt Metin</FormLabel>
                     <FormInput
                       value={editingMetadata?.alt || ''}
                       onChange={(e) => setEditingMetadata(prev => prev ? { ...prev, alt: e.target.value } : { alt: e.target.value, selectedFolders: [] })}
-                      placeholder="Describe this image..."
+                      placeholder="Bu resmi tanımlayın..."
                     />
                   </div>
 
                   <div>
-                    <FormLabel>Folders</FormLabel>
+                    <FormLabel>Klasörler</FormLabel>
                     <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded p-3">
                       {folders.map(folder => (
                         <label key={folder.id} className="flex items-center space-x-2 cursor-pointer">
@@ -733,11 +733,11 @@ const MediaGallery: React.FC = () => {
                   </div>
 
                   <div>
-                    <FormLabel>File Info</FormLabel>
+                    <FormLabel>Dosya Bilgisi</FormLabel>
                     <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                      <p>Size: {formatFileSize(previewItem.size)}</p>
-                      <p>Type: {previewItem.type}</p>
-                      <p>Uploaded: {new Date(previewItem.uploadDate).toLocaleDateString()}</p>
+                      <p>Boyut: {formatFileSize(previewItem.size)}</p>
+                      <p>Tip: {previewItem.type}</p>
+                      <p>Yüklenme: {new Date(previewItem.uploadDate).toLocaleDateString()}</p>
                     </div>
                   </div>
 
@@ -750,34 +750,34 @@ const MediaGallery: React.FC = () => {
                       {isSaving ? (
                         <>
                           <Lucide icon="Loader2" className="w-4 h-4 mr-2 animate-spin" />
-                          Saving...
+                          Kaydediliyor...
                         </>
                       ) : (
-                        'Save Changes'
+                        'Değişiklikleri Kaydet'
                       )}
                     </Button>
                     <Button
                       variant="danger"
                       onClick={async () => {
-                        if (confirm('Are you sure you want to delete this image?')) {
+                        if (confirm('Bu resmi silmek istediğinizden emin misiniz?')) {
                           try {
                             const response = await mediaService.deleteMediaItem(currentBrandId, previewItem.id);
                             if (response.ok) {
                               setMediaItems(prev => prev.filter(item => item.id !== previewItem.id));
                               setTotalCount(prev => prev - 1);
                               closePreviewModal();
-                              alert('Image deleted successfully');
+                              alert('Resim başarıyla silindi');
                             } else {
-                              alert('Failed to delete image: ' + response.error?.message);
+                              alert('Resim silinemedi: ' + response.error?.message);
                             }
                           } catch (error) {
                             console.error('Delete error:', error);
-                            alert('Failed to delete image');
+                            alert('Resim silinemedi');
                           }
                         }
                       }}
                     >
-                      Delete
+                      Sil
                     </Button>
                   </div>
                 </div>

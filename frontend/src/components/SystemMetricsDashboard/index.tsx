@@ -28,11 +28,11 @@ function SystemMetricsDashboard({ systemHealth, className }: SystemMetricsDashbo
             <Lucide icon="Zap" className="w-6 h-6 text-success fill-success/10" />
           </div>
           <div className="ml-4">
-            <div className="text-base font-medium">{systemHealth.onlineStations} Online</div>
-            <div className="text-slate-500 mt-0.5">of {systemHealth.totalStations} stations</div>
+            <div className="text-base font-medium">{systemHealth.onlineStations} Çevrimiçi</div>
+            <div className="text-slate-500 mt-0.5">{systemHealth.totalStations} istasyondan</div>
           </div>
         </div>
-        
+
         <div className="relative mt-5 mb-6 overflow-hidden">
           <div className="absolute inset-0 h-px my-auto tracking-widest text-slate-400/60 whitespace-nowrap leading-[0] text-xs">
             .......................................................................
@@ -45,15 +45,15 @@ function SystemMetricsDashboard({ systemHealth, className }: SystemMetricsDashbo
             backgroundColor={getColor("success", 0.3)}
           />
         </div>
-        
+
         <div className="flex flex-wrap items-center justify-center gap-y-3 gap-x-5">
           <div className="flex items-center">
             <div className="w-2 h-2 rounded-full bg-success/70"></div>
-            <div className="ml-2.5 text-xs">Online ({stationUptimePercentage.toFixed(1)}%)</div>
+            <div className="ml-2.5 text-xs">Çevrimiçi ({stationUptimePercentage.toFixed(1)}%)</div>
           </div>
           <div className="flex items-center">
             <div className="w-2 h-2 rounded-full bg-warning/70"></div>
-            <div className="ml-2.5 text-xs">Maintenance ({systemHealth.maintenanceStations})</div>
+            <div className="ml-2.5 text-xs">Bakımda ({systemHealth.maintenanceStations})</div>
           </div>
         </div>
       </div>
@@ -65,23 +65,23 @@ function SystemMetricsDashboard({ systemHealth, className }: SystemMetricsDashbo
             <Lucide icon="Battery" className="w-6 h-6 text-primary fill-primary/10" />
           </div>
           <div className="ml-4">
-            <div className="text-base font-medium">{systemHealth.availableChargers} Available</div>
-            <div className="text-slate-500 mt-0.5">of {systemHealth.totalChargers} chargers</div>
+            <div className="text-base font-medium">{systemHealth.availableChargers} Müsait</div>
+            <div className="text-slate-500 mt-0.5">{systemHealth.totalChargers} şarj cihazından</div>
           </div>
         </div>
-        
+
         <div className="relative mt-5 mb-6">
           <ReportDonutChart3 className="relative z-10" height={100} />
         </div>
-        
+
         <div className="flex flex-wrap items-center justify-center gap-y-3 gap-x-5">
           <div className="flex items-center">
             <div className="w-2 h-2 rounded-full bg-primary/70"></div>
-            <div className="ml-2.5 text-xs">Available</div>
+            <div className="ml-2.5 text-xs">Müsait</div>
           </div>
           <div className="flex items-center">
             <div className="w-2 h-2 rounded-full bg-warning/70"></div>
-            <div className="ml-2.5 text-xs">Occupied</div>
+            <div className="ml-2.5 text-xs">Dolu</div>
           </div>
         </div>
       </div>
@@ -94,7 +94,7 @@ function SystemMetricsDashboard({ systemHealth, className }: SystemMetricsDashbo
           </div>
           <div className="ml-4">
             <div className="text-base font-medium">{systemHealth.systemUptimePercentage}%</div>
-            <div className="text-slate-500 mt-0.5">System uptime</div>
+            <div className="text-slate-500 mt-0.5">Sistem Çalışma Süresi</div>
           </div>
         </div>
         
@@ -114,7 +114,7 @@ function SystemMetricsDashboard({ systemHealth, className }: SystemMetricsDashbo
         <div className="flex flex-wrap items-center justify-center gap-y-3 gap-x-5">
           <div className="flex items-center">
             <div className="w-2 h-2 rounded-full bg-info/70"></div>
-            <div className="ml-2.5 text-xs">Uptime trend</div>
+            <div className="ml-2.5 text-xs">Çalışma süresi trendi</div>
           </div>
         </div>
       </div>
@@ -127,16 +127,16 @@ function SystemMetricsDashboard({ systemHealth, className }: SystemMetricsDashbo
           </div>
           <div className="ml-4">
             <div className="text-base font-medium">{systemHealth.criticalAlerts.length}</div>
-            <div className="text-slate-500 mt-0.5">Critical alerts</div>
+            <div className="text-slate-500 mt-0.5">Kritik uyarılar</div>
           </div>
         </div>
-        
+
         <div className="mt-5 space-y-2 min-h-[100px]">
           {systemHealth.criticalAlerts.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <Lucide icon="CheckCircle" className="w-8 h-8 text-success mx-auto mb-2" />
-                <div className="text-sm text-slate-500">All systems normal</div>
+                <div className="text-sm text-slate-500">Tüm sistemler normal</div>
               </div>
             </div>
           ) : (
@@ -149,7 +149,7 @@ function SystemMetricsDashboard({ systemHealth, className }: SystemMetricsDashbo
               ))}
               {systemHealth.criticalAlerts.length > 3 && (
                 <div className="text-xs text-center text-slate-500 pt-2">
-                  +{systemHealth.criticalAlerts.length - 3} more alerts
+                  +{systemHealth.criticalAlerts.length - 3} uyarı daha
                 </div>
               )}
             </>
@@ -164,7 +164,7 @@ function SystemMetricsDashboard({ systemHealth, className }: SystemMetricsDashbo
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold text-slate-700">{systemHealth.totalStations}</div>
-              <div className="text-sm text-slate-500">Total Stations</div>
+              <div className="text-sm text-slate-500">Toplam İstasyon</div>
             </div>
             <Lucide icon="MapPin" className="w-8 h-8 text-slate-400" />
           </div>
@@ -175,7 +175,7 @@ function SystemMetricsDashboard({ systemHealth, className }: SystemMetricsDashbo
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold text-slate-700">{systemHealth.totalChargers}</div>
-              <div className="text-sm text-slate-500">Total Chargers</div>
+              <div className="text-sm text-slate-500">Toplam Şarj Cihazı</div>
             </div>
             <Lucide icon="Zap" className="w-8 h-8 text-slate-400" />
           </div>
@@ -186,7 +186,7 @@ function SystemMetricsDashboard({ systemHealth, className }: SystemMetricsDashbo
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold text-slate-700">{chargerUtilizationPercentage.toFixed(1)}%</div>
-              <div className="text-sm text-slate-500">Utilization Rate</div>
+              <div className="text-sm text-slate-500">Kullanım Oranı</div>
             </div>
             <Lucide icon="TrendingUp" className="w-8 h-8 text-slate-400" />
           </div>
@@ -199,7 +199,7 @@ function SystemMetricsDashboard({ systemHealth, className }: SystemMetricsDashbo
               <div className="text-2xl font-bold text-slate-700">
                 {systemHealth.offlineStations + systemHealth.offlineChargers}
               </div>
-              <div className="text-sm text-slate-500">Offline Units</div>
+              <div className="text-sm text-slate-500">Çevrimdışı Birimler</div>
             </div>
             <Lucide icon="WifiOff" className="w-8 h-8 text-slate-400" />
           </div>
