@@ -1,6 +1,4 @@
 import { FormCheck, FormInput, FormLabel } from "@/components/Base/Form";
-import Tippy from "@/components/Base/Tippy";
-import users from "@/fakers/users";
 import Button from "@/components/Base/Button";
 import Alert from "@/components/Base/Alert";
 import Lucide from "@/components/Base/Lucide";
@@ -9,6 +7,7 @@ import _ from "lodash";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import ovolt_logo from "@/assets/images/ovolt-logo.svg";
 
 function Main() {
   const { login, isAuthenticated, isLoading } = useAuth();
@@ -36,10 +35,10 @@ function Main() {
       });
 
       if (!result.success) {
-        setError(result.error || 'Login failed');
+        setError(result.error || 'Giriş başarısız');
       }
     } catch (err) {
-      setError('An unexpected error occurred');
+      setError('Beklenmeyen bir hata oluştu');
     } finally {
       setIsSubmitting(false);
     }
@@ -67,21 +66,15 @@ function Main() {
           ])}
         >
           <div className="relative z-10 flex flex-col justify-center w-full h-full py-2 lg:py-32">
-            <div className="rounded-[0.8rem] w-[55px] h-[55px] border border-primary/30 flex items-center justify-center">
-              <div className="relative flex items-center justify-center w-[50px] rounded-[0.6rem] h-[50px] bg-gradient-to-b from-theme-1/90 to-theme-2/90 bg-white">
-                <div className="w-[26px] h-[26px] relative -rotate-45 [&_div]:bg-white">
-                  <div className="absolute w-[20%] left-0 inset-y-0 my-auto rounded-full opacity-50 h-[75%]"></div>
-                  <div className="absolute w-[20%] inset-0 m-auto h-[120%] rounded-full"></div>
-                  <div className="absolute w-[20%] right-0 inset-y-0 my-auto rounded-full opacity-50 h-[75%]"></div>
-                </div>
-              </div>
+            <div className="w-[120px] h-[55px] flex items-center">
+              <img src={ovolt_logo} alt="Ovolt Logo" className="w-full h-auto" />
             </div>
             <div className="mt-10">
-              <div className="text-2xl font-medium">Sign In</div>
+              <div className="text-2xl font-medium">Giriş Yap</div>
               <div className="mt-2.5 text-slate-600 dark:text-slate-400">
-                Don't have an account?{" "}
+                Hesabınız yok mu?{" "}
                 <a className="font-medium text-primary" href="">
-                  Sign Up
+                  Kaydol
                 </a>
               </div>
               <Alert
@@ -97,10 +90,9 @@ function Main() {
                       />
                     </div>
                     <div className="ml-1 mr-8">
-                      Welcome to <span className="font-medium">Tailwise</span>{" "}
-                      demo! Simply click{" "}
-                      <span className="font-medium">Sign In</span> to explore
-                      and access our documentation.
+                      <span className="font-medium">Ovolt</span>{" "}
+                      Admin Paneline hoş geldiniz! Giriş yapmak için{" "}
+                      <span className="font-medium">Giriş Yap</span> butonuna tıklayın.
                     </div>
                     <Alert.DismissButton
                       type="button"
@@ -139,12 +131,12 @@ function Main() {
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                 />
-                <FormLabel className="mt-4">Password*</FormLabel>
+                <FormLabel className="mt-4">Şifre*</FormLabel>
                 <FormInput
                   type="password"
                   required
                   className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-                  placeholder="Enter your password"
+                  placeholder="Şifrenizi girin"
                   value={formData.password}
                   onChange={(e) => handleInputChange('password', e.target.value)}
                 />
@@ -161,10 +153,10 @@ function Main() {
                       className="cursor-pointer select-none"
                       htmlFor="remember-me"
                     >
-                      Remember me
+                      Beni hatırla
                     </label>
                   </div>
-                  <a href="/forgot-password">Forgot Password?</a>
+                  {/* <a href="/forgot-password">Şifremi unuttum?</a> */}
                 </div>
                 <div className="mt-5 text-center xl:mt-8 xl:text-left">
                   <Button
@@ -177,10 +169,10 @@ function Main() {
                     {isSubmitting ? (
                       <div className="flex items-center justify-center">
                         <Lucide icon="Loader" className="w-4 h-4 mr-2 animate-spin" />
-                        Signing In...
+                        Giriş yapılıyor...
                       </div>
                     ) : (
-                      'Sign In'
+                      'Giriş Yap'
                     )}
                   </Button>
                 </div>
@@ -206,56 +198,12 @@ function Main() {
         >
           <div className="sticky top-0 z-10 flex-col justify-center hidden h-screen ml-16 lg:flex xl:ml-28 2xl:ml-36">
             <div className="leading-[1.4] text-[2.6rem] xl:text-5xl font-medium xl:leading-[1.2] text-white">
-              Embrace Excellence <br /> in Dashboard Development
+              Elektrikli Araç <br /> Şarj Çözümlerinde Lider
             </div>
             <div className="mt-5 text-base leading-relaxed xl:text-lg text-white/70">
-              Unlock the potential of Tailwise, where developers craft
-              meticulously structured, visually stunning dashboards with
-              feature-rich modules. Join us today to shape the future of your
-              application development.
-            </div>
-            <div className="flex flex-col gap-3 mt-10 xl:items-center xl:flex-row">
-              <div className="flex items-center">
-                <div className="w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-                  <Tippy
-                    as="img"
-                    alt="Tailwise - Admin Dashboard Template"
-                    className="rounded-full border-[3px] border-white/50"
-                    src={users.fakeUsers()[0].photo}
-                    content={users.fakeUsers()[0].name}
-                  />
-                </div>
-                <div className="-ml-3 w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-                  <Tippy
-                    as="img"
-                    alt="Tailwise - Admin Dashboard Template"
-                    className="rounded-full border-[3px] border-white/50"
-                    src={users.fakeUsers()[0].photo}
-                    content={users.fakeUsers()[0].name}
-                  />
-                </div>
-                <div className="-ml-3 w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-                  <Tippy
-                    as="img"
-                    alt="Tailwise - Admin Dashboard Template"
-                    className="rounded-full border-[3px] border-white/50"
-                    src={users.fakeUsers()[0].photo}
-                    content={users.fakeUsers()[0].name}
-                  />
-                </div>
-                <div className="-ml-3 w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-                  <Tippy
-                    as="img"
-                    alt="Tailwise - Admin Dashboard Template"
-                    className="rounded-full border-[3px] border-white/50"
-                    src={users.fakeUsers()[0].photo}
-                    content={users.fakeUsers()[0].name}
-                  />
-                </div>
-              </div>
-              <div className="text-base xl:ml-2 2xl:ml-3 text-white/70">
-                Over 7k+ strong and growing! Your journey begins here.
-              </div>
+              Türkiye'nin en geniş elektrikli araç şarj ağını yönetin.
+              Ovolt Admin Panel ile istasyonlarınızı, kullanıcılarınızı ve
+              içeriklerinizi kolayca kontrol edin.
             </div>
           </div>
         </div>
