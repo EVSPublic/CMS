@@ -221,18 +221,18 @@ public class TarifelerPageHeaderDto
 
 public class TarifelerTariffsDto
 {
+    public bool IsCampaign { get; set; }
+    public string CampaignExpireDate { get; set; } = "30-31 ağustos tarihleri arasında geçerlidir";
     public List<TariffCardDto> Cards { get; set; } = new();
 }
 
 public class TariffCardDto
 {
-    public bool IsCampaign { get; set; }
     public string Badge { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public string OldPrice { get; set; } = string.Empty;
     public string CurrentPrice { get; set; } = string.Empty;
     public string Unit { get; set; } = "kWh";
-    public string CampaignExpireDate { get; set; } = "30-31 ağustos tarihleri arasında geçerlidir";
 }
 
 public class UpdateContentPageDto

@@ -464,37 +464,33 @@ public class ContentController : ControllerBase
                 },
                 Tariffs = new TarifelerTariffsDto
                 {
+                    IsCampaign = true,
+                    CampaignExpireDate = "30-31 ağustos tarihleri arasında geçerlidir",
                     Cards = new List<TariffCardDto>
                     {
                         new()
                         {
-                            IsCampaign = false,
-                            Badge = "Standart",
+                            Badge = "Kampanyalı Tarife",
                             Title = "AC Şarj",
-                            OldPrice = "",
+                            OldPrice = "10,00 TL",
                             CurrentPrice = "8,50 TL",
-                            Unit = "kWh",
-                            CampaignExpireDate = ""
+                            Unit = "kWh"
                         },
                         new()
                         {
-                            IsCampaign = true,
-                            Badge = "Kampanya",
+                            Badge = "Kampanyalı Tarife",
                             Title = "DC Hızlı Şarj",
                             OldPrice = "15,00 TL",
                             CurrentPrice = "12,00 TL",
-                            Unit = "kWh",
-                            CampaignExpireDate = "30-31 ağustos tarihleri arasında geçerlidir"
+                            Unit = "kWh"
                         },
                         new()
                         {
-                            IsCampaign = false,
-                            Badge = "Premium",
+                            Badge = "Kampanyalı Tarife",
                             Title = "DC Ultra Hızlı Şarj",
-                            OldPrice = "",
+                            OldPrice = "20,00 TL",
                             CurrentPrice = "18,00 TL",
-                            Unit = "kWh",
-                            CampaignExpireDate = ""
+                            Unit = "kWh"
                         }
                     }
                 }

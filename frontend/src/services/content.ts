@@ -133,14 +133,14 @@ export interface TarifelerPageContent {
     description: string;
   };
   tariffs: {
+    isCampaign: boolean;
+    campaignExpireDate: string;
     cards: Array<{
-      isCampaign: boolean;
       badge: string;
       title: string;
       oldPrice: string;
       currentPrice: string;
       unit: string;
-      campaignExpireDate: string;
     }>;
   };
 }
@@ -533,14 +533,14 @@ class ContentService {
           description: rawContent.PageHeader?.Description || rawContent.pageHeader?.description || ''
         },
         tariffs: {
+          isCampaign: rawContent.Tariffs?.IsCampaign ?? rawContent.tariffs?.isCampaign ?? false,
+          campaignExpireDate: rawContent.Tariffs?.CampaignExpireDate || rawContent.tariffs?.campaignExpireDate || '30-31 ağustos tarihleri arasında geçerlidir',
           cards: (rawContent.Tariffs?.Cards || rawContent.tariffs?.cards || []).map((card: any) => ({
-            isCampaign: card.IsCampaign ?? card.isCampaign ?? false,
             badge: card.Badge || card.badge || '',
             title: card.Title || card.title || '',
             oldPrice: card.OldPrice || card.oldPrice || '',
             currentPrice: card.CurrentPrice || card.currentPrice || '',
-            unit: card.Unit || card.unit || 'kWh',
-            campaignExpireDate: card.CampaignExpireDate || card.campaignExpireDate || card.ValidityText || card.validityText || '30-31 ağustos tarihleri arasında geçerlidir'
+            unit: card.Unit || card.unit || 'kWh'
           }))
         }
       };

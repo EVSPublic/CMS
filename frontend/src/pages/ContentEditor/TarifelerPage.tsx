@@ -9,13 +9,11 @@ import { contentService, TarifelerPageContent } from '../../services/content';
 import { useScrollEffect } from '../../hooks/useScrollEffect';
 
 interface TariffCard {
-  isCampaign: boolean;
   badge: string;
   title: string;
   oldPrice: string;
   currentPrice: string;
   unit: string;
-  campaignExpireDate: string;
 }
 
 const initialContent: TarifelerPageContent = {
@@ -32,33 +30,29 @@ const initialContent: TarifelerPageContent = {
     description: "Ovolt, elektrikli aracınız için yüksek kaliteli, güvenilir ve erişilebilir şarj çözümleri sunar."
   },
   tariffs: {
+    isCampaign: true,
+    campaignExpireDate: "30-31 ağustos tarihleri arasında geçerlidir",
     cards: [
       {
-        isCampaign: true,
         badge: "Kampanyalı Tarife",
         title: "AC Soket Tarifesi",
         oldPrice: "₺10.99",
         currentPrice: "₺8.99",
-        unit: "kWh",
-        campaignExpireDate: "30-31 ağustos tarihleri arasında geçerlidir"
+        unit: "kWh"
       },
       {
-        isCampaign: true,
         badge: "Kampanyalı Tarife",
         title: "60 kW'a Kadar Tüm DC Soketler",
         oldPrice: "₺11.99",
         currentPrice: "₺9.99",
-        unit: "kWh",
-        campaignExpireDate: "30-31 ağustos tarihleri arasında geçerlidir"
+        unit: "kWh"
       },
       {
-        isCampaign: true,
         badge: "Kampanyalı Tarife",
         title: "Diğer Tüm DC Soketler",
         oldPrice: "₺13.99",
         currentPrice: "₺11.99",
-        unit: "kWh",
-        campaignExpireDate: "30-31 ağustos tarihleri arasında geçerlidir"
+        unit: "kWh"
       }
     ]
   }
@@ -115,6 +109,8 @@ const TarifelerPageEditor: React.FC = () => {
           ...initialContent,
           ...response.data,
           tariffs: {
+            isCampaign: response.data.tariffs?.isCampaign ?? initialContent.tariffs.isCampaign,
+            campaignExpireDate: response.data.tariffs?.campaignExpireDate || initialContent.tariffs.campaignExpireDate,
             cards: response.data.tariffs && response.data.tariffs.cards && response.data.tariffs.cards.length > 0
               ? response.data.tariffs.cards
               : initialContent.tariffs.cards
@@ -145,23 +141,47 @@ const TarifelerPageEditor: React.FC = () => {
     });
   };
 
-  const updateTariffCard = (index: number, field: keyof TariffCard, value: string | boolean) => {
+  const updateTariffCard = (index: number, field: keyof TariffCard, value: string) => {
     const currentCards = content?.tariffs?.cards || initialContent.tariffs.cards;
     const newCards = [...currentCards];
-    if (field === 'isCampaign') {
-      newCards[index] = {
-        ...newCards[index],
-        isCampaign: value as boolean,
-        badge: value ? "Kampanyalı Tarife" : "Normal Tarife"
-      };
-    } else {
-      newCards[index] = { ...newCards[index], [field]: value as string };
-    }
+    newCards[index] = { ...newCards[index], [field]: value };
     setContent(prev => {
       if (!prev) return initialContent;
       return {
         ...prev,
         tariffs: { ...prev.tariffs, cards: newCards }
+      };
+    });
+  };
+
+  // Global campaign management
+  const toggleGlobalCampaign = (checked: boolean) => {
+    setContent(prev => {
+      if (!prev) return initialContent;
+      const newCards = prev.tariffs.cards.map(card => ({
+        ...card,
+        badge: checked ? "Kampanyalı Tarife" : "Normal Tarife"
+      }));
+      return {
+        ...prev,
+        tariffs: {
+          ...prev.tariffs,
+          isCampaign: checked,
+          cards: newCards
+        }
+      };
+    });
+  };
+
+  const updateGlobalCampaignDate = (date: string) => {
+    setContent(prev => {
+      if (!prev) return initialContent;
+      return {
+        ...prev,
+        tariffs: {
+          ...prev.tariffs,
+          campaignExpireDate: date
+        }
       };
     });
   };
@@ -335,26 +355,45 @@ const TarifelerPageEditor: React.FC = () => {
 
             <Tab.Panel>
               <div className="space-y-6">
+                {/* Global Campaign Controls */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-b-lg p-6">
+                  <h3 className="text-lg font-semibold mb-4 text-blue-900 dark:text-blue-100">Kampanya Ayarları</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="global-campaign"
+                        checked={content?.tariffs?.isCampaign || false}
+                        onChange={(e) => toggleGlobalCampaign(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      />
+                      <FormLabel htmlFor="global-campaign" className="cursor-pointer font-semibold">Tüm Tarifeleri Kampanyalı Yap</FormLabel>
+                    </div>
+                    {content?.tariffs?.isCampaign && (
+                      <div>
+                        <FormLabel>Kampanya Bitiş Tarihi (Tüm Tarifeler İçin)</FormLabel>
+                        <FormTextarea
+                          value={content?.tariffs?.campaignExpireDate || ''}
+                          onChange={(e) => updateGlobalCampaignDate(e.target.value)}
+                          rows={2}
+                          placeholder="30-31 ağustos tarihleri arasında geçerlidir"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Individual Tariff Cards */}
                 {(content?.tariffs?.cards || []).map((card, index) => (
                   <div key={index} className="bg-white dark:bg-gray-800 shadow p-6">
                     <h3 className="text-lg font-semibold mb-4">Tarife {index + 1}</h3>
                     <div className="space-y-4">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={`campaign-${index}`}
-                          checked={card?.isCampaign || false}
-                          onChange={(e) => updateTariffCard(index, 'isCampaign', e.target.checked)}
-                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                        />
-                        <FormLabel htmlFor={`campaign-${index}`} className="cursor-pointer">Kampanyalı Tarife</FormLabel>
-                      </div>
                       <div>
                         <FormLabel>Rozet Metni</FormLabel>
                         <FormInput
                           value={card?.badge || ''}
                           onChange={(e) => updateTariffCard(index, 'badge', e.target.value)}
-                          placeholder={card?.isCampaign ? "Kampanyalı Tarife" : "Normal Tarife"}
+                          placeholder={content?.tariffs?.isCampaign ? "Kampanyalı Tarife" : "Normal Tarife"}
                           readOnly
                           className="bg-gray-100 dark:bg-gray-700"
                         />
@@ -367,7 +406,7 @@ const TarifelerPageEditor: React.FC = () => {
                           placeholder="AC Soket Tarifesi"
                         />
                       </div>
-                      {card?.isCampaign && (
+                      {content?.tariffs?.isCampaign && (
                         <div>
                           <FormLabel>Eski Fiyat</FormLabel>
                           <FormInput
@@ -378,7 +417,7 @@ const TarifelerPageEditor: React.FC = () => {
                         </div>
                       )}
                       <div>
-                        <FormLabel>{card?.isCampaign ? 'Güncel Fiyat' : 'Fiyat'}</FormLabel>
+                        <FormLabel>{content?.tariffs?.isCampaign ? 'Güncel Fiyat' : 'Fiyat'}</FormLabel>
                         <FormInput
                           value={card?.currentPrice || ''}
                           onChange={(e) => updateTariffCard(index, 'currentPrice', e.target.value)}
@@ -393,17 +432,6 @@ const TarifelerPageEditor: React.FC = () => {
                           placeholder="kWh"
                         />
                       </div>
-                      {card?.isCampaign && (
-                        <div>
-                          <FormLabel>Kampanya Bitiş Tarihi</FormLabel>
-                          <FormTextarea
-                            value={card?.campaignExpireDate || ''}
-                            onChange={(e) => updateTariffCard(index, 'campaignExpireDate', e.target.value)}
-                            rows={2}
-                            placeholder="30-31 ağustos tarihleri arasında geçerlidir"
-                          />
-                        </div>
-                      )}
                     </div>
                   </div>
                 ))}
