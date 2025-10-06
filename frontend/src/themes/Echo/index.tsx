@@ -502,16 +502,6 @@ function Main() {
                 >
                   <Lucide icon="AlignJustify" className="w-[18px] h-[18px]" />
                 </a>
-                <a
-                  href=""
-                  className="p-2 text-white rounded-full hover:bg-white/5"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setQuickSearch(true);
-                  }}
-                >
-                  <Lucide icon="Search" className="w-[18px] h-[18px]" />
-                </a>
               </div>
               {/* BEGIN: Breadcrumb */}
               <Breadcrumb light className="flex-1 hidden xl:block">
@@ -527,28 +517,13 @@ function Main() {
                 ))}
               </Breadcrumb>
               {/* END: Breadcrumb */}
-              {/* BEGIN: Search */}
-              <div
-                className="relative justify-center flex-1 hidden xl:flex"
-                onClick={() => setQuickSearch(true)}
-              >
-                <div className="bg-white/[0.12] dark:bg-darkmode-900/30 dark:border-transparent border-transparent border w-[350px] flex items-center py-2 px-3.5 rounded-[0.5rem] text-white/60 cursor-pointer hover:bg-white/[0.15] transition-colors duration-300 hover:duration-100">
-                  <Lucide icon="Search" className="w-[18px] h-[18px]" />
-                  <div className="ml-2.5 mr-auto">Quick search...</div>
-                  <div>⌘K</div>
-                </div>
-              </div>
-              {/* END: Search */}
               {/* BEGIN: Notification & User Menu */}
               <div className="flex items-center flex-1">
                 <div className="flex items-center gap-1 ml-auto">
                 </div>
                 <Menu className="ml-5">
-                  <Menu.Button className="overflow-hidden rounded-full w-[36px] h-[36px] border-[3px] border-white/[0.15] image-fit">
-                    <img
-                      alt="Tailwise - Admin Dashboard Template"
-                      src={users.fakeUsers()[0].photo}
-                    />
+                  <Menu.Button className="flex items-center justify-center rounded-full w-[36px] h-[36px] border-[3px] border-white/[0.15] bg-white/10 hover:bg-white/20 transition-colors">
+                    <Lucide icon="User" className="w-[18px] h-[18px] text-white" />
                   </Menu.Button>
                   <Menu.Items className="w-56 mt-1">
                     <Menu.Item
