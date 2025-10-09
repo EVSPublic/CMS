@@ -62,7 +62,10 @@ public class TariffsDto
 {
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
-    public string ListTitle { get; set; } = string.Empty;
+    public string ListTitle { get; set; } = string.Empty; // For Ovolt
+    public string? AcListTitle { get; set; } // For Sharz.net only
+    public string? DcListTitle { get; set; } // For Sharz.net only
+    public string? TarifelerImage { get; set; } // For Sharz.net only
 }
 
 public class OpetDto

@@ -340,7 +340,10 @@ public class ContentController : ControllerBase
                 {
                     Title = "Tarifeler",
                     Description = "Geniş halka açık şarj istasyonu ağı ile elektrikli aracınız için rekabetçi ve şeffaf tarife seçenekleri sunar.",
-                    ListTitle = "Tarife Seçenekleri"
+                    ListTitle = "Tarife Seçenekleri",
+                    AcListTitle = null,
+                    DcListTitle = null,
+                    TarifelerImage = null
                 },
                 Opet = new OpetDto
                 {
