@@ -230,6 +230,7 @@ public class TariffCardDto
 {
     public string Badge { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
+    public string CurrentType { get; set; } = "AC"; // AC or DC
     public string OldPrice { get; set; } = string.Empty;
     public string CurrentPrice { get; set; } = string.Empty;
     public string Unit { get; set; } = "kWh";
