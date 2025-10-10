@@ -138,6 +138,7 @@ export interface TarifelerPageContent {
     cards: Array<{
       badge: string;
       title: string;
+      currentType: string;
       oldPrice: string;
       currentPrice: string;
       unit: string;
@@ -168,19 +169,25 @@ export interface IndexPageContent {
   tariffs: {
     title: string;
     description: string;
-    listTitle: string;
+    listTitle: string; // For Ovolt
+    acListTitle?: string; // For Sharz.net only
+    dcListTitle?: string; // For Sharz.net only
+    tarifelerImage?: string; // For Sharz.net only
   };
   opet: {
     backgroundImage: string;
   };
   solutions: {
+    individualImage?: string; // Individual solutions image
     individualDescription: string;
+    corporateImage?: string; // Corporate solutions image
     corporateDescription: string;
     solutionsImage: string;
   };
   sustainability: {
     title: string;
     description: string;
+    description2?: string; // For Sharz.net only
     backgroundImage: string;
   };
 }
@@ -538,6 +545,7 @@ class ContentService {
           cards: (rawContent.Tariffs?.Cards || rawContent.tariffs?.cards || []).map((card: any) => ({
             badge: card.Badge || card.badge || '',
             title: card.Title || card.title || '',
+            currentType: card.CurrentType || card.currentType || 'AC',
             oldPrice: card.OldPrice || card.oldPrice || '',
             currentPrice: card.CurrentPrice || card.currentPrice || '',
             unit: card.Unit || card.unit || 'kWh'

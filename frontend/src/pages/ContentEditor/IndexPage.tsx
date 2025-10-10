@@ -31,7 +31,10 @@ const initialContent: IndexPageContent = {
   tariffs: {
     title: "Tarifeler",
     description: "Ovolt, geniş halka açık şarj istasyonu ağı ile elektrikli aracınız için rekabetçi ve şeffaf tarife seçenekleri sunar; böylece seyahatlerinizde maliyetlerinizi optimize ederken çevre dostu bir şekilde aracınızı güvenle şarj edebilirsiniz.",
-    listTitle: "Tarife Seçenekleri"
+    listTitle: "Tarife Seçenekleri",
+    acListTitle: "",
+    dcListTitle: "",
+    tarifelerImage: ""
   },
   opet: {
     backgroundImage: ""
@@ -44,6 +47,7 @@ const initialContent: IndexPageContent = {
   sustainability: {
     title: "Sürdürülebilirlik",
     description: "Çevre dostu enerji çözümleri ile geleceğe yatırım yapıyoruz.",
+    description2: "",
     backgroundImage: ""
   }
 };
@@ -251,9 +255,12 @@ const IndexPageEditor: React.FC = () => {
             <Tab className="px-6 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-600 data-[selected]:text-blue-600 dark:data-[selected]:text-blue-400 data-[selected]:border-blue-600 dark:data-[selected]:border-blue-400">
               Tarifeler
             </Tab>
-            <Tab className="px-6 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-600 data-[selected]:text-blue-600 dark:data-[selected]:text-blue-400 data-[selected]:border-blue-600 dark:data-[selected]:border-blue-400">
-              Opet
-            </Tab>
+            {/* Hide Opet tab for Sharz.net */}
+            {currentBrandId === 1 && (
+              <Tab className="px-6 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-600 data-[selected]:text-blue-600 dark:data-[selected]:text-blue-400 data-[selected]:border-blue-600 dark:data-[selected]:border-blue-400">
+                Opet
+              </Tab>
+            )}
             <Tab className="px-6 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-600 data-[selected]:text-blue-600 dark:data-[selected]:text-blue-400 data-[selected]:border-blue-600 dark:data-[selected]:border-blue-400">
               Bireysel+Kurumsal
             </Tab>
@@ -406,64 +413,145 @@ const IndexPageEditor: React.FC = () => {
                       rows={4}
                     />
                   </div>
-                  <div>
-                    <FormLabel>Tarifeler Listesi Başlığı</FormLabel>
-                    <FormInput
-                      value={content?.tariffs?.listTitle || ''}
-                      onChange={(e) => updateContent('tariffs', 'listTitle', e.target.value)}
-                      placeholder="Tarife Seçenekleri"
-                    />
-                  </div>
+                  {/* For Ovolt: Single list title */}
+                  {currentBrandId === 1 && (
+                    <div>
+                      <FormLabel>Tarifeler Listesi Başlığı</FormLabel>
+                      <FormInput
+                        value={content?.tariffs?.listTitle || ''}
+                        onChange={(e) => updateContent('tariffs', 'listTitle', e.target.value)}
+                        placeholder="Tarife Seçenekleri"
+                      />
+                    </div>
+                  )}
+
+                  {/* For Sharz.net: Separate AC and DC list titles and single image */}
+                  {currentBrandId === 2 && (
+                    <>
+                      <div>
+                        <FormLabel>AC Tarifeler Listesi Başlığı</FormLabel>
+                        <FormInput
+                          value={content?.tariffs?.acListTitle || ''}
+                          onChange={(e) => updateContent('tariffs', 'acListTitle', e.target.value)}
+                          placeholder="AC Tarife Seçenekleri"
+                        />
+                      </div>
+                      <div>
+                        <FormLabel>DC Tarifeler Listesi Başlığı</FormLabel>
+                        <FormInput
+                          value={content?.tariffs?.dcListTitle || ''}
+                          onChange={(e) => updateContent('tariffs', 'dcListTitle', e.target.value)}
+                          placeholder="DC Tarife Seçenekleri"
+                        />
+                      </div>
+                      <div>
+                        <ImageInput
+                          value={content?.tariffs?.tarifelerImage || ''}
+                          onChange={(url) => updateContent('tariffs', 'tarifelerImage', url)}
+                          label="Tarifeler Görseli"
+                          placeholder="Tarifeler görseli seçin..."
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </Tab.Panel>
 
-            <Tab.Panel>
-              <div className="bg-white dark:bg-gray-800 shadow p-6">
-                <h3 className="text-lg font-semibold mb-4">Opet</h3>
-                <div className="space-y-4">
-                  <div>
-                    <ImageInput
-                      value={content?.opet?.backgroundImage || ''}
-                      onChange={(url) => updateContent('opet', 'backgroundImage', url)}
-                      label="Arka Plan Görseli"
-                      placeholder="Arka plan görseli seçin..."
-                    />
+            {/* Hide Opet panel for Sharz.net */}
+            {currentBrandId === 1 && (
+              <Tab.Panel>
+                <div className="bg-white dark:bg-gray-800 shadow p-6">
+                  <h3 className="text-lg font-semibold mb-4">Opet</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <ImageInput
+                        value={content?.opet?.backgroundImage || ''}
+                        onChange={(url) => updateContent('opet', 'backgroundImage', url)}
+                        label="Arka Plan Görseli"
+                        placeholder="Arka plan görseli seçin..."
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Tab.Panel>
+              </Tab.Panel>
+            )}
 
             <Tab.Panel>
               <div className="bg-white dark:bg-gray-800 shadow p-6">
                 <h3 className="text-lg font-semibold mb-4">Bireysel + Kurumsal</h3>
                 <div className="space-y-6">
-                  <div>
-                    <FormLabel>Bireysel Açıklama</FormLabel>
-                    <FormTextarea
-                      value={content?.solutions?.individualDescription || ''}
-                      onChange={(e) => updateContent('solutions', 'individualDescription', e.target.value)}
-                      placeholder="Bireysel çözümler açıklaması"
-                      rows={4}
-                    />
-                  </div>
-                  <div>
-                    <FormLabel>Kurumsal Açıklama</FormLabel>
-                    <FormTextarea
-                      value={content?.solutions?.corporateDescription || ''}
-                      onChange={(e) => updateContent('solutions', 'corporateDescription', e.target.value)}
-                      placeholder="Kurumsal çözümler açıklaması"
-                      rows={4}
-                    />
-                  </div>
-                  <div>
-                    <ImageInput
-                      value={content?.solutions?.solutionsImage || ''}
-                      onChange={(url) => updateContent('solutions', 'solutionsImage', url)}
-                      label="Sağ Taraf Görseli"
-                      placeholder="Çözümler görseli seçin..."
-                    />
-                  </div>
+                  {/* For Ovolt: Original layout with descriptions and right side image */}
+                  {currentBrandId === 1 && (
+                    <>
+                      <div>
+                        <FormLabel>Bireysel Açıklama</FormLabel>
+                        <FormTextarea
+                          value={content?.solutions?.individualDescription || ''}
+                          onChange={(e) => updateContent('solutions', 'individualDescription', e.target.value)}
+                          placeholder="Bireysel çözümler açıklaması"
+                          rows={4}
+                        />
+                      </div>
+                      <div>
+                        <FormLabel>Kurumsal Açıklama</FormLabel>
+                        <FormTextarea
+                          value={content?.solutions?.corporateDescription || ''}
+                          onChange={(e) => updateContent('solutions', 'corporateDescription', e.target.value)}
+                          placeholder="Kurumsal çözümler açıklaması"
+                          rows={4}
+                        />
+                      </div>
+                      <div>
+                        <ImageInput
+                          value={content?.solutions?.solutionsImage || ''}
+                          onChange={(url) => updateContent('solutions', 'solutionsImage', url)}
+                          label="Sağ Taraf Görseli"
+                          placeholder="Çözümler görseli seçin..."
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* For Sharz.net: New layout with individual and corporate images */}
+                  {currentBrandId === 2 && (
+                    <>
+                      <div>
+                        <ImageInput
+                          value={content?.solutions?.individualImage || ''}
+                          onChange={(url) => updateContent('solutions', 'individualImage', url)}
+                          label="Bireysel Görseli"
+                          placeholder="Bireysel çözümler görseli seçin..."
+                        />
+                      </div>
+                      <div>
+                        <FormLabel>Bireysel Açıklama</FormLabel>
+                        <FormTextarea
+                          value={content?.solutions?.individualDescription || ''}
+                          onChange={(e) => updateContent('solutions', 'individualDescription', e.target.value)}
+                          placeholder="Bireysel çözümler açıklaması"
+                          rows={4}
+                        />
+                      </div>
+                      <div>
+                        <ImageInput
+                          value={content?.solutions?.corporateImage || ''}
+                          onChange={(url) => updateContent('solutions', 'corporateImage', url)}
+                          label="Kurumsal Görseli"
+                          placeholder="Kurumsal çözümler görseli seçin..."
+                        />
+                      </div>
+                      <div>
+                        <FormLabel>Kurumsal Açıklama</FormLabel>
+                        <FormTextarea
+                          value={content?.solutions?.corporateDescription || ''}
+                          onChange={(e) => updateContent('solutions', 'corporateDescription', e.target.value)}
+                          placeholder="Kurumsal çözümler açıklaması"
+                          rows={4}
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </Tab.Panel>
@@ -481,14 +569,26 @@ const IndexPageEditor: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <FormLabel>Açıklama</FormLabel>
+                    <FormLabel>{currentBrandId === 2 ? 'Açıklama 1' : 'Açıklama'}</FormLabel>
                     <FormTextarea
                       value={content?.sustainability?.description || ''}
                       onChange={(e) => updateContent('sustainability', 'description', e.target.value)}
-                      placeholder="Sürdürülebilirlik açıklaması"
+                      placeholder={currentBrandId === 2 ? 'Sürdürülebilirlik açıklaması 1' : 'Sürdürülebilirlik açıklaması'}
                       rows={3}
                     />
                   </div>
+                  {/* Show Açıklama 2 only for Sharz.net */}
+                  {currentBrandId === 2 && (
+                    <div>
+                      <FormLabel>Açıklama 2</FormLabel>
+                      <FormTextarea
+                        value={content?.sustainability?.description2 || ''}
+                        onChange={(e) => updateContent('sustainability', 'description2', e.target.value)}
+                        placeholder="Sürdürülebilirlik açıklaması 2"
+                        rows={3}
+                      />
+                    </div>
+                  )}
                   <div>
                     <ImageInput
                       value={content?.sustainability?.backgroundImage || ''}

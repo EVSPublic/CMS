@@ -11,6 +11,7 @@ import { useScrollEffect } from '../../hooks/useScrollEffect';
 interface TariffCard {
   badge: string;
   title: string;
+  currentType: string;
   oldPrice: string;
   currentPrice: string;
   unit: string;
@@ -36,6 +37,7 @@ const initialContent: TarifelerPageContent = {
       {
         badge: "Kampanyalı Tarife",
         title: "AC Soket Tarifesi",
+        currentType: "AC",
         oldPrice: "₺10.99",
         currentPrice: "₺8.99",
         unit: "kWh"
@@ -43,6 +45,7 @@ const initialContent: TarifelerPageContent = {
       {
         badge: "Kampanyalı Tarife",
         title: "60 kW'a Kadar Tüm DC Soketler",
+        currentType: "DC",
         oldPrice: "₺11.99",
         currentPrice: "₺9.99",
         unit: "kWh"
@@ -50,6 +53,7 @@ const initialContent: TarifelerPageContent = {
       {
         badge: "Kampanyalı Tarife",
         title: "Diğer Tüm DC Soketler",
+        currentType: "DC",
         oldPrice: "₺13.99",
         currentPrice: "₺11.99",
         unit: "kWh"
@@ -405,6 +409,17 @@ const TarifelerPageEditor: React.FC = () => {
                           onChange={(e) => updateTariffCard(index, 'title', e.target.value)}
                           placeholder="AC Soket Tarifesi"
                         />
+                      </div>
+                      <div>
+                        <FormLabel>Akım Tipi</FormLabel>
+                        <select
+                          value={card?.currentType || 'AC'}
+                          onChange={(e) => updateTariffCard(index, 'currentType', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                        >
+                          <option value="AC">AC</option>
+                          <option value="DC">DC</option>
+                        </select>
                       </div>
                       {content?.tariffs?.isCampaign && (
                         <div>
