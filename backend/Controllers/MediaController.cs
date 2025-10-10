@@ -60,8 +60,8 @@ public class MediaController : ControllerBase
                     Id = m.Id.ToString(),
                     BrandId = m.BrandId,
                     Filename = m.FileName,
-                    Url = $"/media/{m.FilePath.Replace("uploads/", "")}",
-                    Thumbnail = $"/thumbnails/{m.FilePath.Replace("uploads/", "")}",
+                    Url = $"/media/{Path.GetFileName(m.FilePath)}",
+                    Thumbnail = $"/thumbnails/{Path.GetFileName(m.FilePath)}",
                     Size = m.FileSize,
                     Type = m.FileType,
                     Alt = m.AltText ?? "",
@@ -117,8 +117,8 @@ public class MediaController : ControllerBase
                 Id = mediaItemEntity.Id.ToString(),
                 BrandId = mediaItemEntity.BrandId,
                 Filename = mediaItemEntity.FileName,
-                Url = $"/media/{mediaItemEntity.FilePath.Replace("uploads/", "")}",
-                Thumbnail = $"thumbnails/{mediaItemEntity.FilePath.Replace("uploads/", "")}",
+                Url = $"/media/{Path.GetFileName(mediaItemEntity.FilePath)}",
+                Thumbnail = $"/thumbnails/{Path.GetFileName(mediaItemEntity.FilePath)}",
                 Size = mediaItemEntity.FileSize,
                 Type = mediaItemEntity.FileType,
                 Alt = mediaItemEntity.AltText ?? "",
@@ -190,8 +190,8 @@ public class MediaController : ControllerBase
                 Id = createdMediaItemEntity!.Id.ToString(),
                 BrandId = createdMediaItemEntity.BrandId,
                 Filename = createdMediaItemEntity.FileName,
-                Url = $"/media/{createdMediaItemEntity.FilePath.Replace("uploads/", "")}",
-                Thumbnail = $"thumbnails/{createdMediaItemEntity.FilePath.Replace("uploads/", "")}",
+                Url = $"/media/{Path.GetFileName(createdMediaItemEntity.FilePath)}",
+                Thumbnail = $"/thumbnails/{Path.GetFileName(createdMediaItemEntity.FilePath)}",
                 Size = createdMediaItemEntity.FileSize,
                 Type = createdMediaItemEntity.FileType,
                 Alt = createdMediaItemEntity.AltText ?? "",
@@ -262,8 +262,8 @@ public class MediaController : ControllerBase
                 Id = updatedMediaItemEntity!.Id.ToString(),
                 BrandId = updatedMediaItemEntity.BrandId,
                 Filename = updatedMediaItemEntity.FileName,
-                Url = $"/media/{updatedMediaItemEntity.FilePath.Replace("uploads/", "")}",
-                Thumbnail = $"thumbnails/{updatedMediaItemEntity.FilePath.Replace("uploads/", "")}",
+                Url = $"/media/{Path.GetFileName(updatedMediaItemEntity.FilePath)}",
+                Thumbnail = $"/thumbnails/{Path.GetFileName(updatedMediaItemEntity.FilePath)}",
                 Size = updatedMediaItemEntity.FileSize,
                 Type = updatedMediaItemEntity.FileType,
                 Alt = updatedMediaItemEntity.AltText ?? "",
@@ -376,7 +376,7 @@ public class MediaController : ControllerBase
             // Generate a unique file name
             var fileExtension = Path.GetExtension(file.FileName);
             var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
-            var uploadPath = Path.Combine("uploads", brandId.ToString());
+            var uploadPath = "uploads";
             var fullUploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", uploadPath);
 
             // Create directory if it doesn't exist
@@ -427,8 +427,8 @@ public class MediaController : ControllerBase
                 Id = createdMediaItemEntity!.Id.ToString(),
                 BrandId = createdMediaItemEntity.BrandId,
                 Filename = createdMediaItemEntity.FileName,
-                Url = $"/media/{createdMediaItemEntity.FilePath.Replace("uploads/", "")}",
-                Thumbnail = $"thumbnails/{createdMediaItemEntity.FilePath.Replace("uploads/", "")}",
+                Url = $"/media/{Path.GetFileName(createdMediaItemEntity.FilePath)}",
+                Thumbnail = $"/thumbnails/{Path.GetFileName(createdMediaItemEntity.FilePath)}",
                 Size = createdMediaItemEntity.FileSize,
                 Type = createdMediaItemEntity.FileType,
                 Alt = createdMediaItemEntity.AltText ?? "",

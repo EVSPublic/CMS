@@ -216,9 +216,9 @@ app.UseAuthorization();
 app.MapControllers();
 
 // Custom route for media files
-app.MapGet("/media/{brandId}/{filename}", (string brandId, string filename, IWebHostEnvironment env) =>
+app.MapGet("/media/{filename}", (string filename, IWebHostEnvironment env) =>
 {
-    var filePath = Path.Combine(env.WebRootPath, "uploads", brandId, filename);
+    var filePath = Path.Combine(env.WebRootPath, "uploads", filename);
     if (File.Exists(filePath))
     {
         var extension = Path.GetExtension(filename).ToLowerInvariant();
@@ -243,10 +243,10 @@ app.MapGet("/media/{brandId}/{filename}", (string brandId, string filename, IWeb
 });
 
 // Custom route for thumbnails with compression
-app.MapGet("/thumbnails/{brandId}/{filename}", (string brandId, string filename, IWebHostEnvironment env) =>
+app.MapGet("/thumbnails/{filename}", (string filename, IWebHostEnvironment env) =>
 {
     // First try to find actual thumbnail
-    var thumbnailPath = Path.Combine(env.WebRootPath, "thumbnails", brandId, filename);
+    var thumbnailPath = Path.Combine(env.WebRootPath, "thumbnails", filename);
     if (File.Exists(thumbnailPath))
     {
         var extension = Path.GetExtension(filename).ToLowerInvariant();
@@ -263,7 +263,7 @@ app.MapGet("/thumbnails/{brandId}/{filename}", (string brandId, string filename,
     }
 
     // Fallback to original image with compression
-    var originalPath = Path.Combine(env.WebRootPath, "uploads", brandId, filename);
+    var originalPath = Path.Combine(env.WebRootPath, "uploads", filename);
     if (File.Exists(originalPath))
     {
         var extension = Path.GetExtension(filename).ToLowerInvariant();
