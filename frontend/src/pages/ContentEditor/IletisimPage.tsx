@@ -253,16 +253,22 @@ const IletisimPageEditor: React.FC = () => {
 
   // Get project selection from localStorage
   const getSelectedBrandId = (): number => {
-    const selectedBrand = localStorage.getItem('selectedBrand');
-    switch (selectedBrand?.toLowerCase()) {
-      case 'ovolt': return 1;
-      case 'sharz': return 2;
-      default: return 1;
-    }
+    const selectedBrand = localStorage.getItem('selectedBrand') || 'Ovolt';
+    return selectedBrand === 'Ovolt' ? 1 : 2; // Ovolt = 1, Sharz.net = 2
   };
 
   useEffect(() => {
     loadContent();
+  }, []);
+
+  // Listen for brand changes and reload content
+  useEffect(() => {
+    const handleBrandChange = () => {
+      loadContent();
+    };
+
+    window.addEventListener('brandChanged', handleBrandChange);
+    return () => window.removeEventListener('brandChanged', handleBrandChange);
   }, []);
 
   const loadContent = async () => {

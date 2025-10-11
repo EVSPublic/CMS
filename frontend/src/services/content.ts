@@ -587,15 +587,78 @@ class ContentService {
   async getContactPageContent(brandId: number): Promise<ApiResponse<ContactPageContent>> {
     const response = await this.getContentPage(brandId, 'Contact');
     if (response.ok && response.data) {
-      // Extract content from the ContentPageDto structure and merge meta fields
-      const content = response.data.content as ContactPageContent;
+      // Extract content from the ContentPageDto structure
+      const rawContent = response.data.content as any;
 
-      // Merge meta fields from DTO into content structure
-      if (content.meta) {
-        content.meta.title = response.data.metaTitle || content.meta.title || '';
-        content.meta.description = response.data.metaDescription || content.meta.description || '';
-        content.meta.keywords = response.data.metaKeywords || content.meta.keywords || '';
-      }
+      // Normalize to camelCase structure
+      // Priority: camelCase (user edits) -> PascalCase (defaults)
+      const content: ContactPageContent = {
+        meta: {
+          title: response.data.metaTitle || rawContent.meta?.title || rawContent.Meta?.Title || '',
+          description: response.data.metaDescription || rawContent.meta?.description || rawContent.Meta?.Description || '',
+          keywords: response.data.metaKeywords || rawContent.meta?.keywords || rawContent.Meta?.Keywords || ''
+        },
+        hero: {
+          image: rawContent.hero?.image || rawContent.Hero?.Image || ''
+        },
+        pageHero: {
+          backgroundImage: rawContent.pageHero?.backgroundImage || rawContent.PageHero?.BackgroundImage || '',
+          logoImage: rawContent.pageHero?.logoImage || rawContent.PageHero?.LogoImage || '',
+          logoAlt: rawContent.pageHero?.logoAlt || rawContent.PageHero?.LogoAlt || ''
+        },
+        contactInfo: {
+          title: rawContent.contactInfo?.title || rawContent.ContactInfo?.Title || '',
+          office: {
+            title: rawContent.contactInfo?.office?.title || rawContent.ContactInfo?.Office?.Title || '',
+            address: rawContent.contactInfo?.office?.address || rawContent.ContactInfo?.Office?.Address || []
+          },
+          email: {
+            title: rawContent.contactInfo?.email?.title || rawContent.ContactInfo?.Email?.Title || '',
+            address: rawContent.contactInfo?.email?.address || rawContent.ContactInfo?.Email?.Address || ''
+          },
+          phone: {
+            title: rawContent.contactInfo?.phone?.title || rawContent.ContactInfo?.Phone?.Title || '',
+            number: rawContent.contactInfo?.phone?.number || rawContent.ContactInfo?.Phone?.Number || ''
+          }
+        },
+        contactForm: {
+          title: rawContent.contactForm?.title || rawContent.ContactForm?.Title || '',
+          tabs: {
+            individual: rawContent.contactForm?.tabs?.individual || rawContent.ContactForm?.Tabs?.Individual || '',
+            corporate: rawContent.contactForm?.tabs?.corporate || rawContent.ContactForm?.Tabs?.Corporate || ''
+          },
+          fields: {
+            firstName: rawContent.contactForm?.fields?.firstName || rawContent.ContactForm?.Fields?.FirstName || '',
+            lastName: rawContent.contactForm?.fields?.lastName || rawContent.ContactForm?.Fields?.LastName || '',
+            email: rawContent.contactForm?.fields?.email || rawContent.ContactForm?.Fields?.Email || '',
+            phone: rawContent.contactForm?.fields?.phone || rawContent.ContactForm?.Fields?.Phone || '',
+            company: rawContent.contactForm?.fields?.company || rawContent.ContactForm?.Fields?.Company || '',
+            title: rawContent.contactForm?.fields?.title || rawContent.ContactForm?.Fields?.Title || '',
+            subject: rawContent.contactForm?.fields?.subject || rawContent.ContactForm?.Fields?.Subject || '',
+            message: rawContent.contactForm?.fields?.message || rawContent.ContactForm?.Fields?.Message || ''
+          },
+          subjectOptions: (rawContent.contactForm?.subjectOptions || rawContent.ContactForm?.SubjectOptions || []).map((opt: any) => ({
+            value: opt.value || opt.Value || '',
+            label: opt.label || opt.Label || ''
+          })),
+          emailConfig: {
+            smtpHost: rawContent.contactForm?.emailConfig?.smtpHost || rawContent.ContactForm?.EmailConfig?.SmtpHost || '',
+            smtpPort: rawContent.contactForm?.emailConfig?.smtpPort || rawContent.ContactForm?.EmailConfig?.SmtpPort || '',
+            smtpUsername: rawContent.contactForm?.emailConfig?.smtpUsername || rawContent.ContactForm?.EmailConfig?.SmtpUsername || '',
+            smtpPassword: rawContent.contactForm?.emailConfig?.smtpPassword || rawContent.ContactForm?.EmailConfig?.SmtpPassword || '',
+            smtpSecurityType: rawContent.contactForm?.emailConfig?.smtpSecurityType || rawContent.ContactForm?.EmailConfig?.SmtpSecurityType || 'StartTls',
+            extraDetails: rawContent.contactForm?.emailConfig?.extraDetails || rawContent.ContactForm?.EmailConfig?.ExtraDetails || ''
+          },
+          submitButton: rawContent.contactForm?.submitButton || rawContent.ContactForm?.SubmitButton || '',
+          kvkkText: rawContent.contactForm?.kvkkText || rawContent.ContactForm?.KvkkText || '',
+          kvkkLinkText: rawContent.contactForm?.kvkkLinkText || rawContent.ContactForm?.KvkkLinkText || ''
+        },
+        socialMedia: (rawContent.socialMedia || rawContent.SocialMedia || []).map((social: any) => ({
+          name: social.name || social.Name || '',
+          url: social.url || social.Url || '',
+          icon: social.icon || social.Icon || ''
+        }))
+      };
 
       return {
         ok: true,
