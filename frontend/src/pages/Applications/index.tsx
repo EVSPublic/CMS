@@ -18,15 +18,15 @@ const ApplicationsPage: React.FC = () => {
     androidAppLink: ''
   });
 
-  const [currentBrandId, setCurrentBrandId] = useState<number>(1);
-
   const getCurrentBrandId = (): number => {
     const selectedBrand = localStorage.getItem('selectedBrand') || 'Ovolt';
     return selectedBrand === 'Ovolt' ? 1 : 2;
   };
 
+  const [currentBrandId, setCurrentBrandId] = useState<number>(getCurrentBrandId());
+
   useEffect(() => {
-    loadAppLinks();
+    loadAppLinks(currentBrandId);
   }, []);
 
   useEffect(() => {
