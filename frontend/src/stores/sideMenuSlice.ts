@@ -9,6 +9,7 @@ export interface Menu {
   pathname?: string;
   subMenu?: Menu[];
   ignore?: boolean;
+  brandRestriction?: "Ovolt" | "Sharz.net"; // Only show for specific brand
 }
 
 export interface SideMenuState {
@@ -81,6 +82,7 @@ const initialState: SideMenuState = {
       icon: "Megaphone",
       title: "Duyurular",
       pathname: "/announcements",
+      brandRestriction: "Ovolt",
     },
     {
       icon: "Users",

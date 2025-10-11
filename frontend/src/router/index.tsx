@@ -1,4 +1,4 @@
-import { useRoutes } from "react-router-dom";
+import { useRoutes, Navigate } from "react-router-dom";
 import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Layout from "../themes";
@@ -17,6 +17,23 @@ import ApplicationsPage from "../pages/Applications";
 import UserManagementPage from "../pages/UserManagement";
 import StaticPageCreator from "../pages/StaticPageCreator";
 import LogsPage from "../pages/Logs";
+
+// Brand-restricted route wrapper
+const BrandRestrictedRoute = ({
+  element,
+  allowedBrand
+}: {
+  element: React.ReactElement;
+  allowedBrand: "Ovolt" | "Sharz.net"
+}) => {
+  const selectedBrand = localStorage.getItem('selectedBrand') || 'Ovolt';
+
+  if (selectedBrand !== allowedBrand) {
+    return <Navigate to="/" replace />;
+  }
+
+  return element;
+};
 
 function Router() {
   const routes = [
@@ -66,7 +83,7 @@ function Router() {
         },
         {
           path: "/announcements",
-          element: <AnnouncementsPageEditor />,
+          element: <BrandRestrictedRoute element={<AnnouncementsPageEditor />} allowedBrand="Ovolt" />,
         },
         {
           path: "/partnership",

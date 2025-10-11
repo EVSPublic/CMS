@@ -35,8 +35,15 @@ const findActiveMenu = (subMenu: Menu[], location: Location): boolean => {
 
 const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
   const formattedMenu: Array<FormattedMenu | string> = [];
+  const selectedBrand = localStorage.getItem('selectedBrand') || 'Ovolt';
+
   menu.forEach((item) => {
     if (typeof item !== "string") {
+      // Filter based on brandRestriction
+      if (item.brandRestriction && item.brandRestriction !== selectedBrand) {
+        return; // Skip this menu item
+      }
+
       const menuItem: FormattedMenu = {
         icon: item.icon,
         title: item.title,
@@ -44,6 +51,7 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
         pathname: item.pathname,
         subMenu: item.subMenu,
         ignore: item.ignore,
+        brandRestriction: item.brandRestriction,
       };
       menuItem.active =
         ((location.forceActiveMenu !== undefined &&
