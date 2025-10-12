@@ -22,6 +22,7 @@ const initialContent: IndividualSolutionsPageContent = {
   mainSolution: {
     title: "Bireysel Çözümler",
     description: "Ovolt, elektrikli aracınız için yüksek kaliteli, güvenilir ve erişilebilir şarj çözümleri sunar.",
+    additionalDescription: "", // For Sharz.net only
     image: ""
   },
   bottomItems: [
@@ -34,6 +35,7 @@ const initialContent: IndividualSolutionsPageContent = {
       paragraph: "Kullanıcı dostu mobil uygulamamız sayesinde en yakın istasyonu kolayca bulabilir, şarj işleminizi yönetebilir ve ödemelerinizi zahmetsizce gerçekleştirebilirsiniz. Ayrıca 7/24 kesintisiz çağrı merkezi desteğimiz ile her an yanınızdayız."
     }
   ],
+  products: [], // For Sharz.net only
   footerSection: {
     altText: "Ovolt, geleceğin enerjisini bugünden sunarak sürüş deneyiminizi kolaylaştırır ve güvence altına alır."
   }
@@ -88,7 +90,8 @@ const IndividualSolutionsPageEditor: React.FC = () => {
           ...response.data,
           bottomItems: response.data.bottomItems && response.data.bottomItems.length > 0
             ? response.data.bottomItems
-            : initialContent.bottomItems
+            : initialContent.bottomItems,
+          products: response.data.products || []
         };
       }
 
@@ -125,6 +128,36 @@ const IndividualSolutionsPageEditor: React.FC = () => {
     }));
   };
 
+  const updateProduct = (index: number, field: string, value: string) => {
+    const currentProducts = content?.products || [];
+    const newProducts = [...currentProducts];
+    newProducts[index] = { ...newProducts[index], [field]: value };
+    setContent(prev => ({
+      ...prev,
+      products: newProducts
+    }));
+  };
+
+  const addProduct = () => {
+    const currentProducts = content?.products || [];
+    const newProducts = [...currentProducts, { title: '', subtitle: '', image: '' }];
+    setContent(prev => ({
+      ...prev,
+      products: newProducts
+    }));
+  };
+
+  const removeProduct = (index: number) => {
+    if (confirm('Bu ürünü silmek istediğinizden emin misiniz?')) {
+      const currentProducts = content?.products || [];
+      const newProducts = currentProducts.filter((_, i) => i !== index);
+      setContent(prev => ({
+        ...prev,
+        products: newProducts
+      }));
+    }
+  };
+
   const validateContent = (): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
 
@@ -149,6 +182,18 @@ const IndividualSolutionsPageEditor: React.FC = () => {
         errors.push(`Alt bölüm ${index + 1} paragrafı boş olamaz`);
       }
     });
+
+    // Validate products only for Sharz.net
+    if (currentBrandId === 2) {
+      content?.products?.forEach((product, index) => {
+        if (!product.title.trim()) {
+          errors.push(`Ürün ${index + 1} başlığı boş olamaz`);
+        }
+        if (!product.subtitle.trim()) {
+          errors.push(`Ürün ${index + 1} alt başlığı boş olamaz`);
+        }
+      });
+    }
 
     return {
       isValid: errors.length === 0,
@@ -246,6 +291,11 @@ const IndividualSolutionsPageEditor: React.FC = () => {
             <Tab className="px-6 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-600 data-[selected]:text-blue-600 dark:data-[selected]:text-blue-400 data-[selected]:border-blue-600 dark:data-[selected]:border-blue-400">
               Alt Bölümler
             </Tab>
+            {currentBrandId === 2 && (
+              <Tab className="px-6 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-600 data-[selected]:text-blue-600 dark:data-[selected]:text-blue-400 data-[selected]:border-blue-600 dark:data-[selected]:border-blue-400">
+                Ürünler
+              </Tab>
+            )}
             <Tab className="px-6 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 focus:border-gray-300 dark:focus:border-gray-600 data-[selected]:text-blue-600 dark:data-[selected]:text-blue-400 data-[selected]:border-blue-600 dark:data-[selected]:border-blue-400">
               Alt Metin
             </Tab>
@@ -323,6 +373,17 @@ const IndividualSolutionsPageEditor: React.FC = () => {
                       rows={3}
                     />
                   </div>
+                  {currentBrandId === 2 && (
+                    <div>
+                      <FormLabel>Ek Açıklama (Sadece Sharz.net için)</FormLabel>
+                      <FormTextarea
+                        value={content?.mainSolution?.additionalDescription || ''}
+                        onChange={(e) => updateContent('mainSolution', 'additionalDescription', e.target.value)}
+                        placeholder="Ek açıklamayı girin"
+                        rows={3}
+                      />
+                    </div>
+                  )}
                   <div>
                     <ImageInput
                       value={content?.mainSolution?.image || ''}
@@ -363,6 +424,94 @@ const IndividualSolutionsPageEditor: React.FC = () => {
                 ))}
               </div>
             </Tab.Panel>
+
+            {currentBrandId === 2 && (
+              <Tab.Panel>
+                <div className="bg-white dark:bg-gray-800 shadow p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold">Ürünler</h3>
+                    <Button variant="primary" onClick={addProduct}>
+                      <Lucide icon="Plus" className="w-4 h-4 mr-2" />
+                      Yeni Ürün Ekle
+                    </Button>
+                  </div>
+
+                  {(!content?.products || content.products.length === 0) ? (
+                    <div className="text-center py-12 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <p className="text-gray-500 dark:text-gray-400">
+                        Henüz ürün eklenmemiş. Yeni ürün eklemek için yukarıdaki butonu kullanın.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {content.products.map((product, index) => (
+                        <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800 shadow">
+                          <div className="flex justify-between items-start mb-4">
+                            <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                              Ürün {index + 1}
+                            </h4>
+                            <Button
+                              variant="soft-secondary"
+                              onClick={() => removeProduct(index)}
+                              className="text-red-600 hover:text-red-800 text-xs px-2 py-1"
+                            >
+                              <Lucide icon="Trash2" className="w-4 h-4" />
+                            </Button>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div>
+                              <FormLabel htmlFor={`product-title-${index}`} className="text-xs">Başlık</FormLabel>
+                              <FormInput
+                                id={`product-title-${index}`}
+                                value={product.title}
+                                onChange={(e) => updateProduct(index, 'title', e.target.value)}
+                                placeholder="Ürün başlığını girin"
+                                className="text-sm"
+                              />
+                            </div>
+
+                            <div>
+                              <FormLabel htmlFor={`product-subtitle-${index}`} className="text-xs">Alt Başlık</FormLabel>
+                              <FormInput
+                                id={`product-subtitle-${index}`}
+                                value={product.subtitle}
+                                onChange={(e) => updateProduct(index, 'subtitle', e.target.value)}
+                                placeholder="Ürün alt başlığını girin"
+                                className="text-sm"
+                              />
+                            </div>
+
+                            <div>
+                              <ImageInput
+                                value={product.image}
+                                onChange={(url) => updateProduct(index, 'image', url)}
+                                label="Ürün Görseli"
+                                placeholder="Ürün görseli seçin..."
+                              />
+                            </div>
+
+                            {/* Product Image Preview */}
+                            {product.image && (
+                              <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded text-center">
+                                <img
+                                  src={product.image}
+                                  alt={product.title || 'Ürün görseli'}
+                                  className="max-h-24 mx-auto object-contain rounded"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </Tab.Panel>
+            )}
 
             <Tab.Panel>
               <div className="bg-white dark:bg-gray-800 shadow p-6">

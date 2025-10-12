@@ -44,11 +44,17 @@ export interface IndividualSolutionsPageContent {
   mainSolution: {
     title: string;
     description: string;
+    additionalDescription?: string; // For Sharz.net only
     image: string;
   };
   bottomItems: Array<{
     image: string;
     paragraph: string;
+  }>;
+  products?: Array<{ // For Sharz.net only
+    title: string;
+    subtitle: string;
+    image: string;
   }>;
   footerSection: {
     altText: string;
