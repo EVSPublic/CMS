@@ -10,7 +10,49 @@ import { contentService, CorporateSolutionsPageContent } from '../../services/co
 import { useScrollEffect } from '../../hooks/useScrollEffect';
 
 
-const initialContent: CorporateSolutionsPageContent = {
+// Helper function to get initial business cards based on brand
+const getInitialBusinessCards = (brandId: number) => {
+  const ovoltCards = [
+    {
+      image: "",
+      title: "Ağ Entegrasyonu",
+      content: "Şarj ünitelerinizi Ovolt ağına dahil ederek, işletmenizin gelir modeline katkı sağlıyoruz."
+    },
+    {
+      image: "",
+      title: "Filo Dönüşüm Desteği",
+      content: "Akaryakıttan elektriğe geçiş sürecinizde Ovolt çözümleriyle yanınızdayız."
+    },
+    {
+      image: "",
+      title: "Merkezi Yönetim",
+      content: "Şarj ünitelerinizi kolayca yönetebileceğiniz, kullanım raporlarına erişebileceğiniz gelişmiş bir yazılım paneli sunuyoruz."
+    }
+  ];
+
+  const sharzCards = [
+    ...ovoltCards,
+    {
+      image: "",
+      title: "Kart 4",
+      content: ""
+    },
+    {
+      image: "",
+      title: "Kart 5",
+      content: ""
+    },
+    {
+      image: "",
+      title: "Kart 6",
+      content: ""
+    }
+  ];
+
+  return brandId === 2 ? sharzCards : ovoltCards;
+};
+
+const getInitialContent = (brandId: number): CorporateSolutionsPageContent => ({
   meta: {
     title: "Kurumsal Çözümler - Ovolt",
     description: "",
@@ -26,23 +68,7 @@ const initialContent: CorporateSolutionsPageContent = {
   },
   businessSolutions: {
     title: "İşletmelere Özel Çözümler",
-    cards: [
-      {
-        image: "",
-        title: "Ağ Entegrasyonu",
-        content: "Şarj ünitelerinizi Ovolt ağına dahil ederek, işletmenizin gelir modeline katkı sağlıyoruz."
-      },
-      {
-        image: "",
-        title: "Filo Dönüşüm Desteği",
-        content: "Akaryakıttan elektriğe geçiş sürecinizde Ovolt çözümleriyle yanınızdayız."
-      },
-      {
-        image: "",
-        title: "Merkezi Yönetim",
-        content: "Şarj ünitelerinizi kolayca yönetebileceğiniz, kullanım raporlarına erişebileceğiniz gelişmiş bir yazılım paneli sunuyoruz."
-      }
-    ]
+    cards: getInitialBusinessCards(brandId)
   },
   managementCards: [
     {
@@ -66,15 +92,9 @@ const initialContent: CorporateSolutionsPageContent = {
       content: "Kullanıcılar, şarj noktalarını harita üzerinden görüntüleyebilir, ünitelerde şarja başlayabilir ve ödemelerini kolayca yapabilir."
     }
   ]
-};
+});
 
 const CorporateSolutionsPageEditor: React.FC = () => {
-  const [content, setContent] = useState<CorporateSolutionsPageContent>(initialContent);
-  const isScrolled = useScrollEffect();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   // Get current brand ID from localStorage
   const getCurrentBrandId = (): number => {
     const selectedBrand = localStorage.getItem('selectedBrand') || 'Ovolt';
@@ -82,6 +102,11 @@ const CorporateSolutionsPageEditor: React.FC = () => {
   };
 
   const [currentBrandId, setCurrentBrandId] = useState<number>(getCurrentBrandId());
+  const [content, setContent] = useState<CorporateSolutionsPageContent>(getInitialContent(currentBrandId));
+  const isScrolled = useScrollEffect();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
   // Load content on component mount
@@ -109,15 +134,37 @@ const CorporateSolutionsPageEditor: React.FC = () => {
     try {
       const response = await contentService.getCorporateSolutionsPageContent(actualBrandId);
 
-      let finalContent = initialContent;
+      let finalContent = getInitialContent(actualBrandId);
 
       if (response.ok && response.data) {
-        finalContent = response.data;
+        // Ensure we have the correct number of business cards
+        const expectedCardCount = actualBrandId === 2 ? 6 : 3;
+        const currentCardCount = response.data.businessSolutions?.cards?.length || 0;
+
+        if (currentCardCount < expectedCardCount) {
+          // Add missing cards
+          const missingCards = expectedCardCount - currentCardCount;
+          const additionalCards = Array.from({ length: missingCards }, (_, i) => ({
+            image: "",
+            title: `Kart ${currentCardCount + i + 1}`,
+            content: ""
+          }));
+
+          finalContent = {
+            ...response.data,
+            businessSolutions: {
+              ...response.data.businessSolutions,
+              cards: [...(response.data.businessSolutions?.cards || []), ...additionalCards]
+            }
+          };
+        } else {
+          finalContent = response.data;
+        }
       }
 
       setContent(finalContent);
     } catch (err) {
-      setContent(initialContent);
+      setContent(getInitialContent(actualBrandId));
       setError('İçerik yüklenirken bir hata oluştu');
       console.error('Content load error:', err);
     } finally {
@@ -127,7 +174,7 @@ const CorporateSolutionsPageEditor: React.FC = () => {
 
   const updateContent = (section: keyof CorporateSolutionsPageContent, field: string, value: any) => {
     setContent(prev => {
-      if (!prev) return initialContent;
+      if (!prev) return getInitialContent(currentBrandId);
       return {
         ...prev,
         [section]: {
@@ -139,21 +186,21 @@ const CorporateSolutionsPageEditor: React.FC = () => {
   };
 
   const updateBusinessCard = (index: number, field: string, value: string) => {
-    const currentCards = content?.businessSolutions?.cards || initialContent.businessSolutions.cards;
+    const currentCards = content?.businessSolutions?.cards || getInitialContent(currentBrandId).businessSolutions.cards;
     const newCards = [...currentCards];
     newCards[index] = { ...newCards[index], [field]: value };
     setContent(prev => ({
       ...prev,
       businessSolutions: {
         ...prev.businessSolutions,
-        title: prev.businessSolutions?.title || initialContent.businessSolutions.title,
+        title: prev.businessSolutions?.title || getInitialContent(currentBrandId).businessSolutions.title,
         cards: newCards
       }
     }));
   };
 
   const updateManagementCard = (index: number, field: string, value: string) => {
-    const currentCards = content?.managementCards || initialContent.managementCards;
+    const currentCards = content?.managementCards || getInitialContent(currentBrandId).managementCards;
     const newCards = [...currentCards];
     newCards[index] = { ...newCards[index], [field]: value };
     setContent(prev => ({
@@ -400,7 +447,7 @@ const CorporateSolutionsPageEditor: React.FC = () => {
                   </div>
                 </div>
 
-                {(content?.businessSolutions?.cards || initialContent.businessSolutions.cards).map((card, index) => (
+                {(content?.businessSolutions?.cards || getInitialContent(currentBrandId).businessSolutions.cards).map((card, index) => (
                   <div key={index} className="bg-white dark:bg-gray-800 shadow p-6">
                     <h3 className="text-lg font-semibold mb-4">Kart {index + 1}</h3>
                     <div className="space-y-4">
@@ -437,7 +484,7 @@ const CorporateSolutionsPageEditor: React.FC = () => {
 
             <Tab.Panel>
               <div className="space-y-6">
-                {(content?.managementCards || initialContent.managementCards).map((card, index) => (
+                {(content?.managementCards || getInitialContent(currentBrandId).managementCards).map((card, index) => (
                   <div key={index} className="bg-white dark:bg-gray-800 shadow p-6">
                     <h3 className="text-lg font-semibold mb-4">Kart {index + 1}</h3>
                     <div className="space-y-4">
