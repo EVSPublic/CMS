@@ -148,6 +148,20 @@ function Main() {
     return breadcrumbs;
   };
 
+  // Update document title based on breadcrumbs
+  useEffect(() => {
+    const breadcrumbs = generateBreadcrumbs();
+
+    // Build title from breadcrumb trail (skip the first "Brand Admin" item)
+    const titleParts = breadcrumbs
+      .slice(1) // Skip the first breadcrumb (Brand Admin)
+      .map(bc => bc.title);
+
+    // If we have a current page title, use it; otherwise use Dashboard
+    const pageTitle = titleParts.length > 0 ? titleParts.join(' - ') : 'Dashboard';
+    document.title = `${pageTitle} | ${selectedBrand} Admin`;
+  }, [location.pathname, formattedMenu, selectedBrand]);
+
   const toggleCompactMenu = (event: React.MouseEvent) => {
     event.preventDefault();
     setCompactMenu(!compactMenu);
