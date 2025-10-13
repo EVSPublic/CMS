@@ -59,4 +59,6 @@ export type LogAction =
   | 'station_create'
   | 'station_update'
   | 'station_delete'
-  | 'charger_status_update';
+  | 'charger_status_update'
+  | 'announcement_page_update'
+  | 'app_links_update';

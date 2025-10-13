@@ -292,6 +292,10 @@ public class StationMapHeaderDto
 
 public class StationMapMapDto
 {
-    public string IframeUrl { get; set; } = string.Empty;
+    public string Provider { get; set; } = "openstreetmap"; // "openstreetmap" | "google"
     public int Height { get; set; } = 600;
+    public double Zoom { get; set; } = 13;
+    public double Latitude { get; set; } = 39.9334;
+    public double Longitude { get; set; } = 32.8597;
+    public string? GoogleMapsApiKey { get; set; }
 }

@@ -66,7 +66,6 @@ const IndexPageEditor: React.FC = () => {
 
   const [currentBrandId, setCurrentBrandId] = useState<number>(getCurrentBrandId());
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const [realChargingStationCount, setRealChargingStationCount] = useState<string>('1880+');
 
   // Load content on component mount
   useEffect(() => {
@@ -91,30 +90,12 @@ const IndexPageEditor: React.FC = () => {
     setError(null);
 
     try {
-      // Load both content and statistics in parallel
-      const [contentResponse, statsResponse] = await Promise.all([
-        contentService.getIndexPageContent(actualBrandId),
-        contentService.getBrandStatistics(actualBrandId)
-      ]);
+      const response = await contentService.getIndexPageContent(actualBrandId);
 
       let finalContent = initialContent;
 
-      if (contentResponse.ok && contentResponse.data) {
-        finalContent = contentResponse.data;
-      }
-
-      // Update the charging station count with real database value
-      if (statsResponse.ok && statsResponse.data) {
-        setRealChargingStationCount(statsResponse.data.formattedCount);
-
-        // Also update the content count to match the database
-        finalContent = {
-          ...finalContent,
-          hero: {
-            ...finalContent.hero,
-            count: statsResponse.data.formattedCount
-          }
-        };
+      if (response.ok && response.data) {
+        finalContent = response.data;
       }
 
       setContent(finalContent);
@@ -346,14 +327,12 @@ const IndexPageEditor: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <FormLabel>Sayı (sadece görüntüleme)</FormLabel>
+                    <FormLabel>Sayı</FormLabel>
                     <FormInput
-                      value={realChargingStationCount}
-                      readOnly
+                      value={content?.hero?.count || ''}
+                      onChange={(e) => updateContent('hero', 'count', e.target.value)}
                       placeholder="1880+"
-                      className="bg-gray-100 dark:bg-gray-700"
                     />
-                    <p className="text-sm text-gray-500 mt-1">Bu değer veri tabanından otomatik olarak gelir</p>
                   </div>
                   <div>
                     <FormLabel>Sayı Açıklama Metni</FormLabel>

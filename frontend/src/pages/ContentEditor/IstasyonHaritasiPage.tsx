@@ -28,8 +28,12 @@ interface StationMapPageContent {
     Description: string;
   };
   Map: {
-    IframeUrl: string;
+    Provider: 'openstreetmap' | 'google';
     Height: number;
+    Zoom: number;
+    Latitude: number;
+    Longitude: number;
+    GoogleMapsApiKey?: string;
   };
 }
 
@@ -52,8 +56,12 @@ const initialContent: StationMapPageContent = {
     Description: "Opet istasyonları başta olmak üzere stratejik lokasyonlarda konumlanan Ovolt şarj istasyonlarıyla, elektrikli aracınız için hızlı, güvenilir ve kolay erişilebilir enerjiye dilediğiniz her an ulaşabilirsiniz."
   },
   Map: {
-    IframeUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3048.5!2d32.7968!3d39.8954!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMznCsDUzJzQzLjQiTiAzMsKwNDcnNDguNCJF!5e0!3m2!1str!2str!4v1640000000000!5m2!1str!2str",
-    Height: 600
+    Provider: 'openstreetmap',
+    Height: 600,
+    Zoom: 6,
+    Latitude: 39.9334,
+    Longitude: 32.8597,
+    GoogleMapsApiKey: ''
   }
 };
 
@@ -226,7 +234,6 @@ const IstasyonHaritasiPageEditor: React.FC = () => {
       });
 
       if (response.ok) {
-        alert('İçerik başarıyla kaydedildi!\n\nNot: İstasyon sayısı veritabanından otomatik olarak güncellenmektedir.');
         loadContent(); // Reload to get updated data
       } else {
         alert('Kaydetme sırasında bir hata oluştu!');
@@ -355,20 +362,6 @@ const IstasyonHaritasiPageEditor: React.FC = () => {
                 </div>
 
                 <div>
-                  <FormLabel htmlFor="Header.Count">İstasyon Sayısı (otomatik güncellenir)</FormLabel>
-                  <FormInput
-                    id="Header.Count"
-                    value={realStationCount}
-                    readOnly
-                    className="bg-gray-100 dark:bg-gray-700"
-                    placeholder="+1880"
-                  />
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Bu değer veritabanındaki istasyon sayısından otomatik olarak hesaplanır ve düzenlenemez.
-                  </p>
-                </div>
-
-                <div>
                   <FormLabel htmlFor="Header.Description">Açıklama</FormLabel>
                   <FormTextarea
                     id="Header.Description"
@@ -377,6 +370,125 @@ const IstasyonHaritasiPageEditor: React.FC = () => {
                     rows={4}
                     placeholder="Opet istasyonları başta olmak üzere stratejik lokasyonlarda konumlanan Ovolt şarj istasyonlarıyla, elektrikli aracınız için hızlı, güvenilir ve kolay erişilebilir enerjiye dilediğiniz her an ulaşabilirsiniz."
                   />
+                </div>
+
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Harita Ayarları</h3>
+
+                  <div className="space-y-4">
+                    <div>
+                      <FormLabel>Harita Sağlayıcısı</FormLabel>
+                      <div className="flex items-center space-x-4 mt-2">
+                        <label className="flex items-center cursor-pointer">
+                          <input
+                            type="radio"
+                            name="mapProvider"
+                            value="openstreetmap"
+                            checked={content.Map.Provider === 'openstreetmap'}
+                            onChange={(e) => updateContent('Map.Provider', e.target.value)}
+                            className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                          />
+                          <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">OpenStreetMap (Ücretsiz)</span>
+                        </label>
+
+                        <label className="flex items-center cursor-pointer">
+                          <input
+                            type="radio"
+                            name="mapProvider"
+                            value="google"
+                            checked={content.Map.Provider === 'google'}
+                            onChange={(e) => updateContent('Map.Provider', e.target.value)}
+                            className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                          />
+                          <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Google Maps</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {content.Map.Provider === 'google' && (
+                      <div>
+                        <FormLabel htmlFor="Map.GoogleMapsApiKey">Google Maps API Anahtarı</FormLabel>
+                        <FormInput
+                          id="Map.GoogleMapsApiKey"
+                          value={content.Map.GoogleMapsApiKey || ''}
+                          onChange={(e) => updateContent('Map.GoogleMapsApiKey', e.target.value)}
+                          placeholder="Google Maps API anahtarını girin"
+                          type="password"
+                        />
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          Google Maps kullanmak için bir API anahtarı gereklidir. <a href="https://console.cloud.google.com/google/maps-apis" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">API anahtarı alın</a>
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <FormLabel htmlFor="Map.Latitude">Enlem (Latitude)</FormLabel>
+                        <FormInput
+                          id="Map.Latitude"
+                          type="number"
+                          step="0.000001"
+                          value={content.Map.Latitude}
+                          onChange={(e) => updateContent('Map.Latitude', parseFloat(e.target.value))}
+                          placeholder="39.9334"
+                        />
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          Haritanın merkez enlem koordinatı
+                        </p>
+                      </div>
+
+                      <div>
+                        <FormLabel htmlFor="Map.Longitude">Boylam (Longitude)</FormLabel>
+                        <FormInput
+                          id="Map.Longitude"
+                          type="number"
+                          step="0.000001"
+                          value={content.Map.Longitude}
+                          onChange={(e) => updateContent('Map.Longitude', parseFloat(e.target.value))}
+                          placeholder="32.8597"
+                        />
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          Haritanın merkez boylam koordinatı
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <FormLabel htmlFor="Map.Zoom">Yakınlaştırma (Zoom)</FormLabel>
+                        <FormInput
+                          id="Map.Zoom"
+                          type="number"
+                          min="1"
+                          max="20"
+                          step="0.1"
+                          value={content.Map.Zoom}
+                          onChange={(e) => updateContent('Map.Zoom', parseFloat(e.target.value))}
+                          placeholder="6"
+                        />
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          1 (en uzak) - 20 (en yakın)
+                        </p>
+                      </div>
+
+                      <div>
+                        <FormLabel htmlFor="Map.Height">Harita Yüksekliği (px)</FormLabel>
+                        <FormInput
+                          id="Map.Height"
+                          type="number"
+                          min="400"
+                          max="1200"
+                          step="50"
+                          value={content.Map.Height}
+                          onChange={(e) => updateContent('Map.Height', parseInt(e.target.value))}
+                          placeholder="600"
+                        />
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          Piksel cinsinden yükseklik
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </Tab.Panel>

@@ -73,10 +73,15 @@ builder.Services.AddHttpClient();
 
 // Add background services
 builder.Services.AddHostedService<DatabaseKeepAliveService>();
-builder.Services.AddHostedService<StationCountUpdateService>();
+// Disabled: Station count is now manually managed
+// builder.Services.AddHostedService<StationCountUpdateService>();
 
-// Add controllers
-builder.Services.AddControllers();
+// Add controllers with camelCase JSON serialization
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 
 // Configure form options to allow larger file uploads (for videos)
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
