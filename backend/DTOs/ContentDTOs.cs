@@ -47,7 +47,7 @@ public class HeroDto
     public string? Subtitle { get; set; }
     public string MediaType { get; set; } = "video"; // 'video' | 'image'
     public string MediaUrl { get; set; } = string.Empty;
-    public int Count { get; set; } = 0;
+    public string Count { get; set; } = "1880+";
     public string CountText { get; set; } = string.Empty;
 }
 

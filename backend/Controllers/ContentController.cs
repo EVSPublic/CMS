@@ -53,10 +53,10 @@ public class ContentController : ControllerBase
                     contentJson = await EnsureMediaTypeAndCountInHero(contentJson, brandId);
                 }
 
-                // Update station count in Header for StationMap page
+                // Update station count in Header for StationMap page from Index page hero.count
                 if (pageTypeEnum == PageType.StationMap && contentJson.ValueKind == JsonValueKind.Object)
                 {
-                    contentJson = await UpdateStationCountInHeader(contentJson, brandId);
+                    contentJson = await UpdateStationMapCountFromIndexPage(contentJson, brandId);
                 }
 
                 contentPage = new ContentPageDto
@@ -287,13 +287,36 @@ public class ContentController : ControllerBase
                 return NotFound(new { error = new { code = "BRAND_NOT_FOUND", message = "Brand not found" } });
             }
 
-            // Use the ChargingStationCount from the brand (updated every 30 minutes by background service)
-            var finalCount = brand.ChargingStationCount;
+            // Get count from ContentPages Index page hero.count field
+            var contentPage = await _context.ContentPages
+                .Where(c => c.BrandId == brandId && c.PageType == PageType.Index)
+                .FirstOrDefaultAsync();
+
+            string formattedCount = "1880+"; // Default fallback
+
+            if (contentPage != null)
+            {
+                try
+                {
+                    var contentJson = JsonSerializer.Deserialize<JsonElement>(contentPage.Content);
+
+                    if (contentJson.ValueKind == JsonValueKind.Object &&
+                        contentJson.TryGetProperty("hero", out var heroProp) &&
+                        heroProp.TryGetProperty("count", out var countProp))
+                    {
+                        formattedCount = countProp.GetString() ?? "1880+";
+                    }
+                }
+                catch
+                {
+                    // If parsing fails, use default
+                }
+            }
 
             var statistics = new
             {
-                chargingStationCount = finalCount,
-                formattedCount = $"{finalCount}+"
+                chargingStationCount = formattedCount.Replace("+", ""), // Remove + for numeric value
+                formattedCount = formattedCount
             };
 
             return Ok(statistics);
@@ -327,7 +350,7 @@ public class ContentController : ControllerBase
                     Subtitle = "Electric Vehicle Charging Solutions",
                     MediaType = "video",
                     MediaUrl = "assets/video/hero-video.mp4",
-                    Count = chargingStationCount,
+                    Count = $"{chargingStationCount}+",
                     CountText = "Şarj İstasyonu ile Kesintisiz Enerji"
                 },
                 Services = new ServicesDto
@@ -571,12 +594,15 @@ public class ContentController : ControllerBase
                         modified = true;
                     }
 
-                    // Always fetch and update count from brand (updated every 30 minutes by background service)
-                    var brand = await _context.Brands.FindAsync(brandId);
-                    if (brand != null)
+                    // Only add count if missing (don't override user's manual count value)
+                    if (!heroDict.ContainsKey("count") || heroDict["count"] == null)
                     {
-                        heroDict["count"] = brand.ChargingStationCount;
-                        modified = true;
+                        var brand = await _context.Brands.FindAsync(brandId);
+                        if (brand != null)
+                        {
+                            heroDict["count"] = $"{brand.ChargingStationCount}+";
+                            modified = true;
+                        }
                     }
 
                     if (modified)
@@ -620,6 +646,56 @@ public class ContentController : ControllerBase
 
                         // Serialize back to JsonElement
                         return JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(contentDict));
+                    }
+                }
+            }
+
+            return contentJson;
+        }
+        catch
+        {
+            // If any error occurs, return original content
+            return contentJson;
+        }
+    }
+
+    private async Task<JsonElement> UpdateStationMapCountFromIndexPage(JsonElement contentJson, int brandId)
+    {
+        try
+        {
+            // Get the count from Index page hero.count
+            var indexPage = await _context.ContentPages
+                .Where(c => c.BrandId == brandId && c.PageType == PageType.Index)
+                .FirstOrDefaultAsync();
+
+            if (indexPage != null)
+            {
+                var indexContent = JsonSerializer.Deserialize<JsonElement>(indexPage.Content);
+
+                if (indexContent.ValueKind == JsonValueKind.Object &&
+                    indexContent.TryGetProperty("hero", out var heroProp) &&
+                    heroProp.TryGetProperty("count", out var countProp))
+                {
+                    var countString = countProp.GetString() ?? "1880";
+                    // Remove the '+' sign if present and parse to int
+                    var countValue = int.Parse(countString.Replace("+", ""));
+
+                    // Update the StationMap Header.Count
+                    var contentDict = JsonSerializer.Deserialize<Dictionary<string, object>>(contentJson.GetRawText());
+
+                    if (contentDict != null && contentDict.ContainsKey("Header"))
+                    {
+                        var headerJson = JsonSerializer.Serialize(contentDict["Header"]);
+                        var headerDict = JsonSerializer.Deserialize<Dictionary<string, object>>(headerJson);
+
+                        if (headerDict != null)
+                        {
+                            headerDict["Count"] = countValue;
+                            contentDict["Header"] = headerDict;
+
+                            // Serialize back to JsonElement
+                            return JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(contentDict));
+                        }
                     }
                 }
             }
