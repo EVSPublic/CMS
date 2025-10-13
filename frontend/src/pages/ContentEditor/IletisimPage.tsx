@@ -621,7 +621,7 @@ const IletisimPageEditor: React.FC = () => {
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Merkez Ofis</h3>
                   <div className="space-y-4">
                     <div>
-                      <FormLabel htmlFor="office.title">Ofis Başlığı</FormLabel>
+                      <FormLabel htmlFor="office.title">Ofis Adresi</FormLabel>
                       <FormTextarea
                         id="office.title"
                         value={content.contactInfo?.office?.title || ''}
@@ -629,24 +629,6 @@ const IletisimPageEditor: React.FC = () => {
                         placeholder="Merkez Ofis"
                         rows={3}
                       />
-                    </div>
-
-                    <div>
-                      {(content.contactInfo?.office?.address || []).map((line, index) => (
-                        <div key={index} className="flex gap-2 mb-2">
-                          <FormInput
-                            value={line}
-                            onChange={(e) => updateOfficeAddress(index, e.target.value)}
-                            placeholder={`Adres satırı ${index + 1}`}
-                          />
-                          <Button
-                            variant="soft-secondary"
-                            onClick={() => removeOfficeAddress(index)}
-                          >
-                            Sil
-                          </Button>
-                        </div>
-                      ))}
                     </div>
                   </div>
                 </div>
