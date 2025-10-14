@@ -62,8 +62,27 @@ namespace AdminPanel.Controllers
                 .Where(sp => sp.BrandId == brandId.Value)
                 .CountAsync();
 
-            // Products count - when Product model is added
-            // var productsCount = await _context.Products.Where(p => p.BrandId == brandId.Value).CountAsync();
+            // Products count - extract from IndividualSolutions ContentPage JSON
+            var productsCount = 0;
+            var individualSolutionsPage = await _context.ContentPages
+                .Where(cp => cp.BrandId == brandId.Value && cp.PageType == Models.PageType.IndividualSolutions)
+                .FirstOrDefaultAsync();
+
+            if (individualSolutionsPage != null && !string.IsNullOrEmpty(individualSolutionsPage.Content))
+            {
+                try
+                {
+                    var contentJson = System.Text.Json.JsonDocument.Parse(individualSolutionsPage.Content);
+                    if (contentJson.RootElement.TryGetProperty("products", out var productsElement))
+                    {
+                        productsCount = productsElement.GetArrayLength();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error parsing products from content: {ex.Message}");
+                }
+            }
 
             var stats = new
             {
@@ -77,7 +96,7 @@ namespace AdminPanel.Controllers
                     announcements = announcementsCount,
                     partners = partnersCount,
                     staticPages = staticPagesCount,
-                    products = 0, // Placeholder for products
+                    products = productsCount,
                     brandId = brandId.Value
                 },
                 recentActivity = await _context.MediaItems
