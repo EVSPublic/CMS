@@ -20,10 +20,18 @@ namespace AdminPanel.Controllers
         }
 
         [HttpGet("stats")]
-        public async Task<IActionResult> GetDashboardStats()
+        public async Task<IActionResult> GetDashboardStats([FromQuery] int? brandId = null)
         {
-            // Count all media items across all brands
-            var mediaUploadsCount = await _context.MediaItems.CountAsync();
+            // If no brandId provided, return error
+            if (!brandId.HasValue)
+            {
+                return BadRequest(new { error = "BrandId is required" });
+            }
+
+            // Count media items for the selected brand only
+            var mediaUploadsCount = await _context.MediaItems
+                .Where(mi => mi.BrandId == brandId.Value)
+                .CountAsync();
 
             var process = Process.GetCurrentProcess();
             // Memory usage in MB
@@ -41,18 +49,21 @@ namespace AdminPanel.Controllers
                 Console.WriteLine($"Error getting CPU usage: {ex.Message}");
             }
 
-            // Content counts by type
-            var announcementsCount = await _context.Announcements.CountAsync();
-            var partnersCount = await _context.Partnerships.CountAsync();
-            var staticPagesCount = await _context.StaticPages.CountAsync();
-
-            // Ovolt (BrandId = 1) specific counts
-            var ovoltAnnouncementsCount = await _context.Announcements
-                .Where(a => a.BrandId == 1)
+            // Content counts filtered by brand
+            var announcementsCount = await _context.Announcements
+                .Where(a => a.BrandId == brandId.Value)
                 .CountAsync();
 
-            // Sharz.net (BrandId = 2) specific counts - Products would go here
-            // var sharzProductsCount = await _context.Products.Where(p => p.BrandId == 2).CountAsync();
+            var partnersCount = await _context.Partnerships
+                .Where(p => p.BrandId == brandId.Value)
+                .CountAsync();
+
+            var staticPagesCount = await _context.StaticPages
+                .Where(sp => sp.BrandId == brandId.Value)
+                .CountAsync();
+
+            // Products count - when Product model is added
+            // var productsCount = await _context.Products.Where(p => p.BrandId == brandId.Value).CountAsync();
 
             var stats = new
             {
@@ -64,13 +75,14 @@ namespace AdminPanel.Controllers
                 },
                 contentCounts = new {
                     announcements = announcementsCount,
-                    ovoltAnnouncements = ovoltAnnouncementsCount,
                     partners = partnersCount,
                     staticPages = staticPagesCount,
-                    // sharzProducts = sharzProductsCount // When Product model is added
+                    products = 0, // Placeholder for products
+                    brandId = brandId.Value
                 },
                 recentActivity = await _context.MediaItems
                     .Include(mi => mi.Creator)
+                    .Where(mi => mi.BrandId == brandId.Value)
                     .OrderByDescending(mi => mi.CreatedAt)
                     .Take(3)
                     .Select(mi => new {

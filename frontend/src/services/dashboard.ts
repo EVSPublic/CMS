@@ -20,10 +20,10 @@ export interface RecentActivity {
 
 export interface ContentCounts {
   announcements: number;
-  ovoltAnnouncements: number;
   partners: number;
   staticPages: number;
-  sharzProducts?: number;
+  products: number;
+  brandId: number;
 }
 
 export interface DashboardStats {
@@ -41,8 +41,21 @@ class DashboardService {
   }
 
   async getDashboardStats(): Promise<ApiResponse<DashboardStats>> {
+    // Get the selected brand from localStorage
+    const userStr = localStorage.getItem('user');
+    let brandId = 1; // Default to Ovolt
+
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        brandId = user.brandId || 1;
+      } catch (e) {
+        console.error('Failed to parse user data:', e);
+      }
+    }
+
     const healthResponse = await this.getHealthStatus();
-    const statsResponse = await api.get<any>('/api/Dashboard/stats');
+    const statsResponse = await api.get<any>(`/api/Dashboard/stats?brandId=${brandId}`);
 
     if (healthResponse.ok && healthResponse.data && statsResponse.ok && statsResponse.data) {
       return {

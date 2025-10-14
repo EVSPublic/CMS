@@ -7,7 +7,22 @@ function Home() {
   const [dashboardData, setDashboardData] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentBrandId, setCurrentBrandId] = useState<number>(1);
   const isInitialLoad = useRef(true);
+
+  // Get current brand ID from user data
+  const getCurrentBrandId = (): number => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        return user.brandId || 1;
+      } catch (e) {
+        console.error('Failed to parse user data:', e);
+      }
+    }
+    return 1; // Default to Ovolt
+  };
 
   // Get project name from localStorage
   const getProjectName = () => {
@@ -24,6 +39,9 @@ function Home() {
   };
 
   useEffect(() => {
+    // Set current brand ID on mount
+    setCurrentBrandId(getCurrentBrandId());
+
     loadDashboardData();
     const interval = setInterval(loadDashboardData, 10000); // 10 seconds
 
@@ -40,6 +58,10 @@ function Home() {
 
       if (response.ok && response.data) {
         setDashboardData(response.data);
+        // Update current brand ID from response
+        if (response.data.contentCounts?.brandId) {
+          setCurrentBrandId(response.data.contentCounts.brandId);
+        }
       } else {
         setError(response.error?.message || 'Dashboard verileri yüklenemedi');
       }
@@ -175,15 +197,18 @@ function Home() {
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-50 dark:bg-darkmode-400 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-slate-600 dark:text-slate-300 text-sm">Duyurular (Ovolt)</span>
-                    <Lucide icon="Megaphone" className="w-4 h-4 text-slate-400" />
+                {/* Show Announcements only for Ovolt (brandId = 1) */}
+                {currentBrandId === 1 && (
+                  <div className="bg-slate-50 dark:bg-darkmode-400 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-slate-600 dark:text-slate-300 text-sm">Duyurular</span>
+                      <Lucide icon="Megaphone" className="w-4 h-4 text-slate-400" />
+                    </div>
+                    <div className="text-2xl font-bold text-slate-700 dark:text-slate-200">
+                      {dashboardData?.contentCounts?.announcements || 0}
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold text-slate-700 dark:text-slate-200">
-                    {dashboardData?.contentCounts?.ovoltAnnouncements || 0}
-                  </div>
-                </div>
+                )}
 
                 <div className="bg-slate-50 dark:bg-darkmode-400 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
@@ -205,15 +230,18 @@ function Home() {
                   </div>
                 </div>
 
-                <div className="bg-slate-50 dark:bg-darkmode-400 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-slate-600 dark:text-slate-300 text-sm">Ürünler (Sharz)</span>
-                    <Lucide icon="Package" className="w-4 h-4 text-slate-400" />
+                {/* Show Products only for Sharz.net (brandId = 2) */}
+                {currentBrandId === 2 && (
+                  <div className="bg-slate-50 dark:bg-darkmode-400 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-slate-600 dark:text-slate-300 text-sm">Ürünler</span>
+                      <Lucide icon="Package" className="w-4 h-4 text-slate-400" />
+                    </div>
+                    <div className="text-2xl font-bold text-slate-700 dark:text-slate-200">
+                      {dashboardData?.contentCounts?.products || 0}
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold text-slate-700 dark:text-slate-200">
-                    {dashboardData?.contentCounts?.sharzProducts || 0}
-                  </div>
-                </div>
+                )}
               </div>
             )}
           </div>
