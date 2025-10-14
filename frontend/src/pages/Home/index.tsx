@@ -4,25 +4,22 @@ import { dashboardService, DashboardStats } from "@/services/dashboard";
 import LogsWidget from "@/components/LogsWidget";
 
 function Home() {
+  // Get current brand ID from selected brand
+  const getCurrentBrandId = (): number => {
+    const selectedBrand = localStorage.getItem('selectedBrand');
+
+    // Map brand name to brand ID
+    if (selectedBrand === 'Sharz.net') {
+      return 2;
+    }
+    return 1; // Default to Ovolt (brandId = 1)
+  };
+
   const [dashboardData, setDashboardData] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentBrandId, setCurrentBrandId] = useState<number>(1);
+  const [currentBrandId, setCurrentBrandId] = useState<number>(getCurrentBrandId());
   const isInitialLoad = useRef(true);
-
-  // Get current brand ID from user data
-  const getCurrentBrandId = (): number => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        return user.brandId || 1;
-      } catch (e) {
-        console.error('Failed to parse user data:', e);
-      }
-    }
-    return 1; // Default to Ovolt
-  };
 
   // Get project name from localStorage
   const getProjectName = () => {
@@ -39,9 +36,6 @@ function Home() {
   };
 
   useEffect(() => {
-    // Set current brand ID on mount
-    setCurrentBrandId(getCurrentBrandId());
-
     loadDashboardData();
     const interval = setInterval(loadDashboardData, 10000); // 10 seconds
 

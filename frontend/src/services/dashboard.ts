@@ -42,16 +42,12 @@ class DashboardService {
 
   async getDashboardStats(): Promise<ApiResponse<DashboardStats>> {
     // Get the selected brand from localStorage
-    const userStr = localStorage.getItem('user');
-    let brandId = 1; // Default to Ovolt
+    const selectedBrand = localStorage.getItem('selectedBrand');
 
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        brandId = user.brandId || 1;
-      } catch (e) {
-        console.error('Failed to parse user data:', e);
-      }
+    // Map brand name to brand ID
+    let brandId = 1; // Default to Ovolt
+    if (selectedBrand === 'Sharz.net') {
+      brandId = 2;
     }
 
     const healthResponse = await this.getHealthStatus();
