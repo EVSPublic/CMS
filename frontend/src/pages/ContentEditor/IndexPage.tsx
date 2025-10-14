@@ -326,22 +326,6 @@ const IndexPageEditor: React.FC = () => {
                       placeholder={content?.hero?.mediaType === 'video' ? "Video seçin..." : "Hero görseli seçin..."}
                     />
                   </div>
-                  <div>
-                    <FormLabel>Sayı</FormLabel>
-                    <FormInput
-                      value={content?.hero?.count || ''}
-                      onChange={(e) => updateContent('hero', 'count', e.target.value)}
-                      placeholder="1880+"
-                    />
-                  </div>
-                  <div>
-                    <FormLabel>Sayı Açıklama Metni</FormLabel>
-                    <FormInput
-                      value={content?.hero?.countText || ''}
-                      onChange={(e) => updateContent('hero', 'countText', e.target.value)}
-                      placeholder="Şarj İstasyonu ile Kesintisiz Enerji"
-                    />
-                  </div>
                 </div>
               </div>
             </Tab.Panel>

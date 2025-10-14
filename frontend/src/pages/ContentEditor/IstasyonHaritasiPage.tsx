@@ -110,23 +110,15 @@ const IstasyonHaritasiPageEditor: React.FC = () => {
       if (response.ok && response.data) {
         const apiContent = response.data.content;
 
-        // Load statistics to get real station count
+        // Load statistics to get real station count (for display only)
         const statsResponse = await contentService.getBrandStatistics(actualBrandId);
 
         if (statsResponse.ok && statsResponse.data) {
           setRealStationCount(statsResponse.data.formattedCount);
-
-          // Update content with API data and real station count
-          setContent({
-            ...apiContent,
-            Header: {
-              ...apiContent.Header,
-              Count: parseInt(statsResponse.data.formattedCount.replace('+', ''))
-            }
-          });
-        } else {
-          setContent(apiContent);
         }
+
+        // Use the saved content from database without overwriting Count
+        setContent(apiContent);
       } else {
         setContent(initialContent);
         setError('İçerik yüklenirken bir hata oluştu');
@@ -327,6 +319,35 @@ const IstasyonHaritasiPageEditor: React.FC = () => {
                     placeholder="Anahtar kelimeleri virgülle ayırarak girin"
                     rows={2}
                   />
+                </div>
+
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">İstasyon Sayısı</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <FormLabel htmlFor="Header.Count">İstasyon Sayısı</FormLabel>
+                      <FormInput
+                        id="Header.Count"
+                        type="number"
+                        value={content.Header.Count}
+                        onChange={(e) => updateContent('Header.Count', parseInt(e.target.value) || 0)}
+                        placeholder="1880"
+                      />
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Gerçek istasyon sayısı: {realStationCount}
+                      </p>
+                    </div>
+
+                    <div>
+                      <FormLabel htmlFor="Header.CountText">İstasyon Sayısı Açıklama Metni</FormLabel>
+                      <FormInput
+                        id="Header.CountText"
+                        value={content.Header.CountText}
+                        onChange={(e) => updateContent('Header.CountText', e.target.value)}
+                        placeholder="Şarj İstasyonu"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </Tab.Panel>
