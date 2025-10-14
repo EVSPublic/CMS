@@ -18,10 +18,19 @@ export interface RecentActivity {
   timestamp: string;
 }
 
+export interface ContentCounts {
+  announcements: number;
+  ovoltAnnouncements: number;
+  partners: number;
+  staticPages: number;
+  sharzProducts?: number;
+}
+
 export interface DashboardStats {
   mediaUploadsCount: number;
   activeUserSessions: number;
   serverResourceUsage: ServerResourceUsage;
+  contentCounts: ContentCounts;
   recentActivity: RecentActivity[];
   systemHealth: HealthStatus;
 }

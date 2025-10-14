@@ -41,6 +41,19 @@ namespace AdminPanel.Controllers
                 Console.WriteLine($"Error getting CPU usage: {ex.Message}");
             }
 
+            // Content counts by type
+            var announcementsCount = await _context.Announcements.CountAsync();
+            var partnersCount = await _context.Partnerships.CountAsync();
+            var staticPagesCount = await _context.StaticPages.CountAsync();
+
+            // Ovolt (BrandId = 1) specific counts
+            var ovoltAnnouncementsCount = await _context.Announcements
+                .Where(a => a.BrandId == 1)
+                .CountAsync();
+
+            // Sharz.net (BrandId = 2) specific counts - Products would go here
+            // var sharzProductsCount = await _context.Products.Where(p => p.BrandId == 2).CountAsync();
+
             var stats = new
             {
                 mediaUploadsCount,
@@ -48,6 +61,13 @@ namespace AdminPanel.Controllers
                 serverResourceUsage = new {
                     cpu = cpuUsage,
                     memory = memoryUsage
+                },
+                contentCounts = new {
+                    announcements = announcementsCount,
+                    ovoltAnnouncements = ovoltAnnouncementsCount,
+                    partners = partnersCount,
+                    staticPages = staticPagesCount,
+                    // sharzProducts = sharzProductsCount // When Product model is added
                 },
                 recentActivity = await _context.MediaItems
                     .Include(mi => mi.Creator)

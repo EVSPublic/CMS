@@ -161,6 +161,64 @@ function Home() {
           <LogsWidget />
         </div>
 
+        <div className="col-span-12 lg:col-span-6">
+          <div className="box p-5">
+            <div className="flex items-center border-b border-slate-200/60 dark:border-darkmode-400 pb-5 mb-5">
+              <div className="w-10 h-10 flex items-center justify-center bg-warning/10 dark:bg-warning/20 text-warning rounded-full mr-3">
+                <Lucide icon="FileText" className="w-5 h-5" />
+              </div>
+              <div className="text-lg font-semibold">İçerik İstatistikleri</div>
+            </div>
+            {loading ? (
+              <div className="flex items-center justify-center py-4">
+                <Lucide icon="Loader2" className="w-5 h-5 animate-spin text-slate-500" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-50 dark:bg-darkmode-400 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-slate-600 dark:text-slate-300 text-sm">Duyurular (Ovolt)</span>
+                    <Lucide icon="Megaphone" className="w-4 h-4 text-slate-400" />
+                  </div>
+                  <div className="text-2xl font-bold text-slate-700 dark:text-slate-200">
+                    {dashboardData?.contentCounts?.ovoltAnnouncements || 0}
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 dark:bg-darkmode-400 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-slate-600 dark:text-slate-300 text-sm">Ortaklar</span>
+                    <Lucide icon="Users" className="w-4 h-4 text-slate-400" />
+                  </div>
+                  <div className="text-2xl font-bold text-slate-700 dark:text-slate-200">
+                    {dashboardData?.contentCounts?.partners || 0}
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 dark:bg-darkmode-400 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-slate-600 dark:text-slate-300 text-sm">Statik Sayfalar</span>
+                    <Lucide icon="File" className="w-4 h-4 text-slate-400" />
+                  </div>
+                  <div className="text-2xl font-bold text-slate-700 dark:text-slate-200">
+                    {dashboardData?.contentCounts?.staticPages || 0}
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 dark:bg-darkmode-400 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-slate-600 dark:text-slate-300 text-sm">Ürünler (Sharz)</span>
+                    <Lucide icon="Package" className="w-4 h-4 text-slate-400" />
+                  </div>
+                  <div className="text-2xl font-bold text-slate-700 dark:text-slate-200">
+                    {dashboardData?.contentCounts?.sharzProducts || 0}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
     </>
   );

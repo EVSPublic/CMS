@@ -9,7 +9,7 @@ const LogsWidget: React.FC = () => {
 
   useEffect(() => {
     const loadRecentLogs = async () => {
-      const logs = await logService.getRecentLogs(5);
+      const logs = await logService.getRecentLogs(2);
       setRecentLogs(logs);
     };
 
