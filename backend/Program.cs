@@ -335,4 +335,89 @@ app.MapGet("/thumbnails/{filename}", (string filename, IWebHostEnvironment env) 
     return Results.NotFound();
 });
 
+// Custom route for uploads (direct access to uploaded files)
+app.MapGet("/uploads/{filename}", (string filename, IWebHostEnvironment env) =>
+{
+    var filePath = Path.Combine(env.WebRootPath, "uploads", filename);
+    if (File.Exists(filePath))
+    {
+        var extension = Path.GetExtension(filename).ToLowerInvariant();
+        var contentType = extension switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            ".webp" => "image/webp",
+            ".svg" => "image/svg+xml",
+            ".mp4" => "video/mp4",
+            ".webm" => "video/webm",
+            ".ogg" => "video/ogg",
+            ".mov" => "video/quicktime",
+            ".avi" => "video/x-msvideo",
+            ".mkv" => "video/x-matroska",
+            _ => "application/octet-stream"
+        };
+        return Results.File(filePath, contentType);
+    }
+    return Results.NotFound();
+});
+
+// Proxy for ServicePoint API (forward requests to external API)
+app.Map("/ServicePoint/{**path}", async (HttpContext context, IHttpClientFactory httpClientFactory, string path) =>
+{
+    var httpClient = httpClientFactory.CreateClient();
+    var targetUrl = $"https://panel-api.ovolt.com.tr/ServicePoint/{path}";
+
+    // Forward query string
+    if (context.Request.QueryString.HasValue)
+    {
+        targetUrl += context.Request.QueryString.Value;
+    }
+
+    try
+    {
+        var request = new HttpRequestMessage(new HttpMethod(context.Request.Method), targetUrl);
+
+        // Copy headers except Host
+        foreach (var header in context.Request.Headers)
+        {
+            if (header.Key.Equals("Host", StringComparison.OrdinalIgnoreCase))
+                continue;
+            request.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray());
+        }
+
+        // Copy request body for POST/PUT/PATCH
+        if (context.Request.Method != "GET" && context.Request.Method != "HEAD" && context.Request.ContentLength > 0)
+        {
+            var streamContent = new StreamContent(context.Request.Body);
+            if (context.Request.ContentType != null)
+            {
+                streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(context.Request.ContentType);
+            }
+            request.Content = streamContent;
+        }
+
+        var response = await httpClient.SendAsync(request);
+
+        // Copy response status and headers
+        context.Response.StatusCode = (int)response.StatusCode;
+        foreach (var header in response.Headers)
+        {
+            context.Response.Headers[header.Key] = header.Value.ToArray();
+        }
+        foreach (var header in response.Content.Headers)
+        {
+            context.Response.Headers[header.Key] = header.Value.ToArray();
+        }
+
+        // Copy response body
+        await response.Content.CopyToAsync(context.Response.Body);
+    }
+    catch (Exception ex)
+    {
+        context.Response.StatusCode = 502; // Bad Gateway
+        await context.Response.WriteAsJsonAsync(new { error = "Failed to proxy request", message = ex.Message });
+    }
+});
+
 app.Run();
