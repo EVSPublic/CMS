@@ -15,11 +15,25 @@ public class MediaController : ControllerBase
 {
     private readonly AdminPanelContext _context;
     private readonly ILogger<MediaController> _logger;
+    private readonly IConfiguration _configuration;
 
-    public MediaController(AdminPanelContext context, ILogger<MediaController> logger)
+    public MediaController(AdminPanelContext context, ILogger<MediaController> logger, IConfiguration configuration)
     {
         _context = context;
         _logger = logger;
+        _configuration = configuration;
+    }
+
+    private string GetMediaUrl(string filePath)
+    {
+        var baseUrl = _configuration["ApiBaseUrl"] ?? "http://localhost:5050";
+        return $"{baseUrl}/media/{Path.GetFileName(filePath)}";
+    }
+
+    private string GetThumbnailUrl(string filePath)
+    {
+        var baseUrl = _configuration["ApiBaseUrl"] ?? "http://localhost:5050";
+        return $"{baseUrl}/thumbnails/{Path.GetFileName(filePath)}";
     }
 
     [HttpGet("{brandId}")]
@@ -55,38 +69,40 @@ public class MediaController : ControllerBase
                 .OrderByDescending(m => m.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .Select(m => new MediaItemDto
-                {
-                    Id = m.Id.ToString(),
-                    BrandId = m.BrandId,
-                    Filename = m.FileName,
-                    Url = $"/media/{Path.GetFileName(m.FilePath)}",
-                    Thumbnail = $"/thumbnails/{Path.GetFileName(m.FilePath)}",
-                    Size = m.FileSize,
-                    Type = m.FileType,
-                    Alt = m.AltText ?? "",
-                    Tags = new List<string>(), // TODO: Implement tags system
-                    Category = "general", // TODO: Implement categories
-                    Folders = m.MediaItemFolders.Select(mif => new MediaFolderDto
-                    {
-                        Id = mif.MediaFolder.Id,
-                        Name = mif.MediaFolder.Name,
-                        Description = mif.MediaFolder.Description,
-                        ItemCount = 0 // Will be calculated separately if needed
-                    }).ToList(),
-                    UploadDate = m.CreatedAt,
-                    Status = m.Status.ToString(),
-                    CreatedBy = m.CreatedBy,
-                    UpdatedBy = m.UpdatedBy,
-                    CreatedAt = m.CreatedAt,
-                    UpdatedAt = m.UpdatedAt,
-                    BrandName = m.Brand.Name,
-                    CreatorName = m.Creator != null ? m.Creator.Name : null,
-                    UpdaterName = m.Updater != null ? m.Updater.Name : null
-                })
                 .ToListAsync();
 
-            return Ok(new { mediaItems, totalCount, page, pageSize });
+            // Map to DTOs with proper URLs
+            var mediaItemDtos = mediaItems.Select(m => new MediaItemDto
+            {
+                Id = m.Id.ToString(),
+                BrandId = m.BrandId,
+                Filename = m.FileName,
+                Url = GetMediaUrl(m.FilePath),
+                Thumbnail = GetThumbnailUrl(m.FilePath),
+                Size = m.FileSize,
+                Type = m.FileType,
+                Alt = m.AltText ?? "",
+                Tags = new List<string>(), // TODO: Implement tags system
+                Category = "general", // TODO: Implement categories
+                Folders = m.MediaItemFolders.Select(mif => new MediaFolderDto
+                {
+                    Id = mif.MediaFolder.Id,
+                    Name = mif.MediaFolder.Name,
+                    Description = mif.MediaFolder.Description,
+                    ItemCount = 0 // Will be calculated separately if needed
+                }).ToList(),
+                UploadDate = m.CreatedAt,
+                Status = m.Status.ToString(),
+                CreatedBy = m.CreatedBy,
+                UpdatedBy = m.UpdatedBy,
+                CreatedAt = m.CreatedAt,
+                UpdatedAt = m.UpdatedAt,
+                BrandName = m.Brand.Name,
+                CreatorName = m.Creator != null ? m.Creator.Name : null,
+                UpdaterName = m.Updater != null ? m.Updater.Name : null
+            }).ToList();
+
+            return Ok(new { mediaItems = mediaItemDtos, totalCount, page, pageSize });
         }
         catch (Exception ex)
         {
@@ -117,8 +133,8 @@ public class MediaController : ControllerBase
                 Id = mediaItemEntity.Id.ToString(),
                 BrandId = mediaItemEntity.BrandId,
                 Filename = mediaItemEntity.FileName,
-                Url = $"/media/{Path.GetFileName(mediaItemEntity.FilePath)}",
-                Thumbnail = $"/thumbnails/{Path.GetFileName(mediaItemEntity.FilePath)}",
+                Url = GetMediaUrl(mediaItemEntity.FilePath),
+                Thumbnail = GetThumbnailUrl(mediaItemEntity.FilePath),
                 Size = mediaItemEntity.FileSize,
                 Type = mediaItemEntity.FileType,
                 Alt = mediaItemEntity.AltText ?? "",
@@ -190,8 +206,8 @@ public class MediaController : ControllerBase
                 Id = createdMediaItemEntity!.Id.ToString(),
                 BrandId = createdMediaItemEntity.BrandId,
                 Filename = createdMediaItemEntity.FileName,
-                Url = $"/media/{Path.GetFileName(createdMediaItemEntity.FilePath)}",
-                Thumbnail = $"/thumbnails/{Path.GetFileName(createdMediaItemEntity.FilePath)}",
+                Url = GetMediaUrl(createdMediaItemEntity.FilePath),
+                Thumbnail = GetThumbnailUrl(createdMediaItemEntity.FilePath),
                 Size = createdMediaItemEntity.FileSize,
                 Type = createdMediaItemEntity.FileType,
                 Alt = createdMediaItemEntity.AltText ?? "",
@@ -262,8 +278,8 @@ public class MediaController : ControllerBase
                 Id = updatedMediaItemEntity!.Id.ToString(),
                 BrandId = updatedMediaItemEntity.BrandId,
                 Filename = updatedMediaItemEntity.FileName,
-                Url = $"/media/{Path.GetFileName(updatedMediaItemEntity.FilePath)}",
-                Thumbnail = $"/thumbnails/{Path.GetFileName(updatedMediaItemEntity.FilePath)}",
+                Url = GetMediaUrl(updatedMediaItemEntity.FilePath),
+                Thumbnail = GetThumbnailUrl(updatedMediaItemEntity.FilePath),
                 Size = updatedMediaItemEntity.FileSize,
                 Type = updatedMediaItemEntity.FileType,
                 Alt = updatedMediaItemEntity.AltText ?? "",
@@ -427,8 +443,8 @@ public class MediaController : ControllerBase
                 Id = createdMediaItemEntity!.Id.ToString(),
                 BrandId = createdMediaItemEntity.BrandId,
                 Filename = createdMediaItemEntity.FileName,
-                Url = $"/media/{Path.GetFileName(createdMediaItemEntity.FilePath)}",
-                Thumbnail = $"/thumbnails/{Path.GetFileName(createdMediaItemEntity.FilePath)}",
+                Url = GetMediaUrl(createdMediaItemEntity.FilePath),
+                Thumbnail = GetThumbnailUrl(createdMediaItemEntity.FilePath),
                 Size = createdMediaItemEntity.FileSize,
                 Type = createdMediaItemEntity.FileType,
                 Alt = createdMediaItemEntity.AltText ?? "",

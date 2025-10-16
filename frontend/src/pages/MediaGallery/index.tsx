@@ -3,8 +3,7 @@ import FormInput from '../../components/Base/Form/FormInput';
 import FormLabel from '../../components/Base/Form/FormLabel';
 import Button from '../../components/Base/Button';
 import Lucide from '../../components/Base/Lucide';
-import { mediaService, MediaItem, MediaResponse, MediaFolder } from '../../services/media';
-import { authService } from '../../services/auth';
+import { mediaService, MediaItem, MediaFolder } from '../../services/media';
 import { useScrollEffect } from '../../hooks/useScrollEffect';
 
 

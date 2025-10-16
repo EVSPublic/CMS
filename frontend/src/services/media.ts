@@ -181,7 +181,7 @@ class MediaService {
 
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5050'}/api/v1/media/${brandId}/upload`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5050'}/api/v1/media/${brandId}/upload`, {
         method: 'POST',
         headers: {
           ...(token && { Authorization: `Bearer ${token}` }),
