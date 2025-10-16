@@ -12,11 +12,13 @@ public class ServicePointController : ControllerBase
 {
     private readonly AdminPanelContext _context;
     private readonly ILogger<ServicePointController> _logger;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public ServicePointController(AdminPanelContext context, ILogger<ServicePointController> logger)
+    public ServicePointController(AdminPanelContext context, ILogger<ServicePointController> logger, IHttpClientFactory httpClientFactory)
     {
         _context = context;
         _logger = logger;
+        _httpClientFactory = httpClientFactory;
     }
 
     [HttpPost("StationList")]
@@ -24,51 +26,35 @@ public class ServicePointController : ControllerBase
     {
         try
         {
-            var brandId = request?.BrandId ?? 1; // Default to brand 1 if not specified
+            _logger.LogInformation("Proxying station list request to external API");
 
-            _logger.LogInformation("Getting station list for brand {BrandId}", brandId);
+            var httpClient = _httpClientFactory.CreateClient();
 
-            var query = _context.Stations
-                .Include(s => s.Chargers)
-                .AsQueryable();
+            // Forward the request to the external API
+            var externalApiUrl = "https://panel-api.ovolt.com.tr/ServicePoint/StationList";
 
-            // Filter by brand visibility
-            query = query.Where(s => s.BrandVisibility.Contains(brandId.ToString()));
+            var requestContent = new StringContent(
+                JsonSerializer.Serialize(request ?? new StationListRequest()),
+                System.Text.Encoding.UTF8,
+                "application/json"
+            );
 
-            // Only return active stations
-            query = query.Where(s => s.Status == "Active" || s.Status == "Operational");
+            var response = await httpClient.PostAsync(externalApiUrl, requestContent);
 
-            var stations = await query.ToListAsync();
-
-            var response = stations.Select(s => new
+            if (!response.IsSuccessStatusCode)
             {
-                id = s.Id,
-                name = s.Name,
-                address = s.Address,
-                latitude = s.Latitude,
-                longitude = s.Longitude,
-                status = s.Status,
-                chargers = s.Chargers.Select(c => new
-                {
-                    id = c.Id,
-                    type = c.Type,
-                    powerKW = c.PowerKW,
-                    status = c.Status,
-                    connectorType = c.ConnectorType
-                }).ToList(),
-                hours = JsonSerializer.Deserialize<Dictionary<string, string>>(s.Hours) ?? new Dictionary<string, string>(),
-                contact = JsonSerializer.Deserialize<object>(s.Contact) ?? new {},
-                images = JsonSerializer.Deserialize<List<string>>(s.Images) ?? new List<string>(),
-                amenities = JsonSerializer.Deserialize<List<string>>(s.Amenities) ?? new List<string>(),
-                totalChargers = s.Chargers.Count,
-                availableChargers = s.Chargers.Count(c => c.Status == "Available")
-            }).ToList();
+                _logger.LogError("External API returned error: {StatusCode}", response.StatusCode);
+                return StatusCode((int)response.StatusCode, new { message = "External API error" });
+            }
 
-            return Ok(response);
+            var content = await response.Content.ReadAsStringAsync();
+            var data = JsonSerializer.Deserialize<JsonElement>(content);
+
+            return Ok(data);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting station list");
+            _logger.LogError(ex, "Error proxying station list request");
             return StatusCode(500, new { message = "Internal server error", error = ex.Message });
         }
     }
