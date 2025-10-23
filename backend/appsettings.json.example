@@ -1,0 +1,31 @@
+{
+  "ConnectionStrings": {
+    "DefaultConnection": ""
+  },
+  "Api": {
+    "Version": "v1",
+    "Prefix": "api/v1"
+  },
+  "Jwt": {
+    "Key": "",
+    "Issuer": "AdminPanel",
+    "Audience": "AdminPanelUsers",
+    "ExpirationMinutes": 60
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "Kestrel": {
+    "Endpoints": {
+      "Http": {
+        "Url": ""
+      }
+    }
+  },
+  "AllowedOrigins": [],
+  "ApiBaseUrl": ""
+}
