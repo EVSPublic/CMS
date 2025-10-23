@@ -32,8 +32,12 @@ public class AdminPanelContext : IdentityDbContext<User, IdentityRole<int>, int>
         builder.Entity<Brand>(entity =>
         {
             entity.HasIndex(e => e.Name).IsUnique();
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
         });
 
         // Configure User entity
@@ -41,8 +45,12 @@ public class AdminPanelContext : IdentityDbContext<User, IdentityRole<int>, int>
         {
             entity.Property(e => e.Role).HasConversion<string>();
             entity.Property(e => e.Status).HasConversion<string>();
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
 
             entity.HasOne(e => e.Brand)
                 .WithMany(e => e.Users)
@@ -56,8 +64,12 @@ public class AdminPanelContext : IdentityDbContext<User, IdentityRole<int>, int>
             entity.HasIndex(e => new { e.BrandId, e.PageType }).IsUnique();
             entity.Property(e => e.PageType).HasConversion<string>();
             entity.Property(e => e.Status).HasConversion<string>();
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
 
             entity.HasOne(e => e.Brand)
                 .WithMany(e => e.ContentPages)
@@ -80,8 +92,12 @@ public class AdminPanelContext : IdentityDbContext<User, IdentityRole<int>, int>
         {
             entity.HasIndex(e => new { e.BrandId, e.Slug }).IsUnique();
             entity.Property(e => e.Status).HasConversion<string>();
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
 
             entity.HasOne(e => e.Brand)
                 .WithMany(e => e.StaticPages)
@@ -104,8 +120,12 @@ public class AdminPanelContext : IdentityDbContext<User, IdentityRole<int>, int>
         {
             // entity.Property(e => e.Type).HasConversion<string>(); // Type property doesn't exist in Announcement model
             entity.Property(e => e.Status).HasConversion<string>();
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
 
             entity.HasOne(e => e.Brand)
                 .WithMany(e => e.Announcements)
@@ -127,8 +147,12 @@ public class AdminPanelContext : IdentityDbContext<User, IdentityRole<int>, int>
         builder.Entity<Partnership>(entity =>
         {
             entity.Property(e => e.Status).HasConversion<string>();
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
 
             entity.HasOne(e => e.Brand)
                 .WithMany(e => e.Partnerships)
@@ -149,7 +173,9 @@ public class AdminPanelContext : IdentityDbContext<User, IdentityRole<int>, int>
         // Configure MediaFile entity
         builder.Entity<MediaFile>(entity =>
         {
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(e => e.Brand)
                 .WithMany(e => e.MediaFiles)
@@ -166,8 +192,12 @@ public class AdminPanelContext : IdentityDbContext<User, IdentityRole<int>, int>
         builder.Entity<MediaItem>(entity =>
         {
             entity.Property(e => e.Status).HasConversion<string>();
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
 
             entity.HasOne(e => e.Brand)
                 .WithMany()
@@ -188,8 +218,12 @@ public class AdminPanelContext : IdentityDbContext<User, IdentityRole<int>, int>
         // Configure MediaFolder entity
         builder.Entity<MediaFolder>(entity =>
         {
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
             entity.HasIndex(e => new { e.BrandId, e.Name }).IsUnique();
 
             entity.HasOne(e => e.Brand)
@@ -201,7 +235,9 @@ public class AdminPanelContext : IdentityDbContext<User, IdentityRole<int>, int>
         // Configure MediaItemFolder entity (Many-to-Many relationship)
         builder.Entity<MediaItemFolder>(entity =>
         {
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.HasIndex(e => new { e.MediaItemId, e.MediaFolderId }).IsUnique();
 
             entity.HasOne(e => e.MediaItem)
@@ -218,15 +254,23 @@ public class AdminPanelContext : IdentityDbContext<User, IdentityRole<int>, int>
         // Configure Station entity
         builder.Entity<Station>(entity =>
         {
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
         });
 
         // Configure Charger entity
         builder.Entity<Charger>(entity =>
         {
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
 
             entity.HasOne(e => e.Station)
                 .WithMany(e => e.Chargers)
@@ -237,7 +281,9 @@ public class AdminPanelContext : IdentityDbContext<User, IdentityRole<int>, int>
         // Configure ActivityLog entity
         builder.Entity<ActivityLog>(entity =>
         {
-            entity.Property(e => e.Timestamp).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Timestamp)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.Level).HasDefaultValue("info");
             entity.HasIndex(e => e.Timestamp);
             entity.HasIndex(e => e.Action);
