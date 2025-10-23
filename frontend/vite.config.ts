@@ -12,14 +12,6 @@ export default defineConfig({
       '/media': 'http://localhost:5050'
     }
   },
-  build: {
-    commonjsOptions: {
-      include: ["tailwind.config.js", "node_modules/**"],
-    },
-  },
-  optimizeDeps: {
-    include: ["tailwind-config"],
-  },
   plugins: [react()],
   resolve: {
     alias: {
