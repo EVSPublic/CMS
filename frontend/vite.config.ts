@@ -15,21 +15,10 @@ export default defineConfig({
   build: {
     commonjsOptions: {
       include: ["tailwind.config.js", "node_modules/**"],
-      transformMixedEsModules: true,
-    },
-    rollupOptions: {
-      output: {
-        manualChunks: undefined,
-      },
     },
   },
   optimizeDeps: {
-    include: ["tailwind-config", "react", "react-dom"],
-    esbuildOptions: {
-      loader: {
-        '.js': 'jsx',
-      },
-    },
+    include: ["tailwind-config"],
   },
   plugins: [react()],
   resolve: {
