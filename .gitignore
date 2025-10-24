@@ -1,6 +1,7 @@
 .claude
 
 ai-tools/
+backend/publish/
 
 node_modules/
 */node_modules/
