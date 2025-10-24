@@ -168,6 +168,20 @@ const UserManagementPage: React.FC = () => {
   };
 
   const handleDeleteUser = async (userId: string) => {
+    // Get current user from localStorage
+    const currentUserData = localStorage.getItem('user');
+    if (currentUserData) {
+      try {
+        const currentUser = JSON.parse(currentUserData);
+        if (currentUser.id === userId || currentUser.id === parseInt(userId)) {
+          alert('Kendi hesabınızı silemezsiniz!');
+          return;
+        }
+      } catch (e) {
+        console.error('Error parsing current user:', e);
+      }
+    }
+
     const user = users.find(u => u.id === userId);
     if (!confirm(`"${user?.name}" kullanıcısını silmek istediğinizden emin misiniz?`)) {
       return;
@@ -180,6 +194,7 @@ const UserManagementPage: React.FC = () => {
         await loadUsers(); // Reload to get updated list
         alert('Kullanıcı silindi!');
       } else {
+        console.error('Delete failed:', response.error);
         alert('Kullanıcı silinirken bir hata oluştu: ' + (response.error?.message || 'Bilinmeyen hata'));
       }
     } catch (error) {

@@ -164,6 +164,14 @@ class ApiService {
         this.clearAuth();
       }
 
+      // Handle 204 No Content responses (like DELETE)
+      if (response.status === 204) {
+        return {
+          ok: true,
+          data: undefined as any
+        };
+      }
+
       const data = await response.json();
 
       if (!response.ok) {
