@@ -5,6 +5,7 @@ import Button from '../../components/Base/Button';
 import Lucide from '../../components/Base/Lucide';
 import { Users, Plus, Edit, Trash2, Mail, Shield, Calendar } from 'lucide-react';
 import { usersService, User as ApiUser } from '../../services/users';
+import { useScrollEffect } from '../../hooks/useScrollEffect';
 
 interface User {
   id: string;
@@ -27,6 +28,7 @@ interface UserForm {
 const initialUsers: User[] = [];
 
 const UserManagementPage: React.FC = () => {
+  const isScrolled = useScrollEffect();
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -230,11 +232,15 @@ const UserManagementPage: React.FC = () => {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <h1 className={`text-2xl font-semibold flex items-center gap-2 transition-colors ${
+              isScrolled ? 'text-gray-900 dark:text-white' : 'text-white dark:text-white'
+            }`}>
               <Users className="w-6 h-6" />
               Kullanıcı Yönetimi
             </h1>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            <p className={`mt-1 text-sm transition-colors ${
+              isScrolled ? 'text-gray-600 dark:text-gray-400' : 'text-gray-200 dark:text-gray-300'
+            }`}>
               Sistem kullanıcılarını yönetin ve yetkilendirin
             </p>
             {error && (
