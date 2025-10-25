@@ -30,7 +30,7 @@ interface ColorSchemeState {
 
 const getColorScheme = () => {
   const colorScheme = localStorage.getItem("colorScheme");
-  return colorSchemes.filter((item, key) => {
+  return colorSchemes.filter((item) => {
     return item === colorScheme;
   })[0];
 };

@@ -1,6 +1,25 @@
 // Content Management Service
 // Centralized service for managing page content data
 
+// Logger utility for development
+const logger = {
+  log: (message: string, data?: any) => {
+    if (import.meta.env.DEV) {
+      console.log(`[ContentService] ${message}`, data);
+    }
+  },
+  error: (message: string, error?: any) => {
+    if (import.meta.env.DEV) {
+      console.error(`[ContentService] ${message}`, error);
+    }
+  },
+  warn: (message: string, data?: any) => {
+    if (import.meta.env.DEV) {
+      console.warn(`[ContentService] ${message}`, data);
+    }
+  }
+};
+
 export interface ContentValidationResult {
   isValid: boolean;
   errors: string[];
@@ -24,12 +43,12 @@ export interface ContentBackup {
 }
 
 export class ContentService {
-  private baseUrl: string;
-  private apiKey?: string;
+  // private readonly _baseUrl: string;
+  // private readonly _apiKey?: string;
 
-  constructor(baseUrl: string = '/api', apiKey?: string) {
-    this.baseUrl = baseUrl;
-    this.apiKey = apiKey;
+  constructor(_baseUrl: string = '/api', _apiKey?: string) {
+    // this._baseUrl = baseUrl;
+    // this._apiKey = apiKey;
   }
 
   // Get current brand/project from localStorage
@@ -134,17 +153,17 @@ export class ContentService {
   }
 
   // Save content with proper error handling
-  async saveContent(pageId: string, content: any): Promise<ContentSaveResult> {
+  async saveContent(_pageId: string, content: any): Promise<ContentSaveResult> {
     try {
       const payload = {
-        pageId,
+        pageId: _pageId,
         content,
         timestamp: new Date().toISOString(),
         version: this.generateVersion()
       };
 
       // For now, save to localStorage as a fallback
-      const storageKey = this.getStorageKey(pageId);
+      const storageKey = this.getStorageKey(_pageId);
       localStorage.setItem(storageKey, JSON.stringify(payload));
 
       // TODO: Implement actual API call
@@ -174,7 +193,7 @@ export class ContentService {
       };
 
     } catch (error) {
-      console.error('Content save error:', error);
+      logger.error('Content save error:', error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Kaydetme sırasında bilinmeyen bir hata oluştu'
@@ -183,10 +202,10 @@ export class ContentService {
   }
 
   // Load content
-  async loadContent(pageId: string): Promise<any> {
+  async loadContent(_pageId: string): Promise<any> {
     try {
       // First try localStorage
-      const storageKey = this.getStorageKey(pageId);
+      const storageKey = this.getStorageKey(_pageId);
       const stored = localStorage.getItem(storageKey);
 
       if (stored) {
@@ -210,16 +229,16 @@ export class ContentService {
 
       return null; // No content found
     } catch (error) {
-      console.error('Content load error:', error);
+      logger.error('Content load error:', error);
       throw error;
     }
   }
 
   // Create backup
-  async createBackup(pageId: string, content: any, description?: string): Promise<ContentBackup> {
+  async createBackup(_pageId: string, content: any, description?: string): Promise<ContentBackup> {
     const backup: ContentBackup = {
       id: this.generateBackupId(),
-      pageId,
+      pageId: _pageId,
       content: JSON.parse(JSON.stringify(content)), // Deep clone
       timestamp: new Date(),
       version: this.generateVersion(),
@@ -227,7 +246,7 @@ export class ContentService {
     };
 
     // Save backup to localStorage
-    const backups = this.getBackups(pageId);
+    const backups = this.getBackups(_pageId);
     backups.push(backup);
 
     // Keep only last 10 backups per page
@@ -241,15 +260,15 @@ export class ContentService {
       timestamp: b.timestamp.toISOString()
     }));
 
-    localStorage.setItem(this.getStorageKey(pageId, 'backups'), JSON.stringify(serializedBackups));
+    localStorage.setItem(this.getStorageKey(_pageId, 'backups'), JSON.stringify(serializedBackups));
 
     return backup;
   }
 
   // Get backups for a page
-  getBackups(pageId: string): ContentBackup[] {
+  getBackups(_pageId: string): ContentBackup[] {
     try {
-      const stored = localStorage.getItem(this.getStorageKey(pageId, 'backups'));
+      const stored = localStorage.getItem(this.getStorageKey(_pageId, 'backups'));
       if (!stored) return [];
 
       const backups = JSON.parse(stored);
@@ -287,9 +306,9 @@ export class ContentService {
   }
 
   // Delete backup
-  deleteBackup(pageId: string, backupId: string): boolean {
+  deleteBackup(_pageId: string, backupId: string): boolean {
     try {
-      const backups = this.getBackups(pageId);
+      const backups = this.getBackups(_pageId);
       const filteredBackups = backups.filter(backup => backup.id !== backupId);
 
       if (filteredBackups.length === backups.length) {
@@ -302,7 +321,7 @@ export class ContentService {
         timestamp: b.timestamp.toISOString()
       }));
 
-      localStorage.setItem(this.getStorageKey(pageId, 'backups'), JSON.stringify(serializedBackups));
+      localStorage.setItem(this.getStorageKey(_pageId, 'backups'), JSON.stringify(serializedBackups));
       return true;
     } catch {
       return false;
@@ -321,19 +340,19 @@ export class ContentService {
   }
 
   // Preview content (generate preview URL or data)
-  generatePreview(pageId: string, content: any): { previewUrl?: string; previewData: any } {
+  generatePreview(_pageId: string, content: any): { previewUrl?: string; previewData: any } {
     // For now, return the content for preview
     // In a real implementation, this might generate a temporary preview URL
     return {
       previewData: content,
-      // previewUrl: `${this.baseUrl}/preview/${pageId}?token=${this.generatePreviewToken()}`
+      // previewUrl: `${baseUrl}/preview/${_pageId}?token=${this.generatePreviewToken()}`
     };
   }
 
   // Export content for backup
-  exportContent(pageId: string, content: any): Blob {
+  exportContent(_pageId: string, content: any): Blob {
     const exportData = {
-      pageId,
+      pageId: _pageId,
       content,
       exportDate: new Date().toISOString(),
       version: this.generateVersion()

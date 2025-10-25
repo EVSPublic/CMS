@@ -7,7 +7,7 @@ import Router from "./router";
 import "./assets/css/app.css";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <BrowserRouter>
+  <BrowserRouter basename="/CMS">
     <Provider store={store}>
       <Router />
     </Provider>

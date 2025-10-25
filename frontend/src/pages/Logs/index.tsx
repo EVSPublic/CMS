@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Lucide from '@/components/Base/Lucide';
 import Button from '@/components/Base/Button';
 import FormSelect from '@/components/Base/Form/FormSelect';
-import FormInput from '@/components/Base/Form/FormInput';
 import { logService } from '@/services/logService';
-import { LogEntry, LogsResponse } from '@/types/log';
+import { LogsResponse } from '@/types/log';
 import { useScrollEffect } from '@/hooks/useScrollEffect';
 
 const LogsPage: React.FC = () => {

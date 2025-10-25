@@ -1,6 +1,7 @@
-const plugin = require("tailwindcss/plugin");
-const colors = require("tailwindcss/colors");
-const { parseColor } = require("tailwindcss/lib/util/color");
+import plugin from "tailwindcss/plugin";
+import colors from "tailwindcss/colors";
+import { parseColor } from "tailwindcss/lib/util/color";
+import forms from "@tailwindcss/forms";
 
 /** Converts HEX color to RGB */
 const toRGB = (value) => {
@@ -8,7 +9,7 @@ const toRGB = (value) => {
 };
 
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
   darkMode: "class",
   theme: {
@@ -68,7 +69,7 @@ module.exports = {
     },
   },
   plugins: [
-    require("@tailwindcss/forms"),
+    forms,
     plugin(function ({ addBase, matchUtilities }) {
       addBase({
         // Default colors

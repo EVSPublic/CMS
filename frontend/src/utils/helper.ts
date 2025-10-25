@@ -140,7 +140,7 @@ const stringToHTML = (arg: string) => {
 const slideUp = (
   el: HTMLElement,
   duration = 300,
-  callback = (el: HTMLElement) => {}
+  callback = (_el: HTMLElement) => {}
 ) => {
   el.style.transitionProperty = "height, margin, padding";
   el.style.transitionDuration = duration + "ms";
@@ -169,7 +169,7 @@ const slideUp = (
 const slideDown = (
   el: HTMLElement,
   duration = 300,
-  callback = (el: HTMLElement) => {}
+  callback = (_el: HTMLElement) => {}
 ) => {
   el.style.removeProperty("display");
   let display = window.getComputedStyle(el).display;

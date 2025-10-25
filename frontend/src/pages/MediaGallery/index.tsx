@@ -14,8 +14,8 @@ const MediaGallery: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [currentBrandId, setCurrentBrandId] = useState<number>(1); // Default to brand 1
-  const [totalCount, setTotalCount] = useState(0);
+  const [currentBrandId, _setCurrentBrandId] = useState<number>(1); // Default to brand 1
+  const [, setTotalCount] = useState(0);
 
   const [folders, setFolders] = useState<MediaFolder[]>([]);
 
@@ -254,29 +254,10 @@ const MediaGallery: React.FC = () => {
     }
   };
 
-  const updateItemMetadata = async (itemId: string, updates: Partial<MediaItem>) => {
-    try {
-      const updateData = {
-        fileName: updates.filename,
-        altText: updates.alt,
-        caption: updates.alt // Using alt as caption for simplicity
-      };
-
-      const response = await mediaService.updateMediaItem(currentBrandId, itemId, updateData);
-
-      if (response.ok && response.data) {
-        setMediaItems(prev => prev.map(item =>
-          item.id === itemId ? response.data! : item
-        ));
-      } else {
-        console.error('Update failed:', response.error);
-        alert('Öğe meta verileri güncellenemedi');
-      }
-    } catch (error) {
-      console.error('Update error:', error);
-      alert('Öğe meta verileri güncellenemedi');
-    }
-  };
+  // const _updateItemMetadata = async (_itemId: string, _updates: Partial<MediaItem>) => {
+  //   // This function is currently unused but kept for future implementation
+  //   return Promise.resolve();
+  // };
 
   const handleCreateFolder = async () => {
     if (!newFolderName.trim() || creatingFolder) return;

@@ -221,7 +221,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 // Custom route for media files
-app.MapGet("/media/{filename}", (string filename, IWebHostEnvironment env) =>
+app.MapGet("media/{filename}", (string filename, IWebHostEnvironment env) =>
 {
     var filePath = Path.Combine(env.WebRootPath, "uploads", filename);
     if (File.Exists(filePath))
@@ -248,7 +248,7 @@ app.MapGet("/media/{filename}", (string filename, IWebHostEnvironment env) =>
 });
 
 // Custom route for thumbnails with compression
-app.MapGet("/thumbnails/{filename}", (string filename, IWebHostEnvironment env) =>
+app.MapGet("thumbnails/{filename}", (string filename, IWebHostEnvironment env) =>
 {
     // First try to find actual thumbnail
     var thumbnailPath = Path.Combine(env.WebRootPath, "thumbnails", filename);
@@ -336,7 +336,7 @@ app.MapGet("/thumbnails/{filename}", (string filename, IWebHostEnvironment env) 
 });
 
 // Custom route for uploads (direct access to uploaded files)
-app.MapGet("/uploads/{filename}", (string filename, IWebHostEnvironment env) =>
+app.MapGet("uploads/{filename}", (string filename, IWebHostEnvironment env) =>
 {
     var filePath = Path.Combine(env.WebRootPath, "uploads", filename);
     if (File.Exists(filePath))
@@ -363,7 +363,7 @@ app.MapGet("/uploads/{filename}", (string filename, IWebHostEnvironment env) =>
 });
 
 // Proxy for ServicePoint API (forward requests to external API)
-app.Map("/ServicePoint/{**path}", async (HttpContext context, IHttpClientFactory httpClientFactory, string path) =>
+app.Map("ServicePoint/{**path}", async (HttpContext context, IHttpClientFactory httpClientFactory, string path) =>
 {
     var httpClient = httpClientFactory.CreateClient();
     var targetUrl = $"https://panel-api.ovolt.com.tr/ServicePoint/{path}";

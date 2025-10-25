@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/CMS/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Panel</title>
+    <meta name="robots" content="noindex">
+    <script type="module" crossorigin src="/CMS/assets/index-BIS4A3-S.js"></script>
+    <link rel="modulepreload" crossorigin href="/CMS/assets/vendor-sJCFcGIF.js">
+    <link rel="modulepreload" crossorigin href="/CMS/assets/router-asOpmUrF.js">
+    <link rel="modulepreload" crossorigin href="/CMS/assets/ui-DMO7fQTX.js">
+    <link rel="modulepreload" crossorigin href="/CMS/assets/editor-DI-i9TJw.js">
+    <link rel="stylesheet" crossorigin href="/CMS/assets/index-sdcSgd5a.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Console'da hataları görmek için
+      window.addEventListener('error', function(e) {
+        console.error('JavaScript Error:', e.error);
+      });
+      
+      window.addEventListener('unhandledrejection', function(e) {
+        console.error('Unhandled Promise Rejection:', e.reason);
+      });
+      
+      // React uygulamasının yüklenip yüklenmediğini kontrol et
+      setTimeout(() => {
+        const root = document.getElementById('root');
+        if (root && root.innerHTML.trim() === '') {
+          console.error('React app did not render - root is empty');
+        } else {
+          console.log('React app rendered successfully');
+        }
+      }, 3000);
+    </script>
+  </body>
+</html>

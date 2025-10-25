@@ -1,5 +1,24 @@
 // API Configuration and Base Service
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5050';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://test-www.ovolt.com.tr/API';
+
+// Logger utility for development
+const logger = {
+  log: (message: string, data?: any) => {
+    if (import.meta.env.DEV) {
+      console.log(`[API] ${message}`, data);
+    }
+  },
+  error: (message: string, error?: any) => {
+    if (import.meta.env.DEV) {
+      console.error(`[API] ${message}`, error);
+    }
+  },
+  warn: (message: string, data?: any) => {
+    if (import.meta.env.DEV) {
+      console.warn(`[API] ${message}`, data);
+    }
+  }
+};
 
 export interface PaginationMeta {
   page: number;
@@ -16,13 +35,22 @@ export interface ApiResponse<T> {
     code: string;
     message: string;
     details?: any;
+    statusCode?: number;
   };
+}
+
+export interface ApiError extends Error {
+  code: string;
+  statusCode?: number;
+  details?: any;
 }
 
 class ApiService {
   private baseUrl: string;
   private tokenRefreshTimeout: number | null = null;
   private isRefreshing = false;
+  private readonly timeout = 30000; // 30 seconds
+  private readonly maxRetries = 3;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
@@ -72,17 +100,17 @@ class ApiService {
         if (refreshData.ok && refreshData.accessToken) {
           localStorage.setItem('access_token', refreshData.accessToken);
           localStorage.setItem('user', JSON.stringify(refreshData.user));
-          console.log('Token refreshed successfully');
+          logger.log('Token refreshed successfully');
 
           // Schedule next refresh
           this.scheduleTokenRefresh();
         }
       } else {
-        console.error('Token refresh failed, logging out');
+        logger.error('Token refresh failed, logging out');
         this.clearAuth();
       }
     } catch (error) {
-      console.error('Token refresh error:', error);
+      logger.error('Token refresh error:', error);
     } finally {
       this.isRefreshing = false;
     }
@@ -110,7 +138,8 @@ class ApiService {
   private async makeRequest<T>(
     endpoint: string,
     options: RequestInit = {},
-    isRetry: boolean = false
+    isRetry: boolean = false,
+    retryCount: number = 0
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
 
@@ -123,14 +152,21 @@ class ApiService {
       // Get token from localStorage
       const token = localStorage.getItem('access_token');
       
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+      
       const response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
           ...(token && { Authorization: `Bearer ${token}` }),
           ...options.headers,
         },
+        signal: controller.signal,
         ...options,
       });
+
+      clearTimeout(timeoutId);
 
       // Handle 401 Unauthorized - try to refresh token
       if (response.status === 401 && !isRetry && !endpoint.includes('/auth/')) {
@@ -153,11 +189,11 @@ class ApiService {
               this.scheduleTokenRefresh();
 
               // Retry the original request with new token
-              return this.makeRequest<T>(endpoint, options, true);
+              return this.makeRequest<T>(endpoint, options, true, retryCount);
             }
           }
         } catch (refreshError) {
-          console.error('Token refresh failed:', refreshError);
+          logger.error('Token refresh failed:', refreshError);
         }
 
         // If refresh fails, clear auth data
@@ -175,11 +211,23 @@ class ApiService {
       const data = await response.json();
 
       if (!response.ok) {
+        const errorMessage = data?.error?.message || data?.message || `HTTP ${response.status}: ${response.statusText}`;
+        const errorCode = data?.error?.code || data?.code || 'HTTP_ERROR';
+        
+        logger.error(`API Error: ${errorCode}`, {
+          status: response.status,
+          message: errorMessage,
+          endpoint,
+          data
+        });
+
         return {
           ok: false,
-          error: data.error || {
-            code: 'HTTP_ERROR',
-            message: `HTTP ${response.status}: ${response.statusText}`,
+          error: {
+            code: errorCode,
+            message: errorMessage,
+            statusCode: response.status,
+            details: data
           },
         };
       }
@@ -195,12 +243,46 @@ class ApiService {
         data: data
       };
     } catch (error) {
+      // Handle timeout
+      if (error instanceof Error && error.name === 'AbortError') {
+        logger.error('Request timeout', { endpoint, url });
+        return {
+          ok: false,
+          error: {
+            code: 'TIMEOUT_ERROR',
+            message: 'Request timeout',
+            details: `Request to ${endpoint} timed out after ${this.timeout}ms`,
+          },
+        };
+      }
+
+      // Handle network errors with retry logic
+      if (retryCount < this.maxRetries && !isRetry) {
+        logger.warn(`Network error, retrying... (${retryCount + 1}/${this.maxRetries})`, {
+          endpoint,
+          error: error instanceof Error ? error.message : error,
+          url
+        });
+
+        // Wait before retry (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+        
+        return this.makeRequest<T>(endpoint, options, false, retryCount + 1);
+      }
+
+      logger.error('Network Error', {
+        endpoint,
+        error: error instanceof Error ? error.message : error,
+        url,
+        retryCount
+      });
+
       return {
         ok: false,
         error: {
           code: 'NETWORK_ERROR',
           message: 'Failed to connect to the server',
-          details: error,
+          details: error instanceof Error ? error.message : String(error),
         },
       };
     }

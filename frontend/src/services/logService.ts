@@ -1,6 +1,25 @@
 import { LogEntry, LogsResponse, LogAction } from '../types/log';
 import { api } from './api';
 
+// Logger utility for development
+const logger = {
+  log: (message: string, data?: any) => {
+    if (import.meta.env.DEV) {
+      console.log(`[LogService] ${message}`, data);
+    }
+  },
+  error: (message: string, error?: any) => {
+    if (import.meta.env.DEV) {
+      console.error(`[LogService] ${message}`, error);
+    }
+  },
+  warn: (message: string, data?: any) => {
+    if (import.meta.env.DEV) {
+      console.warn(`[LogService] ${message}`, data);
+    }
+  }
+};
+
 class LogService {
   async log(action: LogAction, details: string, options: {
     level?: 'info' | 'warning' | 'error' | 'success';
@@ -25,7 +44,7 @@ class LogService {
 
       await api.post('/api/v1/logs', logData);
     } catch (error) {
-      console.error('Error logging activity:', error);
+      logger.error('Error logging activity:', error);
       // Silently fail - don't break the user experience if logging fails
     }
   }
@@ -41,7 +60,7 @@ class LogService {
       }
       return [];
     } catch (error) {
-      console.error('Error fetching recent logs:', error);
+      logger.error('Error fetching recent logs:', error);
       return [];
     }
   }
@@ -96,7 +115,7 @@ class LogService {
         totalPages: 0
       };
     } catch (error) {
-      console.error('Error fetching logs:', error);
+      logger.error('Error fetching logs:', error);
       return {
         logs: [],
         total: 0,
@@ -111,7 +130,7 @@ class LogService {
     try {
       await api.delete('/api/v1/logs');
     } catch (error) {
-      console.error('Error clearing logs:', error);
+      logger.error('Error clearing logs:', error);
       throw error;
     }
   }

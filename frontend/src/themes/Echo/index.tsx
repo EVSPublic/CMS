@@ -12,7 +12,7 @@ import {
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { FormattedMenu, linkTo, nestedMenu, enter, leave } from "./side-menu";
 import Lucide from "@/components/Base/Lucide";
-import users from "@/fakers/users";
+// import users from "@/fakers/users";
 import clsx from "clsx";
 import SimpleBar from "simplebar";
 import { Menu } from "@/components/Base/Headless";
@@ -55,7 +55,7 @@ function Main() {
   };
 
   const [topBarActive, setTopBarActive] = useState(false);
-  const [quickSearch, setQuickSearch] = useState(false);
+  const [, _setQuickSearch] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState(() => {
     return localStorage.getItem('selectedBrand') || 'Ovolt';
   });
@@ -173,12 +173,12 @@ function Main() {
     }
   };
 
-  const requestFullscreen = () => {
-    const el = document.documentElement;
-    if (el.requestFullscreen) {
-      el.requestFullscreen();
-    }
-  };
+    // const _requestFullscreen = () => {
+    //   const el = document.documentElement;
+    //   if (el.requestFullscreen) {
+    //     el.requestFullscreen();
+    //   }
+    // };
 
   useEffect(() => {
     if (scrollableRef.current) {

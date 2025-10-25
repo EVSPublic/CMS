@@ -85,7 +85,7 @@ const ImageInput: React.FC<ImageInputProps> = ({
         <div className="mt-3">
           <div className="w-32 h-32 border border-gray-200 dark:border-gray-700 overflow-hidden bg-gray-100 dark:bg-gray-800">
             <img
-              src={selectedItem?.thumbnail ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5050'}${selectedItem.thumbnail}` : value}
+              src={selectedItem?.thumbnail ? `${import.meta.env.VITE_API_BASE_URL || 'https://test-www.ovolt.com.tr/API'}${selectedItem.thumbnail}` : value}
               alt={selectedItem?.alt || "Selected image"}
               className="w-full h-full object-cover"
               onError={(e) => {

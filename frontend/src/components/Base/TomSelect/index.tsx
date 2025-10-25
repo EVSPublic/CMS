@@ -1,18 +1,17 @@
 import "@/assets/css/vendors/tom-select.css";
 import { createRef, useEffect } from "react";
 import { setValue, init, updateValue } from "./tom-select";
-import {
-  TomSettings,
-  RecursivePartial,
-  TomInput,
-} from "tom-select/src/types/index";
+// import {
+//   TomSettings,
+//   RecursivePartial,
+//   TomInput,
+// } from "tom-select/src/types/index";
 import TomSelectPlugin from "tom-select";
 import { useRef, useMemo } from "react";
 import clsx from "clsx";
 
 export interface TomSelectElement
-  extends HTMLSelectElement,
-    Omit<TomInput, keyof HTMLSelectElement | "tomselect"> {
+  extends HTMLSelectElement {
   TomSelect: TomSelectPlugin;
 }
 
@@ -26,7 +25,7 @@ export interface TomSelectProps<T extends string | string[]>
       value: T;
     };
   }) => void;
-  options?: RecursivePartial<TomSettings>;
+  options?: any;
   getRef?: (el: TomSelectElement) => void;
 }
 
@@ -40,7 +39,7 @@ export interface TomSelectProps<T extends string | string[] = string | string[]>
       value: T;
     };
   }) => void;
-  options?: RecursivePartial<TomSettings>;
+  options?: any;
   getRef?: (el: TomSelectElement) => void;
 }
 

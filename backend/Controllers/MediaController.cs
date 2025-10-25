@@ -16,24 +16,26 @@ public class MediaController : ControllerBase
     private readonly AdminPanelContext _context;
     private readonly ILogger<MediaController> _logger;
     private readonly IConfiguration _configuration;
+    private readonly IWebHostEnvironment _hostingEnvironment;
 
-    public MediaController(AdminPanelContext context, ILogger<MediaController> logger, IConfiguration configuration)
+    public MediaController(AdminPanelContext context, ILogger<MediaController> logger, IConfiguration configuration, IWebHostEnvironment hostingEnvironment )
     {
         _context = context;
         _logger = logger;
         _configuration = configuration;
+        _hostingEnvironment = hostingEnvironment;
     }
 
     private string GetMediaUrl(string filePath)
     {
         var baseUrl = _configuration["ApiBaseUrl"] ?? "http://localhost:5050";
-        return $"{baseUrl}/media/{Path.GetFileName(filePath)}";
+        return $"{baseUrl}media/{Path.GetFileName(filePath)}";
     }
 
     private string GetThumbnailUrl(string filePath)
     {
         var baseUrl = _configuration["ApiBaseUrl"] ?? "http://localhost:5050";
-        return $"{baseUrl}/thumbnails/{Path.GetFileName(filePath)}";
+        return $"{baseUrl}thumbnails/{Path.GetFileName(filePath)}";
     }
 
     [HttpGet("{brandId}")]
@@ -392,8 +394,10 @@ public class MediaController : ControllerBase
             // Generate a unique file name
             var fileExtension = Path.GetExtension(file.FileName);
             var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
+            
             var uploadPath = "uploads";
-            var fullUploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", uploadPath);
+            var wwwRootPath = _hostingEnvironment.WebRootPath; 
+            var fullUploadPath = Path.Combine(wwwRootPath, uploadPath);  
 
             // Create directory if it doesn't exist
             if (!Directory.Exists(fullUploadPath))

@@ -1,4 +1,4 @@
-import { api, ApiResponse, PaginationMeta } from './api';
+import { api, ApiResponse } from './api';
 import { logService } from './logService';
 
 export interface User {
